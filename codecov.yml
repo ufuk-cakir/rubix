@@ -8,3 +8,4 @@ coverage:
 
 ignore:
   - "**/tests/**"
+  - "**/test_*.py"
