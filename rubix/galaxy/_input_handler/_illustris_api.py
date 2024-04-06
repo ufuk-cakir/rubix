@@ -102,10 +102,6 @@ class IllustrisAPI:
         except requests.exceptions.HTTPError as err:
             raise ValueError(err)
         
-        # Check if the response is empty -- do I even need this?
-        if r.headers.get("content-type") is None:
-            raise ValueError("Response is empty.")
-        
         if r.headers["content-type"] == "application/json":
             return r.json()  # parse json responses automatically
         if "content-disposition" in r.headers:
@@ -157,9 +153,11 @@ class IllustrisAPI:
         # Check if filename ends with .hdf5
         if filename.endswith(".hdf5"):
             filename = filename[:-5]
-
         returndict = dict()
         file_path = os.path.join(self.DATAPATH, f"{filename}.hdf5")
+        if not os.path.exists(file_path):
+            raise ValueError(f"File {file_path} does not exist.")
+        
         with h5py.File(file_path, "r") as f:
             for type in f.keys():
                 if type == "Header":
