@@ -74,4 +74,5 @@ jobs:
         files: ./tests/coverage.xml
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        ILLUSTRIS_API_KEY: ${{ secrets.ILLUSTRIS_API_KEY }} # need this to run the tests
     
