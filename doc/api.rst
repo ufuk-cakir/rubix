@@ -5,5 +5,5 @@ User API
 
 This is an example function:
 
-.. automodule:: virtual_telescope
+.. automodule:: rubix
     :members:
