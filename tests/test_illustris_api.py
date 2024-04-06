@@ -1,6 +1,6 @@
 import pytest
 import os
-from virtual_telescope.galaxy._input_handler._illustris_api import IllustrisAPI
+from rubix.galaxy._input_handler._illustris_api import IllustrisAPI
 
 def test__init__():
     api = IllustrisAPI(api_key="test_key")
