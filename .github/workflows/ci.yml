@@ -66,6 +66,8 @@ jobs:
       working-directory: ./tests
       run: |
         python -m pytest --cov --cov-report=xml
+      env:
+        ILLUSTRIS_API_KEY: ${{ secrets.ILLUSTRIS_API_KEY }} # need this to run the tests
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
@@ -74,5 +76,5 @@ jobs:
         files: ./tests/coverage.xml
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        ILLUSTRIS_API_KEY: ${{ secrets.ILLUSTRIS_API_KEY }} # need this to run the tests
+        
     
