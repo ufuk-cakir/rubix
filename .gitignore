@@ -139,3 +139,9 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+
+
+
+*.hdf5
+*.h5

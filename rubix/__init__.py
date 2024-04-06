@@ -1,5 +1,5 @@
 # The version file is generated automatically by setuptools_scm
-from virtual_telescope._version import version as __version__
+from rubix._version import version as __version__
 
 
 def add_one(x: int):
