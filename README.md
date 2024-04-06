@@ -1,26 +1,26 @@
-# Welcome to virtual-telescope
+# Welcome to rubix
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/ufuk-cakir/virtual-telescope/ci.yml?branch=main)](https://github.com/ufuk-cakir/virtual-telescope/actions/workflows/ci.yml)
-[![Documentation Status](https://readthedocs.org/projects/virtual-telescope/badge/)](https://virtual-telescope.readthedocs.io/)
-[![codecov](https://codecov.io/gh/ufuk-cakir/virtual-telescope/branch/main/graph/badge.svg)](https://codecov.io/gh/ufuk-cakir/virtual-telescope)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/ufuk-cakir/rubix/ci.yml?branch=main)](https://github.com/ufuk-cakir/rubix/actions/workflows/ci.yml)
+[![Documentation Status](https://readthedocs.org/projects/rubix/badge/)](https://rubix.readthedocs.io/)
+[![codecov](https://codecov.io/gh/ufuk-cakir/rubix/branch/main/graph/badge.svg)](https://codecov.io/gh/ufuk-cakir/rubix)
 
 ## Installation
 
-The Python package `virtual_telescope` can be installed from PyPI:
+The Python package `rubix` can be installed from PyPI:
 
 ```
-python -m pip install virtual_telescope
+python -m pip install rubix
 ```
 
 ## Development installation
 
-If you want to contribute to the development of `virtual_telescope`, we recommend
+If you want to contribute to the development of `rubix`, we recommend
 the following editable installation from this repository:
 
 ```
-git clone https://github.com/ufuk-cakir/virtual-telescope
-cd virtual-telescope
+git clone https://github.com/ufuk-cakir/rubix
+cd rubix
 python -m pip install --editable .[tests]
 ```
 
