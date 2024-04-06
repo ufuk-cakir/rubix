@@ -5,7 +5,6 @@
 requires = [
     "setuptools >=61",
     "setuptools_scm >=7",
-    "requests",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -28,6 +27,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
 ]
 dependencies = [
+    "requests",
 ]
 
 [project.optional-dependencies]
