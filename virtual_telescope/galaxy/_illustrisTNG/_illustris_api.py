@@ -7,6 +7,14 @@ class IllustrisAPI:
     '''This class is used to load data from the Illustris API.
     
     It loads both subhalo data and particle data from a given simulation, snapshot, and subhalo ID.
+    The default fields that are downloaded are:
+    - For gas particles: "Coordinates", "Density", "Masses", "ParticleIDs", "GFM_Metallicity", "SubfindHsml",
+    "StarFormationRate", "InternalEnergy", "Velocities", "ElectronAbundance", "GFM_Metals"
+    
+    - For star particles: "Coordinates", "GFM_InitialMass", "Masses", "ParticleIDs", "GFM_Metallicity",
+    "GFM_StellarFormationTime", "Velocities"
+    
+    Check the source for the API documentation for more information: https://www.tng-project.org/data/docs/api/
     '''
     DATAPATH = "./tempdata"
     URL = "http://www.tng-project.org/api/"
@@ -68,9 +76,6 @@ class IllustrisAPI:
         self.baseURL = f"{self.URL}{self.simulation}/snapshots/{self.snapshot}"
 
 
-
-
-    
     def _get(self, path, params=None, name=None):
         """Get data from the Illustris API.
 
@@ -163,7 +168,7 @@ class IllustrisAPI:
 
         return returndict
 
-    def get_particle_data(self, id, particle_type, fields=DEFAULT_FIELDS):
+    def get_particle_data(self, id:int, particle_type, fields=DEFAULT_FIELDS):
         """Get particle data from the Illustris API.
 
         Returns the particle data for the given subhalo ID.
@@ -189,7 +194,29 @@ class IllustrisAPI:
         data = self._load_hdf5("cutout")
         return data
 
-    def load_galaxy(self, id, verbose=False):
+    def load_galaxy(self, id:int , verbose=False):
+        '''Download Galaxy Data from the Illustris API.
+        
+        This function downloads both the subhalo data and the particle data for stars and gas particles, for the fields specified in DEFAULT_FIELDS.
+        It saves the data in a HDF5 file.
+        
+        Parameters
+        ----------
+        id : int
+            The ID of the subhalo to download.
+        verbose : bool
+            Whether to print out information about the download.
+            
+        Returns
+        -------
+        dict
+            The galaxy data.
+        
+        Examples
+        --------
+        >>> illustris_api = IllustrisAPI(api_key, simulation="TNG50-1", snapshot=99)
+        >>> data = illustris_api.load_galaxy(id=0, verbose=True)
+        '''
         if verbose:
             print(f"Getting data for subhalo {id}")
 
