@@ -1,3 +1,4 @@
+import h5py
 import pytest
 import os
 from rubix.galaxy._input_handler._illustris_api import IllustrisAPI
@@ -52,10 +53,43 @@ def test__get_no_api_key():
     with pytest.raises(ValueError):
         api = IllustrisAPI(api_key=None)
         api._get("http://www.tng-project.org/api/TNG50-1/snapshots/99")
+    
         
-    
+        
+def test_load_hdf5_valid_filename():
+    api = IllustrisAPI(api_key="test_key")
+    filename = "valid_filename"
+    # Create a dummy hdf5 file for testing
+    with h5py.File(os.path.join(api.DATAPATH, f"{filename}.hdf5"), "w") as f:
+        stars = f.create_group("PartType4")
+        stars.create_dataset("Masses", data=[1, 2, 3])
+        
+    assert os.path.exists(os.path.join(api.DATAPATH, f"{filename}.hdf5"))
+    data = api._load_hdf5(filename)
+    assert isinstance(data, dict)
+    assert "PartType4" in data
 
-    
+def test_load_hdf5_filename_with_extension():
+    api = IllustrisAPI(api_key="test_key")
+    filename = "valid_filename.hdf5"
+    # Create a dummy hdf5 file for testing
+    with h5py.File(os.path.join(api.DATAPATH, f"{filename}"), "w") as f:
+        stars = f.create_group("PartType4")
+        stars.create_dataset("Masses", data=[1, 2, 3])
+    data = api._load_hdf5(filename)
+    assert isinstance(data, dict)
+    assert "PartType4" in data
+
+def test_load_hdf5_invalid_filename():
+    api = IllustrisAPI(api_key="test_key")
+    with pytest.raises(ValueError):
+        api._load_hdf5("invalid_filename") 
+
+def test_get_particle_data_empty_fields():
+    key = os.getenv("ILLUSTRIS_API_KEY")
+    api = IllustrisAPI(api_key=key)
+    with pytest.raises(ValueError, match="Fields should not be empty."):
+        api.get_particle_data(0, "stars", "") 
 def test_load_galaxy_valid_input():
     key = os.getenv("ILLUSTRIS_API_KEY")
     api = IllustrisAPI(api_key=key)
