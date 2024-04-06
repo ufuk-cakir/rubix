@@ -14,19 +14,38 @@ def test__init__():
 def test_get_api_key():
     key = os.getenv("ILLUSTRIS_API_KEY")
     assert key != None
+    
+def test_get_particle_data_valid_input():
+    key = os.getenv("ILLUSTRIS_API_KEY")
+    api = IllustrisAPI(api_key=key)
+    data = api.get_particle_data(11, "stars", "Masses")
+    assert isinstance(data, dict)
+    assert "Masses" in data["PartType4"]
 
+
+def test_get_particle_data_invalid_id():
+    key = os.getenv("ILLUSTRIS_API_KEY")
+    api = IllustrisAPI(api_key=key)
+    with pytest.raises(ValueError):
+        api.get_particle_data("invalid_id", "stars", "Masses")
+
+def test_get_particle_data_invalid_particle_type():
+    key = os.getenv("ILLUSTRIS_API_KEY")
+    api = IllustrisAPI(api_key=key)
+    with pytest.raises(ValueError):
+        api.get_particle_data(11, "invalid_type", "Masses")
 
 def test_empty_response():
     with pytest.raises(ValueError):
         key = "wrong_key"
         api = IllustrisAPI(api_key=key)
-        result = api.get_subhalo(0)
+        result = api.get_subhalo(11)
         assert result == None
 
 def test__get():  # Use requests_mock directly as a parameter
     key = os.getenv("ILLUSTRIS_API_KEY")
     api = IllustrisAPI(api_key=key)
-    result = api.get_subhalo(0)
+    result = api.get_subhalo(11)
     assert result != None
 
 def test__get_no_api_key():
@@ -34,4 +53,28 @@ def test__get_no_api_key():
         api = IllustrisAPI(api_key=None)
         api._get("http://www.tng-project.org/api/TNG50-1/snapshots/99")
         
-        
+    
+
+    
+def test_load_galaxy_valid_input():
+    key = os.getenv("ILLUSTRIS_API_KEY")
+    api = IllustrisAPI(api_key=key)
+    api.DEFAULT_FIELDS = {
+        "PartType0": [
+            "ParticleIDs",
+        ],
+        "PartType4": [
+            "ParticleIDs",
+        ],
+    }
+    data = api.load_galaxy(id=11, verbose=True)
+    assert isinstance(data, dict)
+    assert "SubhaloData" in data
+    assert "PartType0" in data 
+    assert "PartType4" in data
+
+def test_load_galaxy_invalid_id():
+    key = os.getenv("ILLUSTRIS_API_KEY")
+    api = IllustrisAPI(api_key=key)
+    with pytest.raises(ValueError):
+        api.load_galaxy(id="invalid_id", verbose=True)
