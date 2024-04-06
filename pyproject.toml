@@ -28,6 +28,7 @@ classifiers = [
 ]
 dependencies = [
     "requests",
+    "h5py",
 ]
 
 [project.optional-dependencies]
