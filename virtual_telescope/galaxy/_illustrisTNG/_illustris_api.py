@@ -58,13 +58,20 @@ class IllustrisAPI:
             Snapshot to load from. Default is 99.
         """
 
+        if api_key is None:
+            raise ValueError("Please set the API key.")
+
         self.headers = {"api-key": api_key}
         self.particle_type = particle_type
         self.snapshot = snapshot
         self.simulation = simulation
         self.baseURL = f"{self.URL}{self.simulation}/snapshots/{self.snapshot}"
 
-    def get(self, path, params=None, name=None):
+
+
+
+    
+    def _get(self, path, params=None, name=None):
         """Get data from the Illustris API.
 
         Parameters
@@ -83,9 +90,17 @@ class IllustrisAPI:
         """
 
         os.makedirs(self.DATAPATH, exist_ok=True)
-        r = requests.get(path, params=params, headers=self.headers)
-        # raise exception if response code is not HTTP SUCCESS (200)
-        r.raise_for_status()
+        try:
+            r = requests.get(path, params=params, headers=self.headers)
+            # raise exception if response code is not HTTP SUCCESS (200)
+            r.raise_for_status()
+        except requests.exceptions.HTTPError as err:
+            raise ValueError(err)
+        
+        # Check if the response is empty -- do I even need this?
+        if r.headers.get("content-type") is None:
+            raise ValueError("Response is empty.")
+        
         if r.headers["content-type"] == "application/json":
             return r.json()  # parse json responses automatically
         if "content-disposition" in r.headers:
@@ -116,9 +131,9 @@ class IllustrisAPI:
 
         """
 
-        return self.get(f"{self.baseURL}/subhalos/{id}")
+        return self._get(f"{self.baseURL}/subhalos/{id}")
 
-    def load_hdf5(self, filename):
+    def _load_hdf5(self, filename):
         """Load HDF5 file.
 
         Loads the HDF5 file with the given filename.
@@ -170,11 +185,11 @@ class IllustrisAPI:
         fields = ",".join(fields)
 
         url = f"{self.baseURL}/subhalos/{id}/cutout.hdf5?{particle_type}={fields}"
-        self.get(url, name="cutout")
-        data = self.load_hdf5("cutout")
+        self._get(url, name="cutout")
+        data = self._load_hdf5("cutout")
         return data
 
-    def get_data(self, id, verbose=False):
+    def load_galaxy(self, id, verbose=False):
         if verbose:
             print(f"Getting data for subhalo {id}")
 
@@ -184,10 +199,10 @@ class IllustrisAPI:
         fields_gas = ",".join(fields_gas)
         fields_stars = ",".join(fields_stars)
         url = f"{self.baseURL}/subhalos/{id}/cutout.hdf5?gas={fields_gas}&stars={fields_stars}"
-        self.get(url, name=f"galaxy-id-{id}")
+        self._get(url, name=f"galaxy-id-{id}")
         subhalo_data = self.get_subhalo(id)
         self._append_subhalo_data(subhalo_data, id)
-        data = self.load_hdf5(filename=f"galaxy-id-{id}")
+        data = self._load_hdf5(filename=f"galaxy-id-{id}")
         return data
     def _append_subhalo_data(self, subhalo_data, id):
         # Append subhalo data to the HDF5 file
