@@ -1,5 +1,5 @@
 # Ignore setuptools_scm generated version file
-virtual_telescope/_version.py
+rubix/_version.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -145,3 +145,4 @@ cython_debug/
 
 *.hdf5
 *.h5
+rubix/version.py

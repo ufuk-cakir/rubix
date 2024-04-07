@@ -1,10 +1,10 @@
 This is an explanation of the file structure that the cookiecutter generated for you:
 
 * Python source files:
-  * The Python package source files are located in the `virtual_telescope` directory.
-  * `tests/test_virtual_telescope.py` contains the unit tests for the package.
+  * The Python package source files are located in the `rubix` directory.
+  * `tests/test_rubix.py` contains the unit tests for the package.
   * `tests/conftest.py` contains testing setup and configuration for `pytest`
-  * The `notebooks` directory contains an example Jupyter notebook on how to use `virtual_telescope`.
+  * The `notebooks` directory contains an example Jupyter notebook on how to use `rubix`.
     This notebook is always executed during `pytest` execution and it is automatically
     rendered into the Sphinx documentation.
 * Markdown files with meta information on the project. [Markdown](https://www.markdownguide.org/basic-syntax/) is

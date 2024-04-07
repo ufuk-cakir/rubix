@@ -1,17 +1,5 @@
-from virtual_telescope.galaxy._input_handler._illustris_api import IllustrisAPI
+from rubix.galaxy._input_handler._illustris_api import IllustrisAPI
 import os
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def _download_galaxy(subhalo_id,simulation="TNG50-1", snapshot=99):

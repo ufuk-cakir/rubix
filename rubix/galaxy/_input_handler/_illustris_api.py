@@ -102,10 +102,6 @@ class IllustrisAPI:
         except requests.exceptions.HTTPError as err:
             raise ValueError(err)
         
-        # Check if the response is empty -- do I even need this?
-        if r.headers.get("content-type") is None:
-            raise ValueError("Response is empty.")
-        
         if r.headers["content-type"] == "application/json":
             return r.json()  # parse json responses automatically
         if "content-disposition" in r.headers:
@@ -136,6 +132,8 @@ class IllustrisAPI:
 
         """
 
+        if not isinstance(id, int):
+            raise ValueError("ID should be an integer.")
         return self._get(f"{self.baseURL}/subhalos/{id}")
 
     def _load_hdf5(self, filename):
@@ -155,20 +153,23 @@ class IllustrisAPI:
         # Check if filename ends with .hdf5
         if filename.endswith(".hdf5"):
             filename = filename[:-5]
-
         returndict = dict()
         file_path = os.path.join(self.DATAPATH, f"{filename}.hdf5")
+        if not os.path.exists(file_path):
+            raise ValueError(f"File {file_path} does not exist.")
+        
         with h5py.File(file_path, "r") as f:
             for type in f.keys():
                 if type == "Header":
                     continue
-                if type.startswith("PartType"):
-                    for fields in f[type].keys():
-                        returndict[fields] = f[type][fields][()]
+                # create new dictionary for each type
+                returndict[type] = dict()
+                for fields in f[type].keys():
+                    returndict[type][fields] = f[type][fields][()]
 
         return returndict
 
-    def get_particle_data(self, id:int, particle_type, fields=DEFAULT_FIELDS):
+    def get_particle_data(self, id:int, particle_type, fields:str=DEFAULT_FIELDS):
         """Get particle data from the Illustris API.
 
         Returns the particle data for the given subhalo ID.
@@ -186,9 +187,16 @@ class IllustrisAPI:
         """
         # Get fields in the right format
         if isinstance(fields, str):
+            if fields == "":
+                raise ValueError("Fields should not be empty.")
             fields = [fields]
+
+        if not isinstance(id, int):
+            raise ValueError("ID should be an integer.")
         fields = ",".join(fields)
 
+        if particle_type not in ["stars", "gas", "dm"]:
+            raise ValueError("Particle type should be 'stars', 'gas', or 'dm'.")
         url = f"{self.baseURL}/subhalos/{id}/cutout.hdf5?{particle_type}={fields}"
         self._get(url, name="cutout")
         data = self._load_hdf5("cutout")
