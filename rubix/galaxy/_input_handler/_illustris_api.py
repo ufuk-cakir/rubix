@@ -230,11 +230,12 @@ class IllustrisAPI:
             print(f"Getting data for subhalo {id}")
 
         # Get Fields in the right format
-        fields_gas = self.DEFAULT_FIELDS["PartType0"]
+        # fields_gas = self.DEFAULT_FIELDS["PartType0"]
+        # fields_gas = ",".join(fields_gas)
+        # RBX-25 Load also gas particles, currently I am only interested in stars
         fields_stars = self.DEFAULT_FIELDS["PartType4"]
-        fields_gas = ",".join(fields_gas)
         fields_stars = ",".join(fields_stars)
-        url = f"{self.baseURL}/subhalos/{id}/cutout.hdf5?gas={fields_gas}&stars={fields_stars}"
+        url = f"{self.baseURL}/subhalos/{id}/cutout.hdf5?stars={fields_stars}"
         self._get(url, name=f"galaxy-id-{id}")
         subhalo_data = self.get_subhalo(id)
         self._append_subhalo_data(subhalo_data, id)

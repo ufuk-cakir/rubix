@@ -239,8 +239,14 @@ def test_load_galaxy(api_instance, galaxy_data, subhalo_data):
         result = api_instance.load_galaxy(id=id, verbose=True)
 
         # Verify the calls
+        # the API loads only the stars data, so here we check for the correct fields
+        # RBX-25 This may be changed if we  need to load gas particles as well
+        # mock_get.assert_called_once_with(
+        #     f"{api_instance.baseURL}/subhalos/{id}/cutout.hdf5?gas={','.join(api_instance.DEFAULT_FIELDS['PartType0'])}&stars={','.join(api_instance.DEFAULT_FIELDS['PartType4'])}",
+        #     name=f"galaxy-id-{id}",
+        # )
         mock_get.assert_called_once_with(
-            f"{api_instance.baseURL}/subhalos/{id}/cutout.hdf5?gas={','.join(api_instance.DEFAULT_FIELDS['PartType0'])}&stars={','.join(api_instance.DEFAULT_FIELDS['PartType4'])}",
+            f"{api_instance.baseURL}/subhalos/{id}/cutout.hdf5?stars={','.join(api_instance.DEFAULT_FIELDS['PartType4'])}",
             name=f"galaxy-id-{id}",
         )
         mock_get_subhalo.assert_called_once_with(id)
