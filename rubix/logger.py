@@ -43,13 +43,16 @@ if RUBIX_LOG_LEVEL:
 else:
 
     class empty_logger:
+        name = "empty-logger"
+        level = 0
+
         def debug(self, *args, **kwargs):
-            pass
+            """Empty logger"""
 
         def info(self, *args, **kwargs):
-            pass
+            """Empty logger"""
 
         def warning(self, *args, **kwargs):
-            pass
+            """Empty logger"""
 
     logger = empty_logger()
