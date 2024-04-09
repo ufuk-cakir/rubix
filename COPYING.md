@@ -1,4 +1,4 @@
-This is the list of copyright holders of virtual-telescope.
+This is the list of copyright holders of rubix.
 
 For information on the license, see LICENSE.md.
 

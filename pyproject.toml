@@ -16,7 +16,7 @@ name = "rubix"
 description = "Add short description here"
 readme = "README.md"
 maintainers = [
-    { name = "Ufuk Çakır", email = "your@email.com" },
+    { name = "Ufuk Çakır", email = "ufukcakir2001@gmail.com" },
 ]
 dynamic = ["version"]
 requires-python = ">=3.8"
@@ -27,6 +27,9 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
 ]
 dependencies = [
+    "requests",
+    "h5py",
+    "requests-mock"
 ]
 
 [project.optional-dependencies]

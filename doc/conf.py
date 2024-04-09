@@ -7,7 +7,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'virtual-telescope'
+project = 'rubix'
 copyright = '2024, Ufuk Çakır'
 author = 'Ufuk Çakır'
 

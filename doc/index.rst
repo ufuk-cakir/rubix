@@ -1,4 +1,4 @@
-virtual-telescope
+rubix
 =================
 
 .. toctree::
