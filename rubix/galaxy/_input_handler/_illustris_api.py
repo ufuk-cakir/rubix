@@ -105,17 +105,17 @@ class IllustrisAPI:
 
         if r.headers["content-type"] == "application/json":
             return r.json()  # parse json responses automatically
-        if "content-disposition" in r.headers:
-            filename = (
-                r.headers["content-disposition"].split("filename=")[1]
-                if name is None
-                else name
-            )
-            file_path = os.path.join(self.DATAPATH, f"{filename}.hdf5")
-            with open(file_path, "wb") as f:
-                f.write(r.content)
-            return filename  # return the filename string
-        return r
+        if "content-disposition" not in r.headers:
+            raise ValueError("No content-disposition header found. Cannot save file.")
+        filename = (
+            r.headers["content-disposition"].split("filename=")[1]
+            if name is None
+            else name
+        )
+        file_path = os.path.join(self.DATAPATH, f"{filename}.hdf5")
+        with open(file_path, "wb") as f:
+            f.write(r.content)
+        return filename  # return the filename string
 
     def get_subhalo(self, id):
         """Get subhalo data from the Illustris API.
@@ -250,4 +250,3 @@ class IllustrisAPI:
                 if isinstance(subhalo_data[key], dict):
                     continue
                 f["SubhaloData"].create_dataset(key, data=subhalo_data[key])
-
