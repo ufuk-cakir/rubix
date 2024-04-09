@@ -1,4 +1,5 @@
 import pytest
+import os
 import importlib
 
 
@@ -26,3 +27,27 @@ def test_logger(setup_logger_env):
         assert logger.logger.name == "rubix" and logger.logger.level == 10
     else:  # If environment variable is not set, check the default or last set level
         assert logger.logger.name == "empty-logger"
+
+
+# Fixture to setup and teardown the test directory
+@pytest.fixture
+def log_dir(tmp_path, monkeypatch):
+    test_log_dir = tmp_path / "test_logs"
+    monkeypatch.setenv("RUBIX_LOG_PATH", str(test_log_dir))
+    yield str(test_log_dir)  # Provide the directory path to the test
+    # No explicit teardown needed if using tmp_path, as pytest handles it
+
+
+def test_log_file_creation(monkeypatch, tmp_path):
+
+    log_dir = tmp_path / "test_logs"
+    monkeypatch.setenv("RUBIX_LOG_LEVEL", "DEBUG")
+    monkeypatch.setenv("RUBIX_LOG_PATH", log_dir)
+    import rubix.logger  # type: ignore
+
+    importlib.reload(rubix.logger)
+    logger = rubix.logger.logger
+    assert logger.name == "rubix"
+    expected_log_file = os.path.join(log_dir, "rubix.log")
+    assert os.path.isdir(log_dir), "Log directory was not created"
+    assert os.path.exists(expected_log_file), "Log file was not created"
