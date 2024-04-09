@@ -29,6 +29,7 @@ classifiers = [
 dependencies = [
     "requests",
     "h5py",
+    "requests-mock"
 ]
 
 [project.optional-dependencies]
