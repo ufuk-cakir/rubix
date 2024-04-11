@@ -1,5 +1,5 @@
 import os
-
+import requests
 import h5py
 from rubix.logger import logger  # type: ignore
 from typing import List, Union
