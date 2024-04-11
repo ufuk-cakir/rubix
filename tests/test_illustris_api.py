@@ -126,11 +126,6 @@ def test_get_api_key(api_key):
 
 
 def test_no_api_key():
-def test_get_api_key(api_key):
-    assert api_key is not None
-
-
-def test_no_api_key():
     with pytest.raises(ValueError):
         api_instance = IllustrisAPI(api_key=None)
         assert api_instance is None

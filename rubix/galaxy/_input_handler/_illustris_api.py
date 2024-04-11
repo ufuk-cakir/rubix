@@ -8,8 +8,6 @@ from typing import List, Union
 class IllustrisAPI:
     """This class is used to load data from the Illustris API.
 
-    """This class is used to load data from the Illustris API.
-
     It loads both subhalo data and particle data from a given simulation, snapshot, and subhalo ID.
     The default fields that are downloaded are:
     - For gas particles: "Coordinates", "Density", "Masses", "ParticleIDs", "GFM_Metallicity", "SubfindHsml",
@@ -21,8 +19,6 @@ class IllustrisAPI:
 
 
     Check the source for the API documentation for more information: https://www.tng-project.org/data/docs/api/
-    """
-
     """
 
     URL = "http://www.tng-project.org/api/"
@@ -58,7 +54,6 @@ class IllustrisAPI:
         simulation="TNG50-1",
         snapshot=99,
         save_data_path="./tempdata",
-        save_data_path="./tempdata",
     ):
         """Illustris API class.
 
@@ -84,7 +79,6 @@ class IllustrisAPI:
         self.snapshot = snapshot
         self.simulation = simulation
         self.baseURL = f"{self.URL}{self.simulation}/snapshots/{self.snapshot}"
-        self.DATAPATH = save_data_path
         self.DATAPATH = save_data_path
 
     def _get(self, path, params=None, name=None):
@@ -116,20 +110,8 @@ class IllustrisAPI:
         except requests.exceptions.HTTPError as err:
             raise ValueError(err)
 
-
         if r.headers["content-type"] == "application/json":
             return r.json()  # parse json responses automatically
-        if "content-disposition" not in r.headers:
-            raise ValueError("No content-disposition header found. Cannot save file.")
-        filename = (
-            r.headers["content-disposition"].split("filename=")[1]
-            if name is None
-            else name
-        )
-        file_path = os.path.join(self.DATAPATH, f"{filename}.hdf5")
-        with open(file_path, "wb") as f:
-            f.write(r.content)
-        return filename  # return the filename string
         if "content-disposition" not in r.headers:
             raise ValueError("No content-disposition header found. Cannot save file.")
         filename = (
@@ -183,7 +165,6 @@ class IllustrisAPI:
         file_path = os.path.join(self.DATAPATH, f"{filename}.hdf5")
         if not os.path.exists(file_path):
             raise ValueError(f"File {file_path} does not exist.")
-
 
         with h5py.File(file_path, "r") as f:
             for type in f.keys():
@@ -284,7 +265,6 @@ class IllustrisAPI:
         data = self._load_hdf5(filename=f"galaxy-id-{id}")
         return data
 
-
     def _append_subhalo_data(self, subhalo_data, id):
         logger.debug(f"Appending subhalo data for subhalo {id}")
         # Append subhalo data to the HDF5 file
@@ -292,7 +272,6 @@ class IllustrisAPI:
         with h5py.File(file_path, "a") as f:
             f.create_group("SubhaloData")
             for key in subhalo_data.keys():
-                if isinstance(subhalo_data[key], dict):
                 if isinstance(subhalo_data[key], dict):
                     continue
                 f["SubhaloData"].create_dataset(key, data=subhalo_data[key])  # type: ignore
