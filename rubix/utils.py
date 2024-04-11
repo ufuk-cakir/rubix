@@ -1,6 +1,4 @@
 # Description: Utility functions for Rubix
-
-import numpy as np
 from astropy.cosmology import Planck15 as cosmo
 
 
