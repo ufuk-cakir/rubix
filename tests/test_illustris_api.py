@@ -1,10 +1,11 @@
-import pytest
-import h5py
 import os
-from rubix.galaxy._input_handler._illustris_api import IllustrisAPI
-from unittest.mock import patch, MagicMock, mock_open
+from unittest.mock import MagicMock, patch
+
+import h5py
 import numpy as np
-import requests_mock as req_mock
+import pytest
+
+from rubix.galaxy._input_handler._illustris_api import IllustrisAPI
 
 
 @pytest.fixture
@@ -19,7 +20,7 @@ def api_instance(api_key, tmp_path):
     return IllustrisAPI(
         api_key=api_key,
         save_data_path=str(save_data_path),
-        particle_type="stars",
+        particle_type=["stars"],
         simulation="TNG50-1",
         snapshot=99,
     )
@@ -114,7 +115,7 @@ def test_get_particle_data(
 def test__init__():
     api = IllustrisAPI(api_key="test_key")
     assert api.headers == {"api-key": "test_key"}
-    assert api.particle_type == "stars"
+    assert api.particle_type == ["stars"]
     assert api.snapshot == 99
     assert api.simulation == "TNG50-1"
     assert api.baseURL == "http://www.tng-project.org/api/TNG50-1/snapshots/99"
@@ -127,6 +128,7 @@ def test_get_api_key(api_key):
 def test_no_api_key():
     with pytest.raises(ValueError):
         api_instance = IllustrisAPI(api_key=None)
+        assert api_instance is None
 
 
 def test_get_http_error(api_instance, requests_mock):
@@ -235,12 +237,82 @@ def test_load_galaxy(api_instance, galaxy_data, subhalo_data):
     ) as mock_append_subhalo_data, patch.object(
         api_instance, "_load_hdf5", return_value=galaxy_data
     ) as mock_load_hdf5:
-
-        result = api_instance.load_galaxy(id=id, verbose=True)
+        api_instance.DEFAULT_FIELDS = {"stars": "Masses"}
+        result = api_instance.load_galaxy(id=id)
 
         # Verify the calls
+        # the API loads only the stars data, so here we check for the correct fields
+        # RBX-25 This may be changed if we  need to load gas particles as well
+        # mock_get.assert_called_once_with(
+        #     f"{api_instance.baseURL}/subhalos/{id}/cutout.hdf5?gas={','.join(api_instance.DEFAULT_FIELDS['PartType0'])}&stars={','.join(api_instance.DEFAULT_FIELDS['PartType4'])}",
+        #     name=f"galaxy-id-{id}",
+        # )
         mock_get.assert_called_once_with(
-            f"{api_instance.baseURL}/subhalos/{id}/cutout.hdf5?gas={','.join(api_instance.DEFAULT_FIELDS['PartType0'])}&stars={','.join(api_instance.DEFAULT_FIELDS['PartType4'])}",
+            f"{api_instance.baseURL}/subhalos/{id}/cutout.hdf5?stars=Masses",
+            name=f"galaxy-id-{id}",
+        )
+        mock_get_subhalo.assert_called_once_with(id)
+        mock_append_subhalo_data.assert_called_once_with(subhalo_data, id)
+        mock_load_hdf5.assert_called_once_with(filename=f"galaxy-id-{id}")
+
+        # Verify the result
+        assert (
+            result == galaxy_data
+        ), "The returned data does not match the expected galaxy data."
+
+
+def test_load_galaxy_unsupported_particle_type(api_instance, subhalo_data):
+    id = 0
+    with patch.object(api_instance, "_get") as mock_get, patch.object(  # noqa
+        api_instance, "get_subhalo", return_value=subhalo_data
+    ):
+        api_instance.DEFAULT_FIELDS = {"stars": "Masses"}
+        api_instance.particle_type = ["unsupported"]
+        with pytest.raises(ValueError) as exc_info:
+            api_instance.load_galaxy(id=id)
+        assert "Got unsupported particle type" in str(exc_info.value)
+
+
+def test_load_galaxy_multiple_fields(api_instance, galaxy_data, subhalo_data):
+    id = 0
+    with patch.object(api_instance, "_get") as mock_get, patch.object(
+        api_instance, "get_subhalo", return_value=subhalo_data
+    ) as mock_get_subhalo, patch.object(
+        api_instance, "_append_subhalo_data"
+    ) as mock_append_subhalo_data, patch.object(
+        api_instance, "_load_hdf5", return_value=galaxy_data
+    ) as mock_load_hdf5:
+        api_instance.DEFAULT_FIELDS = {"stars": ["Masses", "Coordinates"]}
+        result = api_instance.load_galaxy(id=id)
+        mock_get.assert_called_once_with(
+            f"{api_instance.baseURL}/subhalos/{id}/cutout.hdf5?stars=Masses,Coordinates",
+            name=f"galaxy-id-{id}",
+        )
+        mock_get_subhalo.assert_called_once_with(id)
+        mock_append_subhalo_data.assert_called_once_with(subhalo_data, id)
+        mock_load_hdf5.assert_called_once_with(filename=f"galaxy-id-{id}")
+
+        # Verify the result
+        assert (
+            result == galaxy_data
+        ), "The returned data does not match the expected galaxy data."
+
+
+def test_load_galaxy_multiple_particle_types(api_instance, galaxy_data, subhalo_data):
+    id = 0
+    with patch.object(api_instance, "_get") as mock_get, patch.object(
+        api_instance, "get_subhalo", return_value=subhalo_data
+    ) as mock_get_subhalo, patch.object(
+        api_instance, "_append_subhalo_data"
+    ) as mock_append_subhalo_data, patch.object(
+        api_instance, "_load_hdf5", return_value=galaxy_data
+    ) as mock_load_hdf5:
+        api_instance.particle_type = ["stars", "gas"]
+        api_instance.DEFAULT_FIELDS["stars"] = ["Masses", "Coordinates"]
+        api_instance.DEFAULT_FIELDS["gas"] = ["Coordinates"]
+        result = api_instance.load_galaxy(id=id)
+        mock_get.assert_called_once_with(
+            f"{api_instance.baseURL}/subhalos/{id}/cutout.hdf5?stars=Masses,Coordinates&gas=Coordinates",
             name=f"galaxy-id-{id}",
         )
         mock_get_subhalo.assert_called_once_with(id)
@@ -278,26 +350,21 @@ def test_append_subhalo_data(api_instance, tmp_path):
         for key, value in subhalo_data.items():
             if isinstance(value, dict):
                 assert (
-                    key not in f["SubhaloData"]
+                    key not in f["SubhaloData"].keys()  # type: ignore
                 ), f"Dictionary data '{key}' should not be in SubhaloData."
             else:
                 assert (
                     key in f["SubhaloData"]
-                ), f"Non-dictionary data '{key}' was not found in SubhaloData."
-                dataset = f["SubhaloData"][key]
+                ), f"Non-dictionary data '{key}' was not found in SubhaloData."  # type: ignore
+                dataset = f["SubhaloData"][key]  # type: ignore
                 if isinstance(value, np.ndarray):
                     np.testing.assert_array_equal(
-                        dataset[:], value
-                    ), f"Data '{key}' does not match the expected value."
+                        dataset[:], value  # type:ignore
+                    ), f"Data '{key}' does not match the expected value."  # type:ignore
                 else:
                     assert (
-                        dataset[()] == value
+                        dataset[()] == value  # type:ignore
                     ), f"Data '{key}' does not match the expected value."
-
-
-import h5py
-import numpy as np
-import pytest
 
 
 def test_load_hdf5_success(api_instance, tmp_path):

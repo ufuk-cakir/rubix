@@ -1,6 +1,8 @@
 import requests
 import os
 import h5py
+from rubix.logger import logger  # type: ignore
+from typing import List, Union
 
 
 class IllustrisAPI:
@@ -19,7 +21,7 @@ class IllustrisAPI:
 
     URL = "http://www.tng-project.org/api/"
     DEFAULT_FIELDS = {
-        "PartType0": [
+        "gas": [
             "Coordinates",
             "Density",
             "Masses",
@@ -32,7 +34,7 @@ class IllustrisAPI:
             "ElectronAbundance",
             "GFM_Metals",
         ],
-        "PartType4": [
+        "stars": [
             "Coordinates",
             "GFM_InitialMass",
             "Masses",
@@ -46,7 +48,7 @@ class IllustrisAPI:
     def __init__(
         self,
         api_key,
-        particle_type="stars",
+        particle_type: list = ["stars"],
         simulation="TNG50-1",
         snapshot=99,
         save_data_path="./tempdata",
@@ -97,6 +99,9 @@ class IllustrisAPI:
 
         os.makedirs(self.DATAPATH, exist_ok=True)
         try:
+            logger.debug(
+                f"Performing GET request from {path}, with parameters {params}"
+            )
             r = requests.get(path, params=params, headers=self.headers)
             # raise exception if response code is not HTTP SUCCESS (200)
             r.raise_for_status()
@@ -165,12 +170,12 @@ class IllustrisAPI:
                     continue
                 # create new dictionary for each type
                 returndict[type] = dict()
-                for fields in f[type].keys():
-                    returndict[type][fields] = f[type][fields][()]
+                for fields in f[type].keys():  # type: ignore
+                    returndict[type][fields] = f[type][fields][()]  # type: ignore
 
         return returndict
 
-    def get_particle_data(self, id: int, particle_type, fields: str = DEFAULT_FIELDS):
+    def get_particle_data(self, id: int, particle_type, fields: Union[str, List[str]]):
         """Get particle data from the Illustris API.
 
         Returns the particle data for the given subhalo ID.
@@ -203,7 +208,7 @@ class IllustrisAPI:
         data = self._load_hdf5("cutout")
         return data
 
-    def load_galaxy(self, id: int, verbose=False):
+    def load_galaxy(self, id: int):
         """Download Galaxy Data from the Illustris API.
 
         This function downloads both the subhalo data and the particle data for stars and gas particles, for the fields specified in DEFAULT_FIELDS.
@@ -226,15 +231,29 @@ class IllustrisAPI:
         >>> illustris_api = IllustrisAPI(api_key, simulation="TNG50-1", snapshot=99)
         >>> data = illustris_api.load_galaxy(id=0, verbose=True)
         """
-        if verbose:
-            print(f"Getting data for subhalo {id}")
 
-        # Get Fields in the right format
-        fields_gas = self.DEFAULT_FIELDS["PartType0"]
-        fields_stars = self.DEFAULT_FIELDS["PartType4"]
-        fields_gas = ",".join(fields_gas)
-        fields_stars = ",".join(fields_stars)
-        url = f"{self.baseURL}/subhalos/{id}/cutout.hdf5?gas={fields_gas}&stars={fields_stars}"
+        # Check which particles we want to load
+
+        logger.debug(f"Loading galaxy with ID {id}")
+        url = f"{self.baseURL}/subhalos/{id}/cutout.hdf5?"
+
+        for particle_type in self.particle_type:
+            # Check if particle type is valid
+            if particle_type not in self.DEFAULT_FIELDS.keys():
+                raise ValueError(
+                    f"Got unsupported particle type. Supported types are {self.DEFAULT_FIELDS.keys()} and we got {particle_type}."
+                )
+
+            fields = self.DEFAULT_FIELDS[particle_type]
+            # Check if fields is a list
+            if isinstance(fields, list):
+                fields = ",".join(fields)
+            url += f"{particle_type}={fields}&"
+
+        # Remove the last "&" from the url
+        if url[-1] == "&":
+            url = url[:-1]
+
         self._get(url, name=f"galaxy-id-{id}")
         subhalo_data = self.get_subhalo(id)
         self._append_subhalo_data(subhalo_data, id)
@@ -242,6 +261,7 @@ class IllustrisAPI:
         return data
 
     def _append_subhalo_data(self, subhalo_data, id):
+        logger.debug(f"Appending subhalo data for subhalo {id}")
         # Append subhalo data to the HDF5 file
         file_path = os.path.join(self.DATAPATH, f"galaxy-id-{id}.hdf5")
         with h5py.File(file_path, "a") as f:
@@ -249,4 +269,4 @@ class IllustrisAPI:
             for key in subhalo_data.keys():
                 if isinstance(subhalo_data[key], dict):
                     continue
-                f["SubhaloData"].create_dataset(key, data=subhalo_data[key])
+                f["SubhaloData"].create_dataset(key, data=subhalo_data[key])  # type: ignore
