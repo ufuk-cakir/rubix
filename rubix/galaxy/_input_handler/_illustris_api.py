@@ -228,7 +228,7 @@ class IllustrisAPI:
 
         Examples
         --------
-        >>> illustris_api = IllustrisAPI(api_key, simulation="TNG50-1", snapshot=99)
+        >>> illustris_api = IllustrisAPI(api_key, simulation="TNG50-1", snapshot=99, particle_type=["stars", "gas"])
         >>> data = illustris_api.load_galaxy(id=0, verbose=True)
         """
 
