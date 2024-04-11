@@ -29,6 +29,8 @@ classifiers = [
 dependencies = [
     "requests",
     "h5py",
+    "astropy",
+    "scipy",
     "requests-mock"
 ]
 

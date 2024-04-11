@@ -1,18 +1,21 @@
-'''This file defines the file structure of the data we expect '''
+"""This file defines the file structure of the data we expect """
 
 from dataclasses import dataclass, fields
 from jaxtyping import Float, Int, Array
 
+
 @dataclass
 class Stars:
-    coordinates: Float[Array, "n_stars 3"]
-    masses: Float[Array, " n_stars"]
+    coords: Float[Array, "n_stars 3"]
+    mass: Float[Array, " n_stars"]
     metallicity: Float[Array, " n_stars"]
-    masses: Float[Array, " n_stars"]
-    particleIDs: Int[Array, " n_stars"]
-    velocities: Float[Array, " n_stars 3"]
-    age : Float[Array, " n_stars"]
-    
+    mass: Float[Array, " n_stars"]
+    velocity: Float[Array, " n_stars 3"]
+    age: Float[Array, " n_stars"]
+    # [RBX-12] TODO: Check if we need particle ids?
+    # particleIDs: Int[Array, " n_stars"]
+
+
 @dataclass
 class Gas:
     pass
