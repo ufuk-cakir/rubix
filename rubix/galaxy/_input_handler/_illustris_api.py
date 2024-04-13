@@ -12,12 +12,10 @@ class IllustrisAPI:
     The default fields that are downloaded are:
     - For gas particles: "Coordinates", "Density", "Masses", "ParticleIDs", "GFM_Metallicity", "SubfindHsml",
     "StarFormationRate", "InternalEnergy", "Velocities", "ElectronAbundance", "GFM_Metals"
-
-
+    
     - For star particles: "Coordinates", "GFM_InitialMass", "Masses", "ParticleIDs", "GFM_Metallicity",
     "GFM_StellarFormationTime", "Velocities"
-
-
+    
     Check the source for the API documentation for more information: https://www.tng-project.org/data/docs/api/
     """
 
@@ -215,22 +213,19 @@ class IllustrisAPI:
 
         This function downloads both the subhalo data and the particle data for stars and gas particles, for the fields specified in DEFAULT_FIELDS.
         It saves the data in a HDF5 file.
-
-
+        
         Parameters
         ----------
         id : int
             The ID of the subhalo to download.
         verbose : bool
             Whether to print out information about the download.
-
-
+            
         Returns
         -------
         dict
             The galaxy data.
-
-
+        
         Examples
         --------
         >>> illustris_api = IllustrisAPI(api_key, simulation="TNG50-1", snapshot=99, particle_type=["stars", "gas"])
