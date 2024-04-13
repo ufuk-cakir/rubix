@@ -78,7 +78,6 @@ def test_get_particle_data(
     mock_hdf5 = MagicMock()
 
     mock_hdf5.__enter__.return_value = data
-    print(mock_hdf5.keys())
 
     with patch("os.path.exists", return_value=True), patch(
         "h5py.File", return_value=mock_hdf5

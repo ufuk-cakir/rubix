@@ -12,8 +12,15 @@ class InputHandler(ABC):
         "stars": ["coords", "mass", "metallicity", "velocity", "age"]
     }
 
-    def __init__(self, output_path):
-        self.output_path = output_path
+    # TODO: Not sure if I need this, the idea was to add a check inside the IllustrisHandler, but I think it is not needed
+    # STRUCUTRE = {
+    #     "meta": {},  # For the simulation metadata, we do not have any required fields
+    #     "galaxy": REQUIRED_GALAXY_FIELDS,
+    #     "particles": REQUIRED_PARTICLE_FIELDS,
+    # }
+
+    def __init__(self):
+        """Initializes the InputHandler class"""
 
     @abstractmethod
     def get_particle_data(self) -> dict:
@@ -31,7 +38,7 @@ class InputHandler(ABC):
     def get_units(self) -> dict:
         """Returns the units in the required format"""
 
-    def convert_to_rubix(self):
+    def to_rubix(self, output_path: str):
         logger.debug("Converting to Rubix format..")
 
         # Get the data
@@ -46,7 +53,7 @@ class InputHandler(ABC):
         self._check_data(particle_data, galaxy_data, simulation_metadata, units)
 
         # Create the Rubix h5 file
-        file_path = os.path.join(self.output_path, "rubix_galaxy.h5")
+        file_path = os.path.join(output_path, "rubix_galaxy.h5")
         with h5py.File(file_path, "w") as f:
             # Create groups
             meta_group = f.create_group("meta")
@@ -66,8 +73,8 @@ class InputHandler(ABC):
             for key in particle_data:
                 particle_group.create_group(key)
                 for field, value in particle_data[key].items():
-                    particle_group[key].create_dataset(field, data=value)  # ignore:
-                    particle_group[key][field].attrs["unit"] = units[key][field]
+                    particle_group[key].create_dataset(field, data=value)  # type: ignore
+                    particle_group[key][field].attrs["unit"] = units[key][field]  # type: ignore
 
         logger.debug(f"Rubix file saved at {file_path}")
 

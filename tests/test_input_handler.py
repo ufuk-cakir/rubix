@@ -1,10 +1,6 @@
 import pytest
-from unittest.mock import patch, MagicMock, create_autospec
-from rubix import galaxy
 from rubix.galaxy import InputHandler
 import h5py
-import os
-import tempfile
 
 
 class ConcreteInputHandler(InputHandler):
@@ -48,50 +44,50 @@ class ConcreteInputHandler(InputHandler):
 
 @pytest.fixture
 def input_handler(tmp_path):
-    handler = ConcreteInputHandler(output_path=tmp_path)
+    handler = ConcreteInputHandler()
     return handler
 
 
 def test_convert_to_rubix_creates_file(input_handler, tmp_path):
-    input_handler.convert_to_rubix()
+    input_handler.to_rubix(output_path=tmp_path)
     assert (tmp_path / "rubix_galaxy.h5").exists()
     # load the file and check if the groups and datasets are created as expected
 
 
 def test_convert_to_rubix_structure(input_handler, tmp_path):
-    input_handler.convert_to_rubix()
+    input_handler.to_rubix(tmp_path)
 
     with h5py.File(tmp_path / "rubix_galaxy.h5", "r") as f:
         print(f.keys())
         assert "meta" in f
         assert "galaxy" in f
         assert "particles" in f
-        assert "redshift" in f["galaxy"]
-        assert "center" in f["galaxy"]
-        assert "halfmassrad_stars" in f["galaxy"]
-        assert "stars" in f["particles"]
-        assert "coords" in f["particles/stars"]
-        assert "mass" in f["particles/stars"]
-        assert "metallicity" in f["particles/stars"]
-        assert "velocity" in f["particles/stars"]
-        assert "age" in f["particles/stars"]
+        assert "redshift" in f["galaxy"]  # type: ignore
+        assert "center" in f["galaxy"]  # type: ignore
+        assert "halfmassrad_stars" in f["galaxy"]  # type: ignore
+        assert "stars" in f["particles"]  # type: ignore
+        assert "coords" in f["particles/stars"]  # type: ignore
+        assert "mass" in f["particles/stars"]  # type: ignore
+        assert "metallicity" in f["particles/stars"]  # type: ignore
+        assert "velocity" in f["particles/stars"]  # type: ignore
+        assert "age" in f["particles/stars"]  # type: ignore
 
 
 def test_convert_to_rubix_correct_values(input_handler, tmp_path):
-    input_handler.convert_to_rubix()
+    input_handler.to_rubix(tmp_path)
 
     with h5py.File(tmp_path / "rubix_galaxy.h5", "r") as f:
-        assert f["galaxy/redshift"][()] == 0.5
-        assert (f["galaxy/center"][()] == [1, 2, 3]).all()
-        assert f["galaxy/halfmassrad_stars"][()] == 1.5
-        assert (f["particles/stars/coords"][()] == [1, 2, 3]).all()
-        assert (f["particles/stars/mass"][()] == [4, 5, 6]).all()
-        assert (f["particles/stars/metallicity"][()] == [0.1, 0.2, 0.3]).all()
-        assert (f["particles/stars/velocity"][()] == [7, 8, 9]).all()
-        assert (f["particles/stars/age"][()] == [10, 11, 12]).all()
-        assert f["meta/TIME"][()] == 0
-        assert f["meta/NAME"][()] == b"TNG50-1"
-        assert f["meta/SUBHALO_ID"][()] == 0
+        assert f["galaxy/redshift"][()] == 0.5  # type: ignore
+        assert (f["galaxy/center"][()] == [1, 2, 3]).all()  # type: ignore
+        assert f["galaxy/halfmassrad_stars"][()] == 1.5  # type: ignore
+        assert (f["particles/stars/coords"][()] == [1, 2, 3]).all()  # type: ignore
+        assert (f["particles/stars/mass"][()] == [4, 5, 6]).all()  # type: ignore
+        assert (f["particles/stars/metallicity"][()] == [0.1, 0.2, 0.3]).all()  # type: ignore
+        assert (f["particles/stars/velocity"][()] == [7, 8, 9]).all()  # type: ignore
+        assert (f["particles/stars/age"][()] == [10, 11, 12]).all()  # type: ignore
+        assert f["meta/TIME"][()] == 0  # type: ignore
+        assert f["meta/NAME"][()] == b"TNG50-1"  # type: ignore
+        assert f["meta/SUBHALO_ID"][()] == 0  # type: ignore
 
 
 def test_units_are_correct(input_handler):
@@ -113,7 +109,7 @@ def test_units_are_correct(input_handler):
 
 
 def test_rubix_file_has_correct_units(input_handler, tmp_path):
-    input_handler.convert_to_rubix()
+    input_handler.to_rubix(tmp_path)
 
     with h5py.File(tmp_path / "rubix_galaxy.h5", "r") as f:
         assert f["galaxy/redshift"].attrs["unit"] == "dimensionless"

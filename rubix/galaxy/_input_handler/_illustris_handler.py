@@ -19,11 +19,15 @@ class IllustrisHandler(InputHandler):
             "GFM_StellarFormationTime": "age",  # for this we convert SFT to age
         }
     }
+
+    # This Dictionary maps the particle name in the simulation to the name used in Rubix
     MAPPED_PARTICLE_KEYS = {
         "PartType4": "stars",
         # Currently only PartType4 is supported
     }
 
+    # This dictiony map the keys of the simulation metadata to the keys used in Rubix
+    # This also defines the required fields for the simulation metadata, which are used to check if the file is valid
     SIMULATION_META_KEYS = {
         "name": "SimulationName",
         "snapshot": "SnapshotNumber",
@@ -34,6 +38,7 @@ class IllustrisHandler(InputHandler):
 
     GALAXY_SUBHALO_KEYS = {"halfmassrad_stars": "halfmassrad_stars"}
 
+    # This dictionary defines the units we get from the simulation
     UNITS = {
         "stars": {
             "coords": "cm",
@@ -49,15 +54,15 @@ class IllustrisHandler(InputHandler):
         },
     }
 
-    def __init__(self, path, output_path):
-        self.path = path
-        self.output_path = output_path
+    ILLUSTRIS_DATA = ["Header", "SubhaloData", "PartType4"]
 
+    def __init__(self, path):
+        super().__init__()
+        self.path = path
+        self._logger = logger
         # Check if paths are valid
         if not os.path.exists(self.path):
             raise FileNotFoundError(f"File {self.path} not found")
-        if not os.path.exists(self.output_path):
-            raise FileNotFoundError(f"Output path {self.output_path} not found")
         self.simulation_metadata, self.particle_data, self.galaxy_data = (
             self._load_data()
         )
@@ -74,19 +79,36 @@ class IllustrisHandler(InputHandler):
     def get_units(self):
         return self.UNITS
 
+    # TODO: not sure if we need this here
+    # def _check_hdf_structure(self, f):
+    #     # Check if the file has all the correct fields stored in self.STRUCTURE
+    #     for group in self.STRUCTURE:
+    #         if group not in f:
+    #             raise ValueError(f"Group {group} not found in the file")
+    #         for key in self.STRUCTURE[group]:
+    #             if key not in f[group]:
+    #                 raise ValueError(f"Key {key} not found in group {group}")
+
+    def _check_fields(self, f):
+        for fields in self.ILLUSTRIS_DATA:
+            if fields not in f:
+                raise ValueError(f"Field {fields} not found in the file")
+
     def _load_data(self):
         # open the file
         with h5py.File(self.path, "r") as f:
-
+            self._logger.debug("Loading data from Illustris file..")
+            # Check if the file has the required fields
+            self._check_fields(f)
             # Get information from the header
             # TIME is the scale factor of the simulation
             # HUBBLE_PARAM is the Hubble parameter
             # these values are used to convert the values to physical units
             # PARTICLE_KEYS are the keys of the particle types in the file
-            self.TIME = f["Header"].attrs["Time"]
-            self.HUBBLE_PARAM = f["Header"].attrs["HubbleParam"]
-            self.PARTICLE_KEYS = self._get_particle_keys(f)
 
+            self.TIME, self.HUBBLE_PARAM, self.PARTICLE_KEYS = (
+                self._get_data_from_header(f)
+            )
             # Get simulation metadata
             simulation_metadata = self._get_metadata(f)
 
@@ -98,11 +120,33 @@ class IllustrisHandler(InputHandler):
 
         return simulation_metadata, particle_data, galaxy_data
 
+    def _get_data_from_header(self, f):
+        # Check if the file has the required fields
+        # This should not be necessary, as we already checked for the fields in the file
+        # if "Header" not in f:
+        #     raise ValueError("Header not found in the file")
+        if "Time" not in f["Header"].attrs:
+            raise ValueError("Time not found in the header attributes")
+        if "HubbleParam" not in f["Header"].attrs:
+            raise ValueError("HubbleParam not found in the header attributes")
+        # Get the values
+        TIME = f["Header"].attrs["Time"]
+        HUBBLE_PARAM = f["Header"].attrs["HubbleParam"]
+        PARTICLE_KEYS = self._get_particle_keys(f)
+        return TIME, HUBBLE_PARAM, PARTICLE_KEYS
+
     def _get_particle_keys(self, f):
-        keys = [key for key in f.keys() if "PartType" in key]
-        # check if there are any particle types
-        if len(keys) == 0:
-            raise ValueError("No particle types found in the file")
+        # Check if the keys are supported
+        keys = [key for key in f.keys() if key.startswith("PartType")]
+
+        supported_keys = self.MAPPED_PARTICLE_KEYS.keys()
+        for key in keys:
+            if key not in supported_keys:
+                raise NotImplementedError(
+                    f"{key} is not supported. Currently only {supported_keys} are supported"
+                )
+        # if len(keys) == 0:
+        #     raise ValueError("No particle types found in the file")
         return keys
 
     def _get_galaxy_data(self, f):
@@ -157,16 +201,16 @@ class IllustrisHandler(InputHandler):
         data = {}
         for part_type in self.PARTICLE_KEYS:
             # Check if the particle type is supported
-            if part_type not in self.MAPPED_PARTICLE_KEYS:
-                # Raise warning and skip
-                warnings.warn(
-                    f"{part_type} is currently not supported. Currently only {self.MAPPED_PARTICLE_KEYS.keys()} are supported. Skipping.."
-                )
-                continue
-                # TODO or do we want to raise an error?
-                # raise NotImplementedError(
-                #    f"{part_type} is not supported. Currently only {self.MAPPED_PARTICLE_KEYS.keys()} are supported"
-                # )
+            # This is not needed since we already checked for this in _get_particle_keys
+            # if part_type not in self.MAPPED_PARTICLE_KEYS:
+            #     # Raise error
+            #     raise NotImplementedError(
+            #         f"{part_type} is currently not supported. Currently only {self.MAPPED_PARTICLE_KEYS.keys()} are supported."
+            #     )
+            # TODO or do we want to raise an error?
+            # raise NotImplementedError(
+            #    f"{part_type} is not supported. Currently only {self.MAPPED_PARTICLE_KEYS.keys()} are supported"
+            # )
             # Get the particle data
             data_particle = self._get_particle_data(f, part_type)
 
@@ -176,13 +220,16 @@ class IllustrisHandler(InputHandler):
 
     def _get_metadata(self, f):
         data = {}
-        for key in self.SIMULATION_META_KEYS:
-            # Check if the key is in the file
-            if self.SIMULATION_META_KEYS[key] not in f["Header"].attrs:
-                raise ValueError(
-                    f"{self.SIMULATION_META_KEYS[key]} not found in the simulation metadata"
-                )
-            data[key] = f["Header"].attrs[self.SIMULATION_META_KEYS[key]]
+        for keys in f["Header"].attrs:
+            data[keys] = f["Header"].attrs[keys]
+        # I dont think we need this. Just load all metadat
+        # for key in self.SIMULATION_META_KEYS:
+        #     # Check if the key is in the file
+        #     if self.SIMULATION_META_KEYS[key] not in f["Header"].attrs:
+        #         raise ValueError(
+        #             f"{self.SIMULATION_META_KEYS[key]} not found in the simulation metadata"
+        #         )
+        #     data[key] = f["Header"].attrs[self.SIMULATION_META_KEYS[key]]
 
         return data
 
@@ -193,18 +240,19 @@ class IllustrisHandler(InputHandler):
         # )
 
         # Check if part_type is supported
-        if part_type not in self.MAPPED_FIELDS:
-            # This should not happen, as we already checked for the keys. If it does, raise an error
-            raise ValueError(
-                f"{part_type} is not supported. Currently only {self.MAPPED_FIELDS.keys()} are supported"
-            )
+        # this should not happen since we already checked for this in _get_particle_keys
+        # if part_type not in self.MAPPED_FIELDS:
+        #     raise ValueError(
+        #         f"{part_type} is not supported. Currently only {self.MAPPED_FIELDS.keys()} are supported"
+        #     )
 
         part_data = {}
         for key in f[part_type].keys():
             # Check if key is supported, if not, raise a warning and skip
             if key not in self.MAPPED_FIELDS[part_type]:
-                warnings.warn(f"{key} is not supported. Skipping..")
-                continue
+                raise NotImplementedError(
+                    f"{key} is not supported. Currently only {self.MAPPED_FIELDS[part_type].keys()} are supported"
+                )
 
             values = f[part_type][key][()]
             attributes = f[part_type][key].attrs
