@@ -146,3 +146,6 @@ cython_debug/
 *.hdf5
 *.h5
 rubix/version.py
+
+
+rubix/**/*.ipynb

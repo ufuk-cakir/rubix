@@ -42,7 +42,7 @@ def test_log_file_creation(monkeypatch, tmp_path):
 
     log_dir = tmp_path / "test_logs"
     monkeypatch.setenv("RUBIX_LOG_LEVEL", "DEBUG")
-    monkeypatch.setenv("RUBIX_LOG_PATH", log_dir)
+    monkeypatch.setenv("RUBIX_LOG_PATH", str(log_dir))
     import rubix.logger  # type: ignore
 
     importlib.reload(rubix.logger)

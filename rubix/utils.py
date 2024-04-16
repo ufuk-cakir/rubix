@@ -1,44 +1,8 @@
-from rubix.galaxy._input_handler._illustris_api import IllustrisAPI
-import os
+# Description: Utility functions for Rubix
+from astropy.cosmology import Planck15 as cosmo
 
 
-def _download_galaxy(subhalo_id,simulation="TNG50-1", snapshot=99):
-    '''This function downloads the galaxy data from the Illustris API.
-    
-    Returns
-    -------
-    dict
-        The galaxy data.
-    '''
-    
-    # Load the API key
-    api_key = _get_api_key()
-    
-    # Load the galaxy data
-    illustris_api = IllustrisAPI(api_key, simulation=simulation, snapshot=snapshot)
-    galaxy_data = illustris_api.load_galaxy(id = subhalo_id, verbose = True)
-    
-    return galaxy_data
-
-
-
-
-
-def _get_api_key():
-    '''This function loads the API key from the environment variable ILLUSTRIS_API_KEY.
-    
-    Returns
-    -------
-    str
-        The API key.
-    '''
-    
-    key = os.getenv("ILLUSTRIS_API_KEY")
-    if key is None:
-        raise ValueError("Please set the environment variable ILLUSTRIS_API_KEY.")
-    return key
-
-def _convert_values_to_physical(
+def convert_values_to_physical(
     value,
     a,
     a_scale_exponent,
@@ -46,7 +10,7 @@ def _convert_values_to_physical(
     hubble_scale_exponent,
     CGS_conversion_factor,
 ):
-    """Convert values to physical units
+    """Convert values from cosmological simulations to physical units
     Source: https://kateharborne.github.io/SimSpin/examples/generating_hdf5.html#attributes
 
     Parameters
@@ -82,3 +46,16 @@ def _convert_values_to_physical(
     )
     return value
 
+
+def SFTtoAge(a):
+    """Convert scale factor to age in Gyr.
+
+    The lookback time is calculated as the difference between current age
+    of the universe and the age at redshift z=1/a - 1.
+
+    This hence gives the age of the star formed at redshift z=1/a - 1.
+
+    """
+    # TODO maybe implement this in JAX?
+    # TODO CHECK IF THIS IS WHAT WE WANT
+    return cosmo.lookback_time((1 / a) - 1).value

@@ -1,1 +1,1 @@
-from ._input_handler._illustris_api import IllustrisAPI
+from ._input_handler import IllustrisHandler, InputHandler, IllustrisAPI
