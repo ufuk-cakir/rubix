@@ -1,0 +1,30 @@
+Pipeline: 
+
+  Transformers: 
+    Input:
+      active: true 
+      depends_on: null
+      source: "source_name"
+      param: 1 
+    Galaxy:
+      active: true 
+      depends_on: Input
+      param1: 1 
+      param2: 2 
+    Cosmology:
+      active: true 
+      depends_on: Galaxy
+      param1: 3.14
+      param2: 42
+    Spectrum:
+      active: true 
+      depends_on: Cosmology
+      param: "X"
+      other_param: 21
+    Telescope:
+      active: true 
+      depends_on: Spectrum
+      telescope_name: "some_telescope"
+    Output:
+      active: true 
+      depends_on: Telescope 

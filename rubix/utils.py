@@ -1,5 +1,31 @@
 # Description: Utility functions for Rubix
 from astropy.cosmology import Planck15 as cosmo
+import yaml
+
+
+def read_yaml(path_to_file: str) -> dict:
+    """
+    read_yaml Read yaml file into dictionary
+
+    Args:
+        path_to_file (str): path to the file to read
+
+    Raises:
+        RuntimeError: When an error occurs during reading
+
+    Returns:
+        dict: Either the read yaml file in dictionary form, or an empty
+              dictionary if an error occured.
+    """
+    cfg = {}
+    try:
+        with open(path_to_file, "r") as cfgfile:
+            cfg = yaml.safe_load(cfgfile)
+    except Exception as e:
+        raise RuntimeError(
+            f"Something went wrong while reading yaml file {str(path_to_file)}"
+        ) from e
+    return cfg
 
 
 def convert_values_to_physical(
