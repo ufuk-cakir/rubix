@@ -1,0 +1,27 @@
+
+Transformers: 
+  A: 
+    name: Add
+    depends_on: B
+    args: 
+      value: 3.0
+  X: 
+    name: Multiply
+    depends_on: A
+    args: 
+      factor: 2
+  Z: 
+    name: Divide
+    depends_on: X
+    args: 
+      divisor: 4
+  B: 
+    name: Multiply
+    depends_on: C
+    args:
+      factor: 2
+  C:
+    name: Add
+    depends_on: None
+    args:
+      value: 4

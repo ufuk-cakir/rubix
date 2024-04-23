@@ -15,7 +15,7 @@ def read_yaml(path_to_file: str) -> dict:
 
     Returns:
         dict: Either the read yaml file in dictionary form, or an empty
-              dictionary if an error occured.
+            dictionary if an error occured.
     """
     cfg = {}
     try:
