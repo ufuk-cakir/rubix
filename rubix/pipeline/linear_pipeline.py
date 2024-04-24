@@ -1,6 +1,9 @@
 from . import abstract_pipeline as apl
 import jax
 
+# README: extract the expression building and make it more 'functional', 
+# such that the pipeline is an argument and not a captured reference in a closure
+
 
 class LinearTransformerPipeline(apl.AbstractPipeline):
     def __init__(self, cfg: dict):
@@ -16,6 +19,7 @@ class LinearTransformerPipeline(apl.AbstractPipeline):
                 self.update_pipeline(key)
 
     def build_expression(self):
+        # this probably should be a separate function
         def expr(input):
             res = input
             for f in self._pipeline:
