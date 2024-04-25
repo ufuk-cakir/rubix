@@ -1,27 +1,27 @@
 
 Transformers: 
   A: 
-    name: Add
+    name: add
     depends_on: B
     args: 
-      value: 3.0
+      s: 3.0
   X: 
-    name: Multiply
+    name: mult
     depends_on: A
     args: 
-      factor: 3
+      m: 3
   Z: 
-    name: Divide
+    name: div
     depends_on: X
     args: 
-      divisor: 4
+      d: 4
   B: 
-    name: Multiply
+    name: sub
     depends_on: C
     args:
-      factor: 2
+      s: 2
   C:
-    name: Add
+    name: add
     depends_on: null
     args:
-      value: 4
+      s: 4

@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from .transformer import compiled_transformer, expression_transformer
 
 
 class AbstractPipeline(ABC):
@@ -7,57 +8,43 @@ class AbstractPipeline(ABC):
         self._pipeline = []
         self._names = []
         self.transformers = {}
+        self.expression = None
 
-    def _build_pipeline(self):
-
-        # find the starting point and look into corrections
-        start_func = None
-        start_name = None
-        for key, node in self.config["Transformers"].items():
-
-            if "name" not in node:
-                raise ValueError(
-                    "Error, each node of a pipeline must have a config node"
-                )
-
-            # if node["active"] is False:
-            #     continue
-
-            if node["depends_on"] is None and start_name is None:
-                start_func = self.transformers[node["name"]](**node["args"]).create()
-                start_name = key
-            elif node["depends_on"] is None and start_name is not None:
-                raise ValueError("There can only be one starting point.")
-            else:
-                continue
-
-        self._pipeline = [
-            start_func,
-        ]
-
-        self._names = [
-            start_name,
-        ]
-
-        self.update_pipeline(start_name)
+    def assemble(self):
+        if len(self.transformers) == 0:
+            raise RuntimeError("no registered transformers")
+        self.build_pipeline()
+        self.build_expression()
 
     @property
     def pipeline(self):
         return dict(zip(self._names, self._pipeline))
 
-    def register_transformer(self, cls):
+    def register_transformer(self, cls: list):
         if cls.__name__ in self.transformers:
             raise ValueError("Error, a class of this name is already present")
         self.transformers[cls.__name__] = cls
 
-    def assemble(self):
-        if len(self.transformers) == 0:
-            raise RuntimeError("no registered transformers")
-        self._build_pipeline()
-        self.expression = self.build_expression()
+    def get_jaxpr(self, *args, static_args: list = []):
+        return expression_transformer(*args, static_args=static_args)(self.expression)
+
+    def compile_expression(self, static_args=[], static_kwargs=[]):
+        return compiled_transformer(
+            static_args=static_args, static_kwargs=static_kwargs
+        )(self.expression)
+
+    def compile_element(self, name: str, static_args=[], static_kwargs=[]):
+        return compiled_transformer(
+            static_args=static_args, static_kwargs=static_kwargs
+        )(self.transformers[name])
+
+    def get_jaxpr_for_element(self, name: str, *args, static_args: list = []):
+        return expression_transformer(*args, static_args=static_args)(
+            self.transformers[name]
+        )
 
     @abstractmethod
-    def apply(self, input):
+    def build_pipeline(self):
         pass
 
     @abstractmethod
@@ -65,5 +52,5 @@ class AbstractPipeline(ABC):
         pass
 
     @abstractmethod
-    def update_pipeline(self, current_name: str):
+    def apply(self):
         pass
