@@ -9,7 +9,7 @@ Transformers:
     name: Multiply
     depends_on: A
     args: 
-      factor: 2
+      factor: 3
   Z: 
     name: Divide
     depends_on: X
@@ -22,6 +22,6 @@ Transformers:
       factor: 2
   C:
     name: Add
-    depends_on: None
+    depends_on: null
     args:
       value: 4
