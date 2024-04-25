@@ -1,0 +1,10 @@
+MUSE:
+  fov: 5
+  spatial_res: 0.2
+  wave_range: [4700.15, 9351.4]
+  wave_res: 1.25
+  lsf_fwhm: 2.51
+  signal_to_noise: null
+  wave_centre: 6975.775
+  sbin: 64
+  aperture_type: "square"
