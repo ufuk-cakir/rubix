@@ -40,7 +40,8 @@ tests = [
     "pytest",
     "pytest-cov",
     "nbval",
-    "jax[cpu]"
+    "jax[cpu]", 
+    "pre-commit"
 ]
 docs = [
     "ipykernel",
