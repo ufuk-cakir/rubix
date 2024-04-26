@@ -1,9 +1,9 @@
 ---
 constants:
-  C_SPEED:  2.99792458e8  # m/s
-  RHO_CRIT0_KPC3_UNITY_H: 277.536627  # multiply by h**2 in cosmology conversion
-  MPC:  3.08567758149e24  # Mpc in cm
-  YEAR: 31556925.2  # year in seconds
+  C_SPEED: 2.99792458e8 # m/s
+  RHO_CRIT0_KPC3_UNITY_H: 277.536627 # multiply by h**2 in cosmology conversion
+  MPC: 3.08567758149e24 # Mpc in cm
+  YEAR: 31556925.2 # year in seconds
 
 telescopes:
   MUSE:
@@ -14,7 +14,6 @@ telescopes:
     lsf_fwhm: 2.51
     signal_to_noise: null
     wave_centre: 6975.775
-    sbin: 64
     aperture_type: "square"
 
 cosmology:
@@ -23,5 +22,3 @@ cosmology:
     w0: -1.0
     wa: 0.0
     h: 0.6774
-
-

@@ -6,5 +6,4 @@ MUSE:
   lsf_fwhm: 2.51
   signal_to_noise: null
   wave_centre: 6975.775
-  sbin: 64
   aperture_type: "square"
