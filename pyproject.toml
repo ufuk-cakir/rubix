@@ -32,7 +32,7 @@ dependencies = [
     "astropy",
     "scipy",
     "requests-mock", 
-    "pyaml"
+    "pyaml", 
 ]
 
 [project.optional-dependencies]
@@ -40,6 +40,7 @@ tests = [
     "pytest",
     "pytest-cov",
     "nbval",
+    "jax[cpu]"
 ]
 docs = [
     "ipykernel",
