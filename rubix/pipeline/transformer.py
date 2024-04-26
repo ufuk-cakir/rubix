@@ -6,7 +6,10 @@ from jax.tree_util import Partial
 
 
 def bound_transformer(**kwargs):
-
+    """
+    bound_transformer Create a jax.Partial function from an input
+    function and given keyword arguments.
+    """
     def transformer_wrap(kernel):
         return Partial(kernel, **kwargs)
 
@@ -18,7 +21,17 @@ def compiled_transformer(
     static_kwargs: list = [],
     **kwargs,
 ):
+    """
+    compiled_transformer Create a precompiled function with jax with given 
+    untraced arguments and keyword arguments from an input function
 
+    Parameters
+    ----------
+    static_args : list, optional
+        Indices of static, i.e., untraced arguments, by default []
+    static_kwargs : list, optional
+        Names of static, i.e., untraced, keyword arguments, by default []
+    """
     def transformer_wrap(kernel):
 
         return jit(
@@ -34,7 +47,15 @@ def expression_transformer(
     *args,
     static_args: list = [],
 ):
+    """
+    expression_transformer Create a jax intermediate expression with given 
+    untraced arguments from a function. 
 
+    Parameters
+    ----------
+    static_args : list, optional
+        Indices of static, i.e., untraced arguments to the function, by default []
+    """
     def transformer_wrap(kernel):
         if len(args) > 0:
             return make_jaxpr(kernel, static_argnums=static_args)(*args)
