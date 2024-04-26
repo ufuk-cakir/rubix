@@ -75,6 +75,6 @@ testpaths = [
     "tests",
     "notebooks",
 ]
-nbval_cell_output_checks = "relaxed"
+
 
 
