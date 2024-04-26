@@ -8,14 +8,14 @@ from rubix.telescope.base import BaseTelescope
 from rubix.utils import read_yaml
 import os
 import warnings
-from typing import Optional
+from typing import Optional, Union
 
 PATH = os.path.dirname(os.path.abspath(__file__))
 TELESCOPE_CONFIG_PATH = os.path.join(PATH, "telescopes.yaml")
 
 
 class TelescopeFactory:
-    def __init__(self, telescopes_config: Optional[dict | str] = None):
+    def __init__(self, telescopes_config: Optional[Union[dict, str]] = None):
 
         if telescopes_config is None:
             warnings.warn("No telescope config provided, using default")
