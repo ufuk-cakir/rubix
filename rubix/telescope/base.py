@@ -2,6 +2,9 @@ from abc import ABC, abstractmethod
 import jax.numpy as jnp
 from jax import jit
 
+# TODO do I need this as a hyperparemter? 
+# such that the user can choose the cosmology
+from rubix.cosmology import PLANCK15 as rubixcosmo
 from .utils import assign_particles_to_pixel_positions
 
 class BaseTelescope(ABC):
@@ -35,7 +38,9 @@ class BaseTelescope(ABC):
     # Need to think about where to pass this information
     def spaxel_assignment(self, galaxy_distance_z):
         
-        ang_size = cosmojax.angular_scale(galaxy_distance_z)
+        D_A = rubixcosmo.angular_diameter_distance_to_z(galaxy_distance_z) # in Mpc
+        # TODO check this
+        ang_size = D_A* (jnp.pi/(180*3600)) *1e3 # in kpc/arcsec
         aperture_size = self.fov * ang_size
         
         spatial_bin_size = aperture_size / self.sbin
