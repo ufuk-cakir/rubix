@@ -4,15 +4,18 @@ from .transformer import compiled_transformer, expression_transformer
 
 class AbstractPipeline(ABC):
     """
-    AbstractPipeline Abstract baseclass for data transformation pipelines. Provides methods
-    `build_pipeline`, `build_expression` and `apply` which must be implemented by every derived class and 
-    which are responsible for building up the pipeline, for assembling it into a self-contained pure functional 
-    function and for applyin the latter to data, respectively.  
+    AbstractPipeline Abstract baseclass for data transformation pipelines.
+    Provides methods `build_pipeline`, `build_expression` and `apply` which
+    must be implemented by every derived class and
+    which are responsible for building up the pipeline, for assembling it into
+    a self-contained pure functional function and for applyin the latter to
+    data, respectively.
     """
 
     def __init__(self, cfg: dict):
         """
-        __init__ Create a new pipeline. This should only be called in derived classes' __init__ methods.
+        __init__ Create a new pipeline. This should only be called in derived
+                classes' __init__ methods.
 
         Parameters
         ----------
@@ -28,8 +31,11 @@ class AbstractPipeline(ABC):
 
     def assemble(self):
         """
-        assemble Assemble the pipeline into a self-contained function with the same signature as the pipeline's first element. 
-                Can only run if all functions that make up the pipeline are registered with it by calling `register_transformer`.
+        assemble Assemble the pipeline into a self-contained function with the
+        same signature as the pipeline's first element. Can only run if all
+        functions that make up the pipeline are registered with it by calling
+        `register_transformer`.
+
         Raises
         ------
         RuntimeError
@@ -43,18 +49,21 @@ class AbstractPipeline(ABC):
     @property
     def pipeline(self) -> dict:
         """
-        pipeline Get the sequence of functions that make up the pipeline as a dictionary of name: function pairs.
+        pipeline Get the sequence of functions that make up the pipeline as a
+        dictionary of name: function pairs.
 
         Returns
         -------
         dict
-            Description of the pipeline as name: function pairs. 
+            Description of the pipeline as name: function pairs.
         """
         return dict(zip(self._names, self._pipeline))
 
     def register_transformer(self, cls):
         """
-        register_transformer Make a functtion available to the calling pipeline object. The registered function must be a pure functional function in order to be transformable with jax.
+        register_transformer Make a functtion available to the calling
+        pipeline object. The registered function must be a pure functional
+        function in order to be transformable with jax.
 
         Parameters
         ----------
@@ -72,19 +81,23 @@ class AbstractPipeline(ABC):
 
     def get_jaxpr(self, *args, static_args: list = []):
         """
-        get_jaxpr Get a jax intermediate expression for the function that represents an application of this pipeline to input data.
+        get_jaxpr Get a jax intermediate expression for the function that
+        represents an application of this pipeline to input data.
 
         Parameters
         ----------
         static_args : list, optional
-            Static argument indices. Will be forwarded to the static_argnums argument of jax.make_jaxpr, by default []
+            Static argument indices. Will be forwarded to the static_argnums
+            argument of jax.make_jaxpr, by default []
 
         Returns
         -------
         jax.ClosedJaxpr
-            If *args is not empty: A jax intermediate representation that results from applying the calling pipeline to the provided arguments.
+            If *args is not empty: A jax intermediate representation that
+            results from applying the calling pipeline to the provided arguments.
         Callable
-            if *args is empty. A function that will result in a jax intermediate expression if called with desired arguments.
+            if *args is empty. A function that will result in a jax
+            intermediate expression if called with desired arguments.
         """
         return expression_transformer(*args, static_args=static_args)(self.expression)
 
@@ -119,16 +132,19 @@ class AbstractPipeline(ABC):
 
     def compile_element(self, name: str, static_args=[], static_kwargs=[]):
         """
-        compile_element Compile an element of the pipeline named 'name' with the jax jit with the provided static_args and static kwargs.
+        compile_element Compile an element of the pipeline named 'name' with
+        the jax jit with the provided static_args and static kwargs.
 
         Parameters
         ----------
         name : str
             Name of the element to be compiled
         static_args : list, optional
-            static positional argument indices. Will be forwarded to the jit static_argnums argument., by default []
+            static positional argument indices. Will be forwarded to the jit
+            static_argnums argument., by default []
         static_kwargs : list, optional
-            Names of the static keyword arguments. Will be forwarded to the jit static_argnames argument, by default []
+            Names of the static keyword arguments. Will be forwarded to the
+            jit static_argnames argument, by default []
 
         Returns
         -------
@@ -146,7 +162,11 @@ class AbstractPipeline(ABC):
 
     def get_jaxpr_for_element(self, name: str, *args, static_args: list = []):
         """
-        get_jaxpr_for_element Create a jax intermediate expression for a given element of the pipeline named 'name' with static arguments 'static_args and arguments *args. If no arguments are provided, a function is returned which will return the intermediate representation once it is called with arguments.
+        get_jaxpr_for_element Create a jax intermediate expression for a given
+        element of the pipeline named 'name' with static arguments 'static_args
+        and arguments *args. If no arguments are provided, a function is
+        returned which will return the intermediate representation once it is
+        called with arguments.
 
         Parameters
         ----------
@@ -158,9 +178,12 @@ class AbstractPipeline(ABC):
         Returns
         -------
         jax.ClosedJaxpr
-            If *args is not empty: Intermediate expression respresenting the computation that is carried out when calling the element with the given arguments.
+            If *args is not empty: Intermediate expression respresenting the
+            computation that is carried out when calling the element with the
+            given arguments.
         Callable
-            If *args is empty: Function that returns a jax.ClosedJaxpr once called with appropriate arguments.
+            If *args is empty: Function that returns a jax.ClosedJaxpr once
+            called with appropriate arguments.
         """
         expr = None
         try:
