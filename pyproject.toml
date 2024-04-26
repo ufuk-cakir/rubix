@@ -34,7 +34,9 @@ dependencies = [
     "requests-mock",
     "jax",
     "jaxlib",
-    "equinox"
+    "equinox",
+    "jax[cpu]", 
+    "pre-commit"
 ]
 
 [project.optional-dependencies]
