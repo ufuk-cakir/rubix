@@ -33,7 +33,7 @@ dependencies = [
     "scipy",
     "requests-mock",
     "equinox",
-    "jax[cpu]", 
+    "jax[cpu]==0.4.26", 
     "pre-commit"
 ]
 
