@@ -30,6 +30,9 @@ Having done so, the test suite can be run using `pytest`:
 python -m pytest
 ```
 
+This project depends on [jax](https://github.com/google/jax). It only installed for cpu computations with the testing dependencies. For installation instructions with gpu support,
+please refer to [here](https://github.com/google/jax?tab=readme-ov-file#installation).
+
 ## Acknowledgments
 
 This repository was set up using the [SSC Cookiecutter for Python Packages](https://github.com/ssciwr/cookiecutter-python-package).

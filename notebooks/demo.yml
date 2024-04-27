@@ -1,0 +1,27 @@
+
+Transformers: 
+  A: 
+    name: add
+    depends_on: B
+    args: 
+      s: 3.0
+  X: 
+    name: mult
+    depends_on: A
+    args: 
+      m: 3
+  Z: 
+    name: div
+    depends_on: X
+    args: 
+      d: 4
+  B: 
+    name: sub
+    depends_on: C
+    args:
+      s: 2
+  C:
+    name: add
+    depends_on: null
+    args:
+      s: 4
