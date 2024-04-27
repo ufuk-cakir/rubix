@@ -1,7 +1,9 @@
 import pytest  # type: ignore # noqa
-from rubix.utils import convert_values_to_physical, SFTtoAge, print_hdf5_file_structure, read_yaml
+from rubix.utils import convert_values_to_physical, SFTtoAge, print_hdf5_file_structure, read_yaml,load_galaxy_data
 from astropy.cosmology import Planck15 as cosmo
 import h5py
+import numpy as np
+
 
 
 def test_convert_values_to_physical():
@@ -110,3 +112,48 @@ def test_read_yaml_wrong_path():
     with pytest.raises(Exception) as e:
         read_yaml("non_existent_file.yaml")
         
+
+
+def create_test_hdf5_file(path):
+    with h5py.File(path, "w") as f:
+        # Create groups and datasets
+        g = f.create_group("galaxy")
+        g.create_dataset("center", data=np.array([0, 0, 0]))
+        g.create_dataset("halfmassrad_stars", data=300)
+        g.create_dataset("redshift", data=0.5)
+
+        p = f.create_group("particles")
+        stars = p.create_group("stars")
+        stars.create_dataset("mass", data=np.array([1, 2, 3]))
+
+        # Set attributes
+        for key in g.keys():
+            g[key].attrs['unit'] = 'kpc'
+        stars['mass'].attrs['unit'] = 'Msun'
+
+def test_load_galaxy_data_success(tmp_path):
+    # Create a temporary HDF5 file
+    file_path = tmp_path / "test_galaxy.hdf5"
+    create_test_hdf5_file(str(file_path))
+
+    # Test the function
+    data, units = load_galaxy_data(str(file_path))
+    assert data['subhalo_center'].tolist() == [0, 0, 0]
+    assert data['subhalo_halfmassrad_stars'] == 300
+    assert data['redshift'] == 0.5
+    assert data['particle_data']['stars']['mass'].tolist() == [1, 2, 3]
+    assert units['galaxy']['center'] == 'kpc'
+    assert units['galaxy']['halfmassrad_stars'] == 'kpc'
+    assert units['galaxy']['redshift'] == 'kpc'
+    assert units['stars']['mass'] == 'Msun'
+
+def test_load_galaxy_data_failure(tmp_path):
+    # Create a temporary HDF5 file with missing datasets
+    file_path = tmp_path / "test_faulty_galaxy.hdf5"
+    with h5py.File(file_path, "w") as f:
+        f.create_group("galaxy")
+
+    # Test the function should raise RuntimeError
+    with pytest.raises(RuntimeError) as excinfo:
+        load_galaxy_data(str(file_path))
+    assert "Something went wrong while loading galaxy data" in str(excinfo.value)
