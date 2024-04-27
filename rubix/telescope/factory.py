@@ -18,7 +18,7 @@ class TelescopeFactory:
     def __init__(self, telescopes_config: Optional[Union[dict, str]] = None):
 
         if telescopes_config is None:
-            warnings.warn("No telescope config provided, using default")
+            warnings.warn("No telescope config provided, using default stored in {}".format(TELESCOPE_CONFIG_PATH))
             self.telescopes_config = read_yaml(TELESCOPE_CONFIG_PATH)
         elif isinstance(telescopes_config, str):
             self.telescopes_config = read_yaml(telescopes_config)

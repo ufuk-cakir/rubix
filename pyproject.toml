@@ -32,8 +32,6 @@ dependencies = [
     "astropy",
     "scipy",
     "requests-mock",
-    "jax",
-    "jaxlib",
     "equinox",
     "jax[cpu]", 
     "pre-commit"
