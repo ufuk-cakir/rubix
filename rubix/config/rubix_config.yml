@@ -1,0 +1,19 @@
+
+logger:
+  log_level: "DEBUG"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  log_file_path: null
+
+#Defines the fields that are required and the units in which they are stored
+BaseHandler:
+  galaxy:
+    redshift: ""
+    center: "kpc"
+    halfmassrad_stars: "kpc"
+  particles:
+    stars:
+      coords: "kpc"
+      mass: "Msun"
+      velocity: "kpc/s"
+      metallicity: ""
+      age: "Gyr"

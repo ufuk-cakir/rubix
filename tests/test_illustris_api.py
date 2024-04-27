@@ -5,7 +5,7 @@ import h5py
 import numpy as np
 import pytest
 
-from rubix.galaxy._input_handler._illustris_api import IllustrisAPI
+from rubix.galaxy import IllustrisAPI
 
 
 @pytest.fixture
@@ -119,6 +119,7 @@ def test__init__():
     assert api.snapshot == 99
     assert api.simulation == "TNG50-1"
     assert api.baseURL == "http://www.tng-project.org/api/TNG50-1/snapshots/99"
+    assert "TNG50-1" in api.__str__()
 
 
 def test_get_api_key(api_key):

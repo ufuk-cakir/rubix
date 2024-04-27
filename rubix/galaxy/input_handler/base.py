@@ -1,26 +1,24 @@
 from abc import ABC, abstractmethod
 import os
 import h5py
-from rubix.logger import logger
+import logging
+import astropy.units as u
+from typing import List, Union, Optional
+from rubix import config
+from rubix.logger import get_logger
 
 
-class InputHandler(ABC):
-    SUPPORTED_UNITS = ["cm", "g", "dimensionless", "cm/s", "Gyr"]
+class BaseHandler(ABC):
 
     REQUIRED_GALAXY_FIELDS = ["redshift", "center", "halfmassrad_stars"]
     REQUIRED_PARTICLE_FIELDS = {
         "stars": ["coords", "mass", "metallicity", "velocity", "age"]
     }
 
-    # TODO: Not sure if I need this, the idea was to add a check inside the IllustrisHandler, but I think it is not needed
-    # STRUCUTRE = {
-    #     "meta": {},  # For the simulation metadata, we do not have any required fields
-    #     "galaxy": REQUIRED_GALAXY_FIELDS,
-    #     "particles": REQUIRED_PARTICLE_FIELDS,
-    # }
-
-    def __init__(self):
-        """Initializes the InputHandler class"""
+    def __init__(self, logger_config=None):
+        """Initializes the BaseHandler class"""
+        self.config = config["BaseHandler"]
+        self._logger = get_logger(logger_config)
 
     @abstractmethod
     def get_particle_data(self) -> dict:
@@ -39,7 +37,9 @@ class InputHandler(ABC):
         """Returns the units in the required format"""
 
     def to_rubix(self, output_path: str):
-        logger.debug("Converting to Rubix format..")
+        self._logger.debug("Converting to Rubix format..")
+        
+        os.makedirs(output_path, exist_ok=True)
 
         # Get the data
         particle_data = self.get_particle_data()
@@ -66,17 +66,32 @@ class InputHandler(ABC):
 
             # Save the galaxy data: Create a dataset for each field and add the units as attributes
             for key, value in galaxy_data.items():
+                self._logger.debug(
+                    f"Converting {key} for galaxy data into {self.config['galaxy'][key]}"
+                )
+
+                # Convert the units to the correct ones defined in the config
+                value = u.Quantity(value, units["galaxy"][key]).to(
+                    self.config["galaxy"][key]
+                )
                 galaxy_group.create_dataset(key, data=value)
-                galaxy_group[key].attrs["unit"] = units["galaxy"][key]
+                galaxy_group[key].attrs["unit"] = self.config["galaxy"][key]
 
             # Save the particle data: Create a dataset for each field and add the units as attributes
             for key in particle_data:
                 particle_group.create_group(key)
                 for field, value in particle_data[key].items():
-                    particle_group[key].create_dataset(field, data=value)  # type: ignore
-                    particle_group[key][field].attrs["unit"] = units[key][field]  # type: ignore
+                    self._logger.debug(
+                        f"Converting {field} for particle type {key} into {self.config['particles'][key][field]}"
+                    )
+                    value = u.Quantity(value, units[key][field]).to(
+                        self.config["particles"][key][field]
+                    )
 
-        logger.debug(f"Rubix file saved at {file_path}")
+                    particle_group[key].create_dataset(field, data=value)  # type: ignore
+                    particle_group[key][field].attrs["unit"] = self.config["particles"][key][field]  # type: ignore
+
+        self._logger.info(f"Rubix file saved at {file_path}")
 
     def _check_data(self, particle_data, galaxy_data, simulation_metadata, units):
         # Check if all required fields are present
@@ -92,22 +107,20 @@ class InputHandler(ABC):
 
     def _check_galaxy_data(self, galaxy_data, units):
         # Check if all required fields are present
-        for field in self.REQUIRED_GALAXY_FIELDS:
+        for field in self.config["galaxy"]:
             if field not in galaxy_data:
                 raise ValueError(f"Missing field {field} in galaxy data")
         # Check if the units are correct
         for field in galaxy_data:
             if field not in units["galaxy"]:
                 raise ValueError(f"Units for {field} not found in units")
-            if units["galaxy"][field] not in self.SUPPORTED_UNITS:
-                raise ValueError(f"Units for {field} not supported")
 
     def _check_particle_data(self, particle_data, units):
         # Check if all required fields are present
-        for key in self.REQUIRED_PARTICLE_FIELDS:
+        for key in self.config["particles"]:
             if key not in particle_data:
                 raise ValueError(f"Missing particle type {key} in particle data")
-            for field in self.REQUIRED_PARTICLE_FIELDS[key]:
+            for field in self.config["particles"][key]:
                 if field not in particle_data[key]:
                     raise ValueError(
                         f"Missing field {field} in particle data for particle type {key}"
@@ -118,5 +131,3 @@ class InputHandler(ABC):
             for field in particle_data[key]:
                 if field not in units[key]:
                     raise ValueError(f"Units for {field} not found in units")
-                if units[key][field] not in self.SUPPORTED_UNITS:
-                    raise ValueError(f"Units for {field} not supported")

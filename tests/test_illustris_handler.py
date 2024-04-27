@@ -47,7 +47,7 @@ def create_mock_hdf5(mock_data):
     data = {
         "Header": header_mock,
         "PartType4": {
-            "Masses": masses,
+            "GFM_InitialMass": masses,
             "Coordinates": coordindates,
             "GFM_Metallicity": metallicity,
             "GFM_StellarFormationTime": age,
@@ -105,14 +105,14 @@ def test_load_data(mock_file, mock_exists):
         "stars": {
             "coords": "cm",
             "mass": "g",
-            "metallicity": "dimensionless",
+            "metallicity": "",
             "velocity": "cm/s",
             "age": "Gyr",
         },
         "galaxy": {
             "center": "cm",
             "halfmassrad_stars": "cm",
-            "redshift": "dimensionless",
+            "redshift": "",
         },
     }
 
@@ -201,3 +201,17 @@ def test_missing_field(mock_file, mock_exists):
     with pytest.raises(ValueError) as f:
         handler = IllustrisHandler("path")  #
     assert "Unsupported", "Missing" in str(f.value)
+
+
+@patch("os.path.exists")
+@patch("h5py.File")
+def test_set_logger(mock_file, mock_exists):
+    mock_exists.return_value = True
+    mock_data = np.array([0.5, 0.5])
+    data = create_mock_hdf5(mock_data)
+    import logging
+
+    logger = logging.getLogger("test")
+    mock_file.return_value.__enter__.return_value = data
+    handler = IllustrisHandler("path", logger=logger)  #
+    assert handler._logger == logger
