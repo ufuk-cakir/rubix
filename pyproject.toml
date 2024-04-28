@@ -33,6 +33,7 @@ dependencies = [
     "scipy",
     "requests-mock", 
     "pyaml", 
+    "jaxtyping",
 ]
 
 [project.optional-dependencies]
