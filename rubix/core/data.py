@@ -4,6 +4,7 @@ from rubix.utils import read_yaml
 from rubix.galaxy import IllustrisAPI
 from rubix.utils import load_galaxy_data
 from rubix.logger import get_logger
+from rubix.galaxy.alignment import center_particles
 import os
 
 
@@ -34,7 +35,7 @@ def convert_to_rubix(config: Union[dict, str]):
     return config["output_path"]
     
 
-def load_galaxy_data(config: Union[dict, str]):
+def prepare_input(config: Union[dict, str]):
     
     file_path = config["output_path"]
     file_path = os.path.join(file_path, "rubix_galaxy.h5")
@@ -42,4 +43,21 @@ def load_galaxy_data(config: Union[dict, str]):
     # Load the data from the file
     data = load_galaxy_data(file_path)
     
-    # Return the data that is expected by the pipeline input
+    
+    stellar_coordinates = data["particle_data"]["stars"]["coords"]
+    stellar_velocities = data["particle_data"]["stars"]["velocities"]
+    galaxy_center = data["particle_data"]["subhalo_center"]
+    
+    # Center the particles
+    new_stellar_coordinates, new_stellar_velocities = center_particles(stellar_coordinates, stellar_velocities, galaxy_center)
+    
+    # Load the metallicity and age data
+    
+    stars_metallicity = data["particle_data"]["stars"]["metallicity"]
+    stars_mass = data["particle_data"]["stars"]["mass"]
+    stars_age = data["particle_data"]["stars"]["age"]
+    
+    return new_stellar_coordinates, new_stellar_velocities, stars_metallicity, stars_mass, stars_age
+    
+    
+    

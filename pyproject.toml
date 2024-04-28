@@ -75,3 +75,5 @@ testpaths = [
     "tests",
     "notebooks",
 ]
+[tool.ruff]
+ignore = ["F722"]
