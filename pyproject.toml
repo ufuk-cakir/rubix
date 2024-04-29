@@ -32,8 +32,6 @@ dependencies = [
     "astropy",
     "scipy",
     "requests-mock",
-    "jax",
-    "jaxlib",
     "equinox"
 ]
 
@@ -42,6 +40,8 @@ tests = [
     "pytest",
     "pytest-cov",
     "nbval",
+    "jax[cpu]", 
+    "pre-commit"
 ]
 docs = [
     "ipykernel",
