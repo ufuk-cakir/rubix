@@ -1,5 +1,6 @@
 import pytest  # type: ignore # noqa
-from rubix.utils import convert_values_to_physical, SFTtoAge
+from pathlib import Path
+from rubix.utils import convert_values_to_physical, SFTtoAge, read_yaml
 from astropy.cosmology import Planck15 as cosmo
 
 
@@ -66,3 +67,53 @@ def test_SFTtoAge():
     # Check if the result is as expected
     expected_result = cosmo.lookback_time((1 / a) - 1).value
     assert result == expected_result, f"Expected {expected_result}, but got {result}"
+
+
+def test_read_yaml():
+    cfg = read_yaml(Path(__file__).parent / "demo.yml")
+
+    assert cfg == {
+        "Transformers": {
+            "A": {
+                "name": "add",
+                "depends_on": "B",
+                "args": {
+                    "s": 3.0,
+                },
+            },
+            "X": {
+                "name": "mult",
+                "depends_on": "A",
+                "args": {
+                    "m": 3,
+                },
+            },
+            "Z": {
+                "name": "div",
+                "depends_on": "X",
+                "args": {
+                    "d": 4,
+                },
+            },
+            "B": {
+                "name": "sub",
+                "depends_on": "C",
+                "args": {
+                    "s": 2,
+                },
+            },
+            "C": {
+                "name": "add",
+                "depends_on": None,
+                "args": {
+                    "s": 4,
+                },
+            },
+        }
+    }
+
+    path = Path(__file__).parent.parent / "nonexistant.yml"
+    with pytest.raises(
+        RuntimeError, match=f"Something went wrong while reading yaml file {path}"
+    ):
+        read_yaml(Path(__file__).parent.parent / "nonexistant.yml")
