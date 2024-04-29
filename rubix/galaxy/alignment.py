@@ -47,7 +47,7 @@ def center_particles(
         raise ValueError("Center is not within the bounds of the galaxy")
 
     # Calculate Central Velocity from median velocities within 10kpc of center
-    mask = jnp.linalg.vector_norm(stellar_coordinates - galaxy_center, axis=1) < 10
+    mask = jnp.linalg.norm(stellar_coordinates - galaxy_center, axis=1) < 10
     # TODO this should be a median
     central_velocity = jnp.median(stellar_velocities[mask], axis=0)
 
