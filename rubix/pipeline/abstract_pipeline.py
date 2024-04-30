@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from .transformer import compiled_transformer, expression_transformer
+from jax import jit
 
 
 class AbstractPipeline(ABC):
@@ -12,15 +13,15 @@ class AbstractPipeline(ABC):
     data, respectively.
     """
 
-    def __init__(self, cfg: dict):
+    def __init__(self, cfg: dict, transformers: list):
         """
-        __init__ Create a new pipeline. This should only be called in derived
+        __init__ _Create a new pipeline. This should only be called in derived
                 classes' __init__ methods.
 
         Parameters
         ----------
-        cfg : dict
-            Read yaml configuration
+        cfg : dict Read config file defining the pipeline
+        transformers : list Transformer functions to use
         """
         self.config = cfg
         self._pipeline = []
@@ -28,6 +29,11 @@ class AbstractPipeline(ABC):
         self.transformers = {}
         self.expression = None
         self.compiled_expression = None
+
+        for t in transformers:
+            self.register_transformer(t)
+
+        self.assemble()
 
     def assemble(self):
         """
@@ -41,8 +47,6 @@ class AbstractPipeline(ABC):
         RuntimeError
             When no transformers are registered to build the pipeline out of.
         """
-        if len(self.transformers) == 0:
-            raise RuntimeError("no registered transformers")
         self.build_pipeline()
         self.build_expression()
 
@@ -103,7 +107,8 @@ class AbstractPipeline(ABC):
 
     def compile_expression(self, static_args=[], static_kwargs=[]):
         """
-        compile_expression Compile the function that represents an application of this pipeline to input data using jax jit.
+        compile_expression Compile the function that represents an application
+                            of this pipeline to input data using jax jit.
 
         Parameters
         ----------
@@ -120,9 +125,11 @@ class AbstractPipeline(ABC):
         f = None
 
         try:
-            f = compiled_transformer(
-                static_args=static_args, static_kwargs=static_kwargs
-            )(self.expression)
+            f = jit(
+                self.expression,
+                static_argnums=static_args,
+                static_argnames=static_kwargs,
+            )
         except Exception as e:
             raise RuntimeError("Expression compilation failed") from e
 
@@ -157,7 +164,7 @@ class AbstractPipeline(ABC):
                 static_args=static_args, static_kwargs=static_kwargs
             )(self.pipeline[name])
         except Exception as e:
-            raise RuntimeError(f"Compilation of element {name} failed") from e
+            raise RuntimeError(f"Compilation of element '{name}' failed") from e
         return f
 
     def get_jaxpr_for_element(self, name: str, *args, static_args: list = []):
@@ -192,43 +199,9 @@ class AbstractPipeline(ABC):
             )
         except Exception as e:
             raise RuntimeError(
-                f"Cannot create intermediate expression for {name}"
+                f"Cannot create intermediate expression for '{name}'"
             ) from e
         return expr
-
-    def iloc(self, i: int) -> callable:
-        """
-        iloc Get a pipeline elemnet by index.
-
-        Parameters
-        ----------
-        i : int
-            index of the element to be retrieved in the pipeline.
-
-        Returns
-        -------
-        callable
-            Retrieved element at position 'i' in pipeline.
-        """
-        return self._pipeline[i]
-
-    def loc(self, name: str) -> callable:
-        """
-        loc Get an uncompiled element of the pipeline by name.
-
-        Works much like pandas .loc indexing method, hence the name.
-
-        Parameters
-        ----------
-        name : str
-            Name of the pipeline element to retrieve.
-
-        Returns
-        -------
-        callable
-            Retrieved pipeline element named 'name'.
-        """
-        return self.pipeline[name]
 
     @abstractmethod
     def build_pipeline(self):

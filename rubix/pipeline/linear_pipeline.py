@@ -2,6 +2,7 @@ from . import abstract_pipeline as apl
 from .transformer import bound_transformer, compiled_transformer
 from jax.tree_util import Partial
 from copy import deepcopy
+import warnings
 
 
 class LinearTransformerPipeline(apl.AbstractPipeline):
@@ -15,7 +16,7 @@ class LinearTransformerPipeline(apl.AbstractPipeline):
     apl : Abstract base class for all pipeline implementations
     """
 
-    def __init__(self, cfg: dict):
+    def __init__(self, cfg: dict, transformers: list):
         """
         __init__ Build a new LinearTransformerPipeline instance
 
@@ -25,12 +26,12 @@ class LinearTransformerPipeline(apl.AbstractPipeline):
 
         Parameters
         ----------
-        cfg : dict
-            Read yaml configuration file for the pipeline
+        cfg : dict Read config file defining the pipeline
+        transformers : list Transformer functions to use
         """
-        super().__init__(cfg)
+        super().__init__(cfg, transformers)
 
-    def update_pipeline(self, current_name: str):
+    def update_pipeline(self, current_name):
         """
         update_pipeline add a new pipeline node with name 'current_name' to
             the pipeline, taking into account internal linear dependencies.
@@ -41,9 +42,13 @@ class LinearTransformerPipeline(apl.AbstractPipeline):
         current_name : Name of the node to add
 
         """
+
+        if current_name not in self.config["Transformers"]:
+            raise RuntimeError(f"Node '{current_name}' not found in the config")
+
         for key, node in self.config["Transformers"].items():
             if current_name == node["depends_on"]:
-                func = bound_transformer(**node["args"])(
+                func = bound_transformer(*node["args"], **node["kwargs"])(
                     self.transformers[node["name"]]
                 )
                 self._pipeline.append(func)
@@ -58,19 +63,24 @@ class LinearTransformerPipeline(apl.AbstractPipeline):
         been registered with it. Multiple different versions (configurations) of
         the same transformer can be used in a pipeline.
 
-
         Raises
         ------
+        RuntimeError
+            When there are no transformers to build the pipeline out of.
         ValueError
-            When a config node has no `name` element that names a transformer
-            function.
+            When there are multiple starting points to the pipeline.
         ValueError
-            When `depends_on` element of a node is None in more than one node
-            of the config.
+            When branching occurs in the pipeline.
+        ValueError
+            When a config node is present that does not have a 'name' attribute.
         """
-        # find the starting point and look into corrections
-        start_func = None
-        start_name = None
+
+        if len(self.transformers) == 0:
+            raise RuntimeError("No registered transformers present")
+
+        # sanity check: and make sure that dependencies are not there multiple times, as branching is not allowed either
+        # use a set for quick and easy lookup. This check also captures multiple end points.
+        dependencies = set()
         for key, node in self.config["Transformers"].items():
 
             if "name" not in node:
@@ -78,12 +88,38 @@ class LinearTransformerPipeline(apl.AbstractPipeline):
                     "Each node of a pipeline must have a config node containing 'name'"
                 )
 
-            # if node["active"] is False:
-            #     continue
+            if "args" not in node:
+                raise ValueError("Config node must have a possibly empty args element")
+
+            if "kwargs" not in node:
+                raise ValueError(
+                    "Config node must have a possible empty kwargs element"
+                )
+
+            if "depends_on" not in node:
+                raise ValueError(
+                    "Config node must have a possibly 'null' valued node depends_on"
+                )
+
+            dep = node["depends_on"]
+            if dep is None:
+                continue
+
+            if dep in dependencies:
+                raise ValueError(
+                    f"Dependencies must be unique in a linear pipeline as branching is not allowed. Found {dep} at least twice"
+                )
+            else:
+                dependencies.add(node["depends_on"])
+
+        # find the starting point
+        start_func = None
+        start_name = None
+        for key, node in self.config["Transformers"].items():
 
             if node["depends_on"] is None and start_name is None:
 
-                start_func = bound_transformer(**node["args"])(
+                start_func = bound_transformer(*node["args"], **node["kwargs"])(
                     self.transformers[node["name"]]
                 )
 
@@ -101,7 +137,6 @@ class LinearTransformerPipeline(apl.AbstractPipeline):
             start_name,
         ]
 
-        # use update pipeline to recursively add nodes. Here, this is done only linearly
         self.update_pipeline(start_name)
 
     def build_expression(self):
@@ -123,9 +158,10 @@ class LinearTransformerPipeline(apl.AbstractPipeline):
         # which includes `self`
         self.expression = Partial(expr, pipeline=deepcopy(self._pipeline))
 
-    def apply(self, static_args=[], static_kwargs=[], *args):
+    def apply(self, *args, static_args=[], static_kwargs=[], **kwargs):
         """
-        apply Apply the pipeline to a set of input arguments that match the
+        apply Apply the pipeline to a set of input positional arguments *args
+            and keyword arguments **kwargs that match the
             signature of the first method in the pipeline with static
             (keyword) arguments that are not traced. First applies the jax jit
             to the pre-assembled pipeline, then applies the result to the
@@ -148,6 +184,7 @@ class LinearTransformerPipeline(apl.AbstractPipeline):
         ValueError
             _description_
         """
+        print("Arguments: ", *args)
         if len(args) == 0:
             raise ValueError("Cannot apply the pipeline to an empty list of arguments")
 
@@ -156,4 +193,4 @@ class LinearTransformerPipeline(apl.AbstractPipeline):
                 static_args=static_args, static_kwargs=static_kwargs
             )
 
-        return self.compiled_expression(self.expression)(args)
+        return self.compiled_expression(*args, **kwargs)
