@@ -122,29 +122,12 @@ def test_expression_transformer(data):
         ],
     )(func)
 
-    f_s_expr = pt.expression_transformer(
-        p,
-        m,
-        v,
-        k_s,
-        static_args=[
-            3,
-        ],
-    )(func)
-
     func_l_expr = make_jaxpr(
         func,
         static_argnums=[
             3,
         ],
     )(p, m, v, k_l)
-
-    func_s_expr = make_jaxpr(
-        func,
-        static_argnums=[
-            3,
-        ],
-    )(p, m, v, k_s)
 
     # check that computational structure is the same.
     # Input and output variables and source info differ.
@@ -157,11 +140,28 @@ def test_expression_transformer(data):
 
     assert str(f_l_expr) == str(func_l_expr)
 
-    assert len(f_l_expr.eqns) == len(func_s_expr.eqns)
+    assert len(f_l_expr.eqns) == len(func_l_expr.eqns)
 
-    for op1, op2 in zip(f_s_expr.eqns, func_s_expr.eqns):
+    f_l_exprfunc = pt.expression_transformer(
+        static_args=[
+            3,
+        ],
+    )(func)
+
+    f_func = f_l_exprfunc(
+        p,
+        m,
+        v,
+        k_l,
+    )
+
+    assert len(f_func.eqns) == len(func_l_expr.eqns)
+
+    for op1, op2 in zip(f_func.eqns, func_l_expr.eqns):
         assert op1.primitive == op2.primitive
         assert op1.params == op2.params
         assert op1.effects == op2.effects
 
-    assert str(f_s_expr) == str(func_s_expr)
+    assert str(f_func) == str(func_l_expr)
+
+    assert len(f_func.eqns) == len(func_l_expr.eqns)
