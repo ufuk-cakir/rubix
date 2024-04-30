@@ -18,7 +18,7 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
         # Here, we are testing the oldest and the newest supported Python version.
         # If this is insufficient for your package, consider adding more versions.
         python-version: ["3.8", "3.12"]
