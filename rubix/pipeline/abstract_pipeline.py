@@ -63,8 +63,8 @@ class AbstractPipeline(ABC):
         """
         register_transformer Make a functtion available to the calling
         pipeline object. The registered function must be a pure functional
-        function in order to be transformable with jax.
-
+        function in order to be transformable with jax. The registered transformers
+        are used to build a pipeline.
         Parameters
         ----------
         cls
@@ -76,7 +76,7 @@ class AbstractPipeline(ABC):
             When the function is already registered  with the pipeline
         """
         if cls.__name__ in self.transformers:
-            raise ValueError("Error, a function of this name is already present")
+            raise ValueError("A transformer of this name is already present")
         self.transformers[cls.__name__] = cls
 
     def get_jaxpr(self, *args, static_args: list = []):

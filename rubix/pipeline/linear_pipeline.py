@@ -55,7 +55,9 @@ class LinearTransformerPipeline(apl.AbstractPipeline):
         build_pipeline Build up the pipeline from the internally stored
         configuration.
         This only works when all transformers the pipeline is composed of have
-        been registered with it.
+        been registered with it. Multiple different versions (configurations) of
+        the same transformer can be used in a pipeline.
+
 
         Raises
         ------
@@ -73,7 +75,7 @@ class LinearTransformerPipeline(apl.AbstractPipeline):
 
             if "name" not in node:
                 raise ValueError(
-                    "Error, each node of a pipeline must have a config node"
+                    "Each node of a pipeline must have a config node containing 'name'"
                 )
 
             # if node["active"] is False:
