@@ -29,15 +29,17 @@ def compiled_transformer(
     **kwargs,
 ):
     """
-    compiled_transformer Create a precompiled function with jax with given
-    untraced arguments and keyword arguments from an input function.
+    compiled_transformer Create a precompiled function with jax with given arguments and keyword arguments that will be bound to the function, similar
+    to using functools.partial with *args and **kwargs.
+    Note that any array args/kwargs will behave as dynamic arguments in the jax jit, while any non-array args/kwargs will behave as static.
+    static_args and static_kwargs refer to the remaining arguments.
     *args count from the first positional argument of the decorated function in order. *args and **kwargs are bound to the decorated function
     Parameters
     ----------
     static_args : list, optional
-        Indices of static, i.e., untraced arguments, by default []
+        Indices of static, i.e., untraced arguments of the bound function, by default [].
     static_kwargs : list, optional
-        Names of static, i.e., untraced, keyword arguments, by default []
+        Names of static, i.e., untraced, keyword arguments of the bound function, by default {}
     """
 
     def transformer_wrap(kernel):
