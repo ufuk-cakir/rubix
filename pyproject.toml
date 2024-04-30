@@ -31,7 +31,8 @@ dependencies = [
     "h5py",
     "astropy",
     "scipy",
-    "requests-mock"
+    "requests-mock",
+    "equinox"
 ]
 
 [project.optional-dependencies]
@@ -39,6 +40,8 @@ tests = [
     "pytest",
     "pytest-cov",
     "nbval",
+    "jax[cpu]", 
+    "pre-commit"
 ]
 docs = [
     "ipykernel",
@@ -72,3 +75,6 @@ testpaths = [
     "tests",
     "notebooks",
 ]
+
+
+
