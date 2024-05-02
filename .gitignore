@@ -141,6 +141,9 @@ dmypy.json
 cython_debug/
 
 
+# vscode and other ide stuff
+.vscode 
+.idea
 
 
 *.hdf5
