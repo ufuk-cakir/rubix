@@ -60,6 +60,8 @@ class IllustrisAPI:
         if logger is None:
             import logging
             self.logger = logging.getLogger(__name__)
+        else:
+            self.logger = logger
             
     def _get(self, path, params=None, name=None):
         """Get data from the Illustris API.
