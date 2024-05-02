@@ -24,11 +24,12 @@ def convert_to_rubix(config: Union[dict, str]):
     # If the simulationtype is IllustrisAPI, get data from IllustrisAPI
     
     if config["data"]["name"] == "IllustrisAPI":
+        logger.info("Loading data from IllustrisAPI")
         api = IllustrisAPI(**config["data"]["args"], logger=logger)
         api.load_galaxy(**config["data"]["load_galaxy_args"])
         
         # Load the saved data into the input handler
-    
+    logger.info("Loading data into input handler")
     input_handler = get_input_handler(config,logger=logger)
     input_handler.to_rubix(output_path=config["output_path"])
     

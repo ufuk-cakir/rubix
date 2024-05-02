@@ -222,12 +222,15 @@ class IllustrisAPI:
             if not overwrite:
                 # If we should not overwrite it, check if we should reuse it
                 if reuse:
+                    self.logger.info(f"Reusing existing file galaxy-id-{id}.hdf5. If you want to download the data again, set reuse=False.")
                     return self._load_hdf5(filename=f"galaxy-id-{id}")
                 else: 
                     # If we should not reuse it, raise an error
                     raise ValueError(
                         f"File with name galaxy-id-{id}.hdf5 already exists. Please remove it before downloading the data, or set overwrite=True, or reuse=True to load the data."
                     )
+            else:
+                self.logger.info(f"Found existing file galaxy-id-{id}.hdf5, but overwrite is set to True. Overwriting the file.")
 
         # Check which particles we want to load
 
