@@ -9,12 +9,6 @@ from rubix.logger import get_logger
 
 
 class BaseHandler(ABC):
-
-    REQUIRED_GALAXY_FIELDS = ["redshift", "center", "halfmassrad_stars"]
-    REQUIRED_PARTICLE_FIELDS = {
-        "stars": ["coords", "mass", "metallicity", "velocity", "age"]
-    }
-
     def __init__(self, logger_config=None):
         """Initializes the BaseHandler class"""
         self.config = config["BaseHandler"]
