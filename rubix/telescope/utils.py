@@ -1,10 +1,9 @@
-from jax import jit
 import jax.numpy as jnp
+from jaxtyping import Array, Float
 
-
-@jit
-def assign_particles_to_pixel_positions(coords, spatial_bin_edges):
-    """Bin the particle coordinates into a 2D image with the given bin edges.
+def square_spaxel_assignment(coords: Float[Array, " n_stars 3"],
+                                        spatial_bin_edges: Float[Array, " n_bins"])-> Float[Array, " n_stars"]:
+    """Bin the particle coordinates into a 2D image with the given bin edges for square pixels.
 
     This function takes the particle coordinates and bins them into a 2D image with the given bin edges.
     The binning is done by digitizing the x and y coordinates of the particles and then calculating the
@@ -14,7 +13,7 @@ def assign_particles_to_pixel_positions(coords, spatial_bin_edges):
 
     Parameters
     ----------
-    coords : jnp.array (n, 2)
+    coords : jnp.array (n, 3)
         The particle coordinates.
 
     spatial_bin_edges : jnp.array
