@@ -2,6 +2,7 @@ import os
 import requests
 import h5py
 from typing import List, Union
+from rubix import config
 
 
 class IllustrisAPI:
@@ -19,30 +20,7 @@ class IllustrisAPI:
     """
 
     URL = "http://www.tng-project.org/api/"
-    DEFAULT_FIELDS = {
-        "gas": [
-            "Coordinates",
-            "Density",
-            "Masses",
-            "ParticleIDs",
-            "GFM_Metallicity",
-            "SubfindHsml",
-            "StarFormationRate",
-            "InternalEnergy",
-            "Velocities",
-            "ElectronAbundance",
-            "GFM_Metals",
-        ],
-        "stars": [
-            "Coordinates",
-            "GFM_InitialMass",
-            # "Masses",
-            # "ParticleIDs",
-            "GFM_Metallicity",
-            "GFM_StellarFormationTime",
-            "Velocities",
-        ],
-    }
+    DEFAULT_FIELDS = config["IllustrisAPI"]["DEFAULT_FIELDS"]
 
     def __init__(
         self,
