@@ -4,6 +4,70 @@ logger:
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
   log_file_path: null
 
+IllustrisAPI:
+  DEFAULT_FIELDS:
+    gas:
+      - Coordinates
+      - Density
+      - Masses
+      - ParticleIDs
+      - GFM_Metallicity
+      - SubfindHsml
+      - StarFormationRate
+      - InternalEnergy
+      - Velocities
+      - ElectronAbundance
+      - GFM_Metals
+    stars:
+      - Coordinates
+      - GFM_InitialMass
+      # - Masses
+      # - ParticleIDs
+      - GFM_Metallicity
+      - GFM_StellarFormationTime
+      - Velocities
+
+IllustrisHandler:
+  MAPPED_FIELDS:
+    PartType4:
+      Coordinates: coords
+      GFM_InitialMass: mass
+      GFM_Metallicity: metallicity
+      Velocities: velocity
+      GFM_StellarFormationTime: age  # for this we convert SFT to age
+
+  MAPPED_PARTICLE_KEYS:
+    PartType4: stars
+    # Currently only PartType4 is supported
+
+  SIMULATION_META_KEYS:
+    name: SimulationName
+    snapshot: SnapshotNumber
+    redshift: Redshift
+    subhalo_id: CutoutID
+    api_request: CutoutRequest
+
+  GALAXY_SUBHALO_KEYS:
+    halfmassrad_stars: halfmassrad_stars
+
+  UNITS:
+    stars:
+      coords: cm
+      mass: g
+      metallicity: ""
+      velocity: cm/s
+      age: Gyr
+    galaxy:
+      center: cm
+      halfmassrad_stars: cm
+      redshift: ""
+
+  ILLUSTRIS_DATA:
+    - Header
+    - SubhaloData
+    - PartType4
+
+
 #Defines the fields that are required and the units in which they are stored
 BaseHandler:
   galaxy:

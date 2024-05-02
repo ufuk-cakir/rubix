@@ -19,7 +19,7 @@ maintainers = [
     { name = "Ufuk Çakır", email = "ufukcakir2001@gmail.com" },
 ]
 dynamic = ["version"]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = { text = "MIT" }
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -34,6 +34,7 @@ dependencies = [
     "requests-mock", 
     "pyaml", 
     "jaxtyping",
+    "equinox"
 ]
 
 [project.optional-dependencies]
@@ -76,5 +77,21 @@ testpaths = [
     "tests",
     "notebooks",
 ]
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_also = [
+    # Don't complain about missing debug-only code:
+    "def __repr__",
+    "if self\\.debug",
+
+    # Don't complain if non-runnable code isn't run:
+    "if __name__ == .__main__.:",
+
+    # Don't complain about abstract methods, they aren't run:
+    "@(abc\\.)?abstractmethod",
+    ]
+fail_under = 80
+
 [tool.ruff]
 ignore = ["F722"]

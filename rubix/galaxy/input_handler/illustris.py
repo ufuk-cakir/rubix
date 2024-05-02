@@ -3,55 +3,23 @@ import os
 import h5py
 import numpy as np
 from rubix.utils import convert_values_to_physical, SFTtoAge
-
+from rubix import config
 
 class IllustrisHandler(BaseHandler):
-
-    MAPPED_FIELDS = {
-        "PartType4": {
-            "Coordinates": "coords",
-            "GFM_InitialMass": "mass",
-            "GFM_Metallicity": "metallicity",
-            "Velocities": "velocity",
-            "GFM_StellarFormationTime": "age",  # for this we convert SFT to age
-        }
-    }
-
+    MAPPED_FIELDS = config["IllustrisHandler"]["MAPPED_FIELDS"]
     # This Dictionary maps the particle name in the simulation to the name used in Rubix
-    MAPPED_PARTICLE_KEYS = {
-        "PartType4": "stars",
-        # Currently only PartType4 is supported
-    }
+    MAPPED_PARTICLE_KEYS = config["IllustrisHandler"]["MAPPED_PARTICLE_KEYS"]
 
     # This dictiony map the keys of the simulation metadata to the keys used in Rubix
     # This also defines the required fields for the simulation metadata, which are used to check if the file is valid
-    SIMULATION_META_KEYS = {
-        "name": "SimulationName",
-        "snapshot": "SnapshotNumber",
-        "redshift": "Redshift",
-        "subhalo_id": "CutoutID",
-        "api_request": "CutoutRequest",
-    }
+    SIMULATION_META_KEYS = config["IllustrisHandler"]["SIMULATION_META_KEYS"]
 
-    GALAXY_SUBHALO_KEYS = {"halfmassrad_stars": "halfmassrad_stars"}
+    GALAXY_SUBHALO_KEYS = config["IllustrisHandler"]["GALAXY_SUBHALO_KEYS"]
 
     # This dictionary defines the units we get from the simulation
-    UNITS = {
-        "stars": {
-            "coords": "cm",
-            "mass": "g",
-            "metallicity": "",
-            "velocity": "cm/s",
-            "age": "Gyr",
-        },
-        "galaxy": {
-            "center": "cm",
-            "halfmassrad_stars": "cm",
-            "redshift": "",
-        },
-    }
+    UNITS = config["IllustrisHandler"]["UNITS"]
 
-    ILLUSTRIS_DATA = ["Header", "SubhaloData", "PartType4"]
+    ILLUSTRIS_DATA = config["IllustrisHandler"]["ILLUSTRIS_DATA"]
 
     def __init__(self, path, logger=None):
         super().__init__()
