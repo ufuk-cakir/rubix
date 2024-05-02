@@ -93,20 +93,5 @@ exclude_also = [
     ]
 fail_under = 80
 
-[tool.coverage.report]
-# Regexes for lines to exclude from consideration
-exclude_also = [
-    # Don't complain about missing debug-only code:
-    "def __repr__",
-    "if self\\.debug",
-
-    # Don't complain if non-runnable code isn't run:
-    "if __name__ == .__main__.:",
-
-    # Don't complain about abstract methods, they aren't run:
-    "@(abc\\.)?abstractmethod",
-    ]
-fail_under = 80
-
 [tool.ruff]
 ignore = ["F722"]
