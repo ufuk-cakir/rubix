@@ -28,6 +28,7 @@ def sample_telescope_config():
             "signal_to_noise": 100,
             "wave_centre": 550,
             "aperture_type": "square",
+            "pixel_type": "square"
         }
     }
 
@@ -51,6 +52,7 @@ def test_telescope_factory_with_file_path(tmpdir):
             "lsf_fwhm": 0.1,
             "signal_to_noise": 100,
             "wave_centre": 550,
+            "pixel_type": "square"
         }
     }
 

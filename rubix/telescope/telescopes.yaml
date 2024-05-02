@@ -7,3 +7,4 @@ MUSE:
   signal_to_noise: null
   wave_centre: 6975.775
   aperture_type: "square"
+  pixel_type: "square"
