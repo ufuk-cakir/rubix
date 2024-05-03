@@ -34,7 +34,9 @@ dependencies = [
     "requests-mock",
     "equinox",
     "jax[cpu]", 
-    "pre-commit"
+    "pre-commit", 
+    "pyaml", 
+    "jaxtyping"
 ]
 
 [project.optional-dependencies]
@@ -45,6 +47,7 @@ tests = [
     "jax[cpu]", 
     "pre-commit"
 ]
+
 docs = [
     "ipykernel",
     "nbsphinx",
