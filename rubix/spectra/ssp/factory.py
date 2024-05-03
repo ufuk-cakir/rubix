@@ -23,10 +23,8 @@ def get_ssp_template(name: str) -> SSPGrid:
         )
 
     if config[name]["format"].lower() == "hdf5":
-        try:
-            return SSPGrid.from_hdf5(config[name], file_location=TEMPLATE_PATH)
-        except ValueError as e:
-            raise ValueError(f"Error loading SSP template {name}: {e}")
+        return SSPGrid.from_hdf5(config[name], file_location=TEMPLATE_PATH)
+
 
     else:
         raise ValueError("Currently only HDF5 format is supported for SSP templates.")
