@@ -31,9 +31,11 @@ dependencies = [
     "h5py",
     "astropy",
     "scipy",
-    "requests-mock", 
-    "pyaml",
-    "equinox"
+    "requests-mock",
+    "equinox",
+    "jax[cpu]", 
+    "pre-commit", 
+    "pyaml"
 ]
 
 [project.optional-dependencies]
@@ -78,6 +80,9 @@ testpaths = [
     "notebooks",
 ]
 
+[tool.ruff]
+ignore = ["F722"]
+
 [tool.coverage.report]
 # Regexes for lines to exclude from consideration
 exclude_also = [
@@ -92,3 +97,4 @@ exclude_also = [
     "@(abc\\.)?abstractmethod",
     ]
 fail_under = 80
+

@@ -6,13 +6,10 @@ import yaml
 def read_yaml(path_to_file: str) -> dict:
     """
     read_yaml Read yaml file into dictionary
-
     Args:
         path_to_file (str): path to the file to read
-
     Raises:
         RuntimeError: When an error occurs during reading
-
     Returns:
         dict: Either the read yaml file in dictionary form, or an empty
             dictionary if an error occured.

@@ -1,5 +1,5 @@
 import pytest  # type: ignore # noqa
-from pathlib import Path
+import yaml
 from rubix.utils import convert_values_to_physical, SFTtoAge, read_yaml
 from astropy.cosmology import Planck15 as cosmo
 
@@ -69,56 +69,34 @@ def test_SFTtoAge():
     assert result == expected_result, f"Expected {expected_result}, but got {result}"
 
 
-def test_read_yaml():
-    cfg = read_yaml(Path(__file__).parent / "demo.yml")
+def test_read_yaml(tmp_path):
+    # Create a temporary YAML file in the temporary directory
+    test_file = tmp_path / "test.yaml"
 
-    assert cfg == {
-        "Transformers": {
-            "A": {
-                "name": "add",
-                "depends_on": "B",
-                "args": [],
-                "kwargs": {
-                    "s": 3.0,
-                },
-            },
-            "X": {
-                "name": "mult",
-                "depends_on": "A",
-                "args": [],
-                "kwargs": {
-                    "m": 3,
-                },
-            },
-            "Z": {
-                "name": "div",
-                "depends_on": "X",
-                "args": [],
-                "kwargs": {
-                    "d": 4,
-                },
-            },
-            "B": {
-                "name": "sub",
-                "depends_on": "C",
-                "args": [],
-                "kwargs": {
-                    "s": 2,
-                },
-            },
-            "C": {
-                "name": "add",
-                "depends_on": None,
-                "args": [],
-                "kwargs": {
-                    "s": 4,
-                },
-            },
-        }
-    }
+    # Data to write to the YAML file
+    data = {"key": "value", "numbers": [1, 2, 3]}
 
-    path = Path(__file__).parent.parent / "nonexistant.yml"
-    with pytest.raises(
-        RuntimeError, match=f"Something went wrong while reading yaml file {path}"
-    ):
-        read_yaml(Path(__file__).parent.parent / "nonexistant.yml")
+    # Write the YAML data to the file
+    with open(test_file, "w") as file:
+        yaml.dump(data, file)
+
+    # Use the read_yaml function to read the data back from the file
+    result = read_yaml(str(test_file))
+
+    # Check that the data read from the file matches the original data
+    assert (
+        result == data
+    ), "The data read from the YAML file does not match the expected data"
+
+
+def test_read_yaml_error_handling(tmp_path):
+    # Define a path to a non-existent file
+    non_existent_file = tmp_path / "non_existent.yaml"
+
+    # Expect a RuntimeError when trying to read a non-existent file
+    with pytest.raises(RuntimeError) as excinfo:
+        read_yaml(str(non_existent_file))
+
+    assert "Something went wrong while reading yaml file" in str(
+        excinfo.value
+    ), "Expected RuntimeError not raised"

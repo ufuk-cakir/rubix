@@ -16,6 +16,7 @@ telescopes:
     wave_centre: 6975.775
     sbin: 64
     aperture_type: "square"
+    pixel_type: "square"
 
 cosmology:
   PLANCK15:
@@ -23,5 +24,3 @@ cosmology:
     w0: -1.0
     wa: 0.0
     h: 0.6774
-
-
