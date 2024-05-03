@@ -35,6 +35,7 @@ dependencies = [
     "pyaml", 
     "jaxtyping",
     "equinox"
+    "jax[cpu]", 
 ]
 
 [project.optional-dependencies]
@@ -45,6 +46,7 @@ tests = [
     "jax[cpu]", 
     "pre-commit"
 ]
+
 docs = [
     "ipykernel",
     "nbsphinx",
@@ -78,6 +80,9 @@ testpaths = [
     "notebooks",
 ]
 
+[tool.ruff]
+ignore = ["F722"]
+
 [tool.coverage.report]
 # Regexes for lines to exclude from consideration
 exclude_also = [
@@ -92,6 +97,3 @@ exclude_also = [
     "@(abc\\.)?abstractmethod",
     ]
 fail_under = 80
-
-[tool.ruff]
-ignore = ["F722"]

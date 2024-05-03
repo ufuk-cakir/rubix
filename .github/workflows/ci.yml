@@ -60,7 +60,7 @@ jobs:
 
     - name: Install Python package
       run: |
-        python -m pip install .[tests]
+        python -m pip install -e .[tests]
 
     - name: Run Python tests
       working-directory: ./tests
