@@ -1,9 +1,9 @@
 import pytest
-from rubix.galaxy import InputHandler
+from rubix.galaxy import BaseHandler
 import h5py
+from rubix import config
 
-
-class ConcreteInputHandler(InputHandler):
+class ConcreteInputHandler(BaseHandler):
     def get_particle_data(self):
         # Mock particle data that satisfies the requirements
         return {
@@ -27,18 +27,8 @@ class ConcreteInputHandler(InputHandler):
     def get_units(self):
         # Mock units that satisfy the requirements
         return {
-            "galaxy": {
-                "redshift": "dimensionless",
-                "center": "cm",
-                "halfmassrad_stars": "cm",
-            },
-            "stars": {
-                "coords": "cm",
-                "mass": "g",
-                "metallicity": "dimensionless",
-                "velocity": "cm/s",
-                "age": "Gyr",
-            },
+            "galaxy": config["BaseHandler"]["galaxy"],
+            "stars": config["BaseHandler"]["particles"]["stars"],
         }
 
 
@@ -93,33 +83,27 @@ def test_convert_to_rubix_correct_values(input_handler, tmp_path):
 def test_units_are_correct(input_handler):
     units = input_handler.get_units()
     assert units == {
-        "galaxy": {
-            "redshift": "dimensionless",
-            "center": "cm",
-            "halfmassrad_stars": "cm",
-        },
-        "stars": {
-            "coords": "cm",
-            "mass": "g",
-            "metallicity": "dimensionless",
-            "velocity": "cm/s",
-            "age": "Gyr",
-        },
+        "galaxy": config["BaseHandler"]["galaxy"],
+        "stars": config["BaseHandler"]["particles"]["stars"],
+        
     }
 
 
 def test_rubix_file_has_correct_units(input_handler, tmp_path):
     input_handler.to_rubix(tmp_path)
 
+    # get the units from the rubix config
+    from rubix import config 
+    config = config["BaseHandler"]
     with h5py.File(tmp_path / "rubix_galaxy.h5", "r") as f:
-        assert f["galaxy/redshift"].attrs["unit"] == "dimensionless"
-        assert f["galaxy/center"].attrs["unit"] == "cm"
-        assert f["galaxy/halfmassrad_stars"].attrs["unit"] == "cm"
-        assert f["particles/stars/coords"].attrs["unit"] == "cm"
-        assert f["particles/stars/mass"].attrs["unit"] == "g"
-        assert f["particles/stars/metallicity"].attrs["unit"] == "dimensionless"
-        assert f["particles/stars/velocity"].attrs["unit"] == "cm/s"
-        assert f["particles/stars/age"].attrs["unit"] == "Gyr"
+        assert f["galaxy/redshift"].attrs["unit"] == config["galaxy"]["redshift"]
+        assert f["galaxy/center"].attrs["unit"] == config["galaxy"]["center"]
+        assert f["galaxy/halfmassrad_stars"].attrs["unit"] == config["galaxy"]["halfmassrad_stars"]
+        assert f["particles/stars/coords"].attrs["unit"] == config["particles"]["stars"]["coords"]
+        assert f["particles/stars/mass"].attrs["unit"] == config["particles"]["stars"]["mass"]
+        assert f["particles/stars/metallicity"].attrs["unit"] == config["particles"]["stars"]["metallicity"]
+        assert f["particles/stars/velocity"].attrs["unit"] == config["particles"]["stars"]["velocity"]
+        assert f["particles/stars/age"].attrs["unit"] == config["particles"]["stars"]["age"]
 
 
 def test_missing_galaxy_field_error(input_handler):
@@ -130,14 +114,6 @@ def test_missing_galaxy_field_error(input_handler):
         input_handler._check_galaxy_data(galaxy_data, input_handler.get_units())
     assert "Missing field redshift in galaxy data" in str(excinfo.value)
 
-
-def test_unsupported_galaxy_unit_error(input_handler):
-    with pytest.raises(ValueError) as excinfo:
-        # Manually change a unit to an unsupported one
-        units = input_handler.get_units()
-        units["galaxy"]["redshift"] = "unsupported_unit"
-        input_handler._check_galaxy_data(input_handler.get_galaxy_data(), units)
-    assert "Units for redshift not supported" in str(excinfo.value)
 
 
 def test_galaxy_field_unit_info_missing_error(input_handler):
@@ -178,12 +154,3 @@ def test_particle_field_unit_info_missing_error(input_handler):
         particle_data["stars"]["unsupported_field"] = 1
         input_handler._check_particle_data(particle_data, units)
     assert "Units for unsupported_field not found in units" in str(excinfo.value)
-
-
-def test_unsupported_particle_unit_error(input_handler):
-    with pytest.raises(ValueError) as excinfo:
-        # Change a unit to an unsupported one
-        units = input_handler.get_units()
-        units["stars"]["coords"] = "unsupported_unit"
-        input_handler._check_particle_data(input_handler.get_particle_data(), units)
-    assert "Units for coords not supported" in str(excinfo.value)

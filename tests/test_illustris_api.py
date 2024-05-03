@@ -5,7 +5,7 @@ import h5py
 import numpy as np
 import pytest
 
-from rubix.galaxy._input_handler._illustris_api import IllustrisAPI
+from rubix.galaxy import IllustrisAPI
 
 
 @pytest.fixture
@@ -119,6 +119,17 @@ def test__init__():
     assert api.snapshot == 99
     assert api.simulation == "TNG50-1"
     assert api.baseURL == "http://www.tng-project.org/api/TNG50-1/snapshots/99"
+    assert "TNG50-1" in api.__str__()
+    
+
+def test_init_with_logger():
+    import logging
+    logger = logging.getLogger("test_logger")
+    
+    api = IllustrisAPI(api_key="test_key", logger=logger)
+    assert api.logger == logger
+
+
 
 
 def test_get_api_key(api_key):
@@ -470,3 +481,43 @@ def test_load_hdf5_with_extension(api_instance, tmp_path):
     assert os.path.exists(
         full_path_constructed
     ), "File with expected filename doesn't exist."
+
+
+
+def test_load_galaxy_overwrite_reuse(api_instance, tmp_path):
+    id = 1
+    filename = f"galaxy-id-{id}"
+    filename_with_extension = f"{filename}.hdf5"
+    file_path = tmp_path / filename_with_extension
+
+    # Create a placeholder for the existing file
+    file_path.touch()
+
+    # Ensure the API's DATAPATH is set to the tmp_path
+    api_instance.DATAPATH = str(tmp_path)
+
+    with patch.object(api_instance, '_load_hdf5', return_value={"data": "loaded"}) as mock_load_hdf5:
+        # Test reuse without overwrite, file exists
+        result = api_instance.load_galaxy(id=id, overwrite=False, reuse=True)
+        mock_load_hdf5.assert_called_once_with(filename=filename)
+        assert result == {"data": "loaded"}, "The data should be loaded from the existing file."
+
+        # Reset mock
+        mock_load_hdf5.reset_mock()
+
+        # Test overwrite, file exists
+        with patch.object(api_instance, '_get') as mock_get, patch.object(
+            api_instance, 'get_subhalo', return_value={}
+        ) as mock_get_subhalo, patch.object(
+            api_instance, '_append_subhalo_data'
+        ):
+            result = api_instance.load_galaxy(id=id, overwrite=True, reuse=False)
+            mock_get.assert_called()
+            mock_get_subhalo.assert_called()
+            mock_load_hdf5.assert_called_once_with(filename=filename)
+            assert "data" in result, "The data should be refreshed and loaded."
+
+        # Test error raise when file exists, and neither overwrite nor reuse are true
+        with pytest.raises(ValueError) as exc_info:
+            api_instance.load_galaxy(id=id, overwrite=False, reuse=False)
+        assert "already exists" in str(exc_info.value), "An error should be raised when attempting to download without overwrite and reuse."

@@ -1,8 +1,8 @@
 import os
 import requests
 import h5py
-from rubix.logger import logger  # type: ignore
 from typing import List, Union
+from rubix import config
 
 
 class IllustrisAPI:
@@ -20,30 +20,7 @@ class IllustrisAPI:
     """
 
     URL = "http://www.tng-project.org/api/"
-    DEFAULT_FIELDS = {
-        "gas": [
-            "Coordinates",
-            "Density",
-            "Masses",
-            "ParticleIDs",
-            "GFM_Metallicity",
-            "SubfindHsml",
-            "StarFormationRate",
-            "InternalEnergy",
-            "Velocities",
-            "ElectronAbundance",
-            "GFM_Metals",
-        ],
-        "stars": [
-            "Coordinates",
-            "GFM_InitialMass",
-            "Masses",
-            "ParticleIDs",
-            "GFM_Metallicity",
-            "GFM_StellarFormationTime",
-            "Velocities",
-        ],
-    }
+    DEFAULT_FIELDS = config["IllustrisAPI"]["DEFAULT_FIELDS"]
 
     def __init__(
         self,
@@ -51,7 +28,8 @@ class IllustrisAPI:
         particle_type: list = ["stars"],
         simulation="TNG50-1",
         snapshot=99,
-        save_data_path="./tempdata",
+        save_data_path="./api_data",
+        logger =None,
     ):
         """Illustris API class.
 
@@ -68,6 +46,7 @@ class IllustrisAPI:
         snapshot : int
             Snapshot to load from. Default is 99.
         """
+        
 
         if api_key is None:
             raise ValueError("Please set the API key.")
@@ -78,7 +57,12 @@ class IllustrisAPI:
         self.simulation = simulation
         self.baseURL = f"{self.URL}{self.simulation}/snapshots/{self.snapshot}"
         self.DATAPATH = save_data_path
-
+        if logger is None:
+            import logging
+            self.logger = logging.getLogger(__name__)
+        else:
+            self.logger = logger
+            
     def _get(self, path, params=None, name=None):
         """Get data from the Illustris API.
 
@@ -99,7 +83,7 @@ class IllustrisAPI:
 
         os.makedirs(self.DATAPATH, exist_ok=True)
         try:
-            logger.debug(
+            self.logger.debug(
                 f"Performing GET request from {path}, with parameters {params}"
             )
             r = requests.get(path, params=params, headers=self.headers)
@@ -208,7 +192,7 @@ class IllustrisAPI:
         data = self._load_hdf5("cutout")
         return data
 
-    def load_galaxy(self, id: int):
+    def load_galaxy(self, id: int, overwrite: bool = False, reuse:bool = False):
         """Download Galaxy Data from the Illustris API.
 
         This function downloads both the subhalo data and the particle data for stars and gas particles, for the fields specified in DEFAULT_FIELDS.
@@ -232,9 +216,25 @@ class IllustrisAPI:
         >>> data = illustris_api.load_galaxy(id=0, verbose=True)
         """
 
+        # Check if there is already a file with the same name
+        if os.path.exists(os.path.join(self.DATAPATH, f"galaxy-id-{id}.hdf5")):
+            # If file exists, check if we should overwrite it
+            if not overwrite:
+                # If we should not overwrite it, check if we should reuse it
+                if reuse:
+                    self.logger.info(f"Reusing existing file galaxy-id-{id}.hdf5. If you want to download the data again, set reuse=False.")
+                    return self._load_hdf5(filename=f"galaxy-id-{id}")
+                else: 
+                    # If we should not reuse it, raise an error
+                    raise ValueError(
+                        f"File with name galaxy-id-{id}.hdf5 already exists. Please remove it before downloading the data, or set overwrite=True, or reuse=True to load the data."
+                    )
+            else:
+                self.logger.info(f"Found existing file galaxy-id-{id}.hdf5, but overwrite is set to True. Overwriting the file.")
+
         # Check which particles we want to load
 
-        logger.debug(f"Loading galaxy with ID {id}")
+        self.logger.debug(f"Loading galaxy with ID {id}")
         url = f"{self.baseURL}/subhalos/{id}/cutout.hdf5?"
 
         for particle_type in self.particle_type:
@@ -261,7 +261,7 @@ class IllustrisAPI:
         return data
 
     def _append_subhalo_data(self, subhalo_data, id):
-        logger.debug(f"Appending subhalo data for subhalo {id}")
+        self.logger.debug(f"Appending subhalo data for subhalo {id}")
         # Append subhalo data to the HDF5 file
         file_path = os.path.join(self.DATAPATH, f"galaxy-id-{id}.hdf5")
         with h5py.File(file_path, "a") as f:
@@ -270,3 +270,6 @@ class IllustrisAPI:
                 if isinstance(subhalo_data[key], dict):
                     continue
                 f["SubhaloData"].create_dataset(key, data=subhalo_data[key])  # type: ignore
+
+    def __str__(self) -> str:
+        return f"IllustrisAPI: Simulation {self.simulation}, Snapshot {self.snapshot}, Particle Type {self.particle_type}"
