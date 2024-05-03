@@ -1,65 +1,38 @@
-from ._input_handler import InputHandler
+from .base import BaseHandler  # type: ignore
 import os
 import h5py
 import numpy as np
-import warnings
-from rubix.logger import logger
 from rubix.utils import convert_values_to_physical, SFTtoAge
+from rubix import config
 
-
-class IllustrisHandler(InputHandler):
-
-    # TODO [RBX-18] Change names to be more descriptive
-    MAPPED_FIELDS = {
-        "PartType4": {
-            "Coordinates": "coords",
-            "Masses": "mass",
-            "GFM_Metallicity": "metallicity",
-            "Velocities": "velocity",
-            "GFM_StellarFormationTime": "age",  # for this we convert SFT to age
-        }
-    }
-
+class IllustrisHandler(BaseHandler):
+    MAPPED_FIELDS = config["IllustrisHandler"]["MAPPED_FIELDS"]
     # This Dictionary maps the particle name in the simulation to the name used in Rubix
-    MAPPED_PARTICLE_KEYS = {
-        "PartType4": "stars",
-        # Currently only PartType4 is supported
-    }
+    MAPPED_PARTICLE_KEYS = config["IllustrisHandler"]["MAPPED_PARTICLE_KEYS"]
 
     # This dictiony map the keys of the simulation metadata to the keys used in Rubix
     # This also defines the required fields for the simulation metadata, which are used to check if the file is valid
-    SIMULATION_META_KEYS = {
-        "name": "SimulationName",
-        "snapshot": "SnapshotNumber",
-        "redshift": "Redshift",
-        "subhalo_id": "CutoutID",
-        "api_request": "CutoutRequest",
-    }
+    SIMULATION_META_KEYS = config["IllustrisHandler"]["SIMULATION_META_KEYS"]
 
-    GALAXY_SUBHALO_KEYS = {"halfmassrad_stars": "halfmassrad_stars"}
+    GALAXY_SUBHALO_KEYS = config["IllustrisHandler"]["GALAXY_SUBHALO_KEYS"]
 
     # This dictionary defines the units we get from the simulation
-    UNITS = {
-        "stars": {
-            "coords": "cm",
-            "mass": "g",
-            "metallicity": "dimensionless",
-            "velocity": "cm/s",
-            "age": "Gyr",
-        },
-        "galaxy": {
-            "center": "cm",
-            "halfmassrad_stars": "cm",
-            "redshift": "dimensionless",
-        },
-    }
+    UNITS = config["IllustrisHandler"]["UNITS"]
 
-    ILLUSTRIS_DATA = ["Header", "SubhaloData", "PartType4"]
+    ILLUSTRIS_DATA = config["IllustrisHandler"]["ILLUSTRIS_DATA"]
 
-    def __init__(self, path):
+    def __init__(self, path, logger=None):
         super().__init__()
+
+        if logger is not None:
+            self._logger = logger
+        else:
+            import logging
+
+            self._logger = logging.getLogger(__name__)
+            self._logger.setLevel(logging.INFO)
+
         self.path = path
-        self._logger = logger
         # Check if paths are valid
         if not os.path.exists(self.path):
             raise FileNotFoundError(f"File {self.path} not found")
@@ -79,16 +52,6 @@ class IllustrisHandler(InputHandler):
     def get_units(self):
         return self.UNITS
 
-    # TODO: not sure if we need this here
-    # def _check_hdf_structure(self, f):
-    #     # Check if the file has all the correct fields stored in self.STRUCTURE
-    #     for group in self.STRUCTURE:
-    #         if group not in f:
-    #             raise ValueError(f"Group {group} not found in the file")
-    #         for key in self.STRUCTURE[group]:
-    #             if key not in f[group]:
-    #                 raise ValueError(f"Key {key} not found in group {group}")
-
     def _check_fields(self, f):
         for fields in self.ILLUSTRIS_DATA:
             if fields not in f:
@@ -101,6 +64,7 @@ class IllustrisHandler(InputHandler):
             # Check if the file has the required fields
             self._check_fields(f)
             # Get information from the header
+
             # TIME is the scale factor of the simulation
             # HUBBLE_PARAM is the Hubble parameter
             # these values are used to convert the values to physical units
@@ -122,9 +86,6 @@ class IllustrisHandler(InputHandler):
 
     def _get_data_from_header(self, f):
         # Check if the file has the required fields
-        # This should not be necessary, as we already checked for the fields in the file
-        # if "Header" not in f:
-        #     raise ValueError("Header not found in the file")
         if "Time" not in f["Header"].attrs:
             raise ValueError("Time not found in the header attributes")
         if "HubbleParam" not in f["Header"].attrs:
@@ -145,8 +106,6 @@ class IllustrisHandler(InputHandler):
                 raise NotImplementedError(
                     f"{key} is not supported. Currently only {supported_keys} are supported"
                 )
-        # if len(keys) == 0:
-        #     raise ValueError("No particle types found in the file")
         return keys
 
     def _get_galaxy_data(self, f):
@@ -200,17 +159,6 @@ class IllustrisHandler(InputHandler):
     def _get_data(self, f):
         data = {}
         for part_type in self.PARTICLE_KEYS:
-            # Check if the particle type is supported
-            # This is not needed since we already checked for this in _get_particle_keys
-            # if part_type not in self.MAPPED_PARTICLE_KEYS:
-            #     # Raise error
-            #     raise NotImplementedError(
-            #         f"{part_type} is currently not supported. Currently only {self.MAPPED_PARTICLE_KEYS.keys()} are supported."
-            #     )
-            # TODO or do we want to raise an error?
-            # raise NotImplementedError(
-            #    f"{part_type} is not supported. Currently only {self.MAPPED_PARTICLE_KEYS.keys()} are supported"
-            # )
             # Get the particle data
             data_particle = self._get_particle_data(f, part_type)
 
@@ -222,15 +170,6 @@ class IllustrisHandler(InputHandler):
         data = {}
         for keys in f["Header"].attrs:
             data[keys] = f["Header"].attrs[keys]
-        # I dont think we need this. Just load all metadat
-        # for key in self.SIMULATION_META_KEYS:
-        #     # Check if the key is in the file
-        #     if self.SIMULATION_META_KEYS[key] not in f["Header"].attrs:
-        #         raise ValueError(
-        #             f"{self.SIMULATION_META_KEYS[key]} not found in the simulation metadata"
-        #         )
-        #     data[key] = f["Header"].attrs[self.SIMULATION_META_KEYS[key]]
-
         return data
 
     def _get_particle_data(self, f, part_type):
@@ -238,14 +177,6 @@ class IllustrisHandler(InputHandler):
         # self._logger.debug(
         #    f"Calculating {part_type} particles parameters in physical units.."
         # )
-
-        # Check if part_type is supported
-        # this should not happen since we already checked for this in _get_particle_keys
-        # if part_type not in self.MAPPED_FIELDS:
-        #     raise ValueError(
-        #         f"{part_type} is not supported. Currently only {self.MAPPED_FIELDS.keys()} are supported"
-        #     )
-
         part_data = {}
         for key in f[part_type].keys():
             # Check if key is supported, if not, raise a warning and skip
@@ -267,7 +198,7 @@ class IllustrisHandler(InputHandler):
             # Look for the correct field name
 
             if key == "GFM_StellarFormationTime":
-                logger.debug("Converting Stellar Formation Time to Age")
+                self._logger.debug("Converting Stellar Formation Time to Age")
                 physical_values = self._convert_stellar_formation_time(physical_values)
 
             key = self.MAPPED_FIELDS[part_type][key]
