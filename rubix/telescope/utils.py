@@ -1,8 +1,28 @@
 import jax.numpy as jnp
 from jaxtyping import Array, Float
+from rubix.cosmology.base import BaseCosmology
+from typing import Tuple
 
-def square_spaxel_assignment(coords: Float[Array, " n_stars 3"],
-                                        spatial_bin_edges: Float[Array, " n_bins"])-> Float[Array, " n_stars"]:
+
+def calculate_spatial_bin_edges(
+    fov: float, spatial_bins: float, dist_z: float, cosmology: BaseCosmology
+) -> Tuple[Float[Array, " n_bins"], float]:
+    """Calculate the bin edges for the spatial bins.
+    jnp.array
+        The bin edges for the spatial bins.
+    """
+    ang_size = cosmology.angular_scale(dist_z)
+    aperture_size = ang_size * fov
+    spatial_bin_size = aperture_size / spatial_bins
+    spatial_bin_edges = jnp.arange(
+        -aperture_size / 2, aperture_size / 2, spatial_bin_size
+    )
+    return spatial_bin_edges, spatial_bin_size
+
+
+def square_spaxel_assignment(
+    coords: Float[Array, " n_stars 3"], spatial_bin_edges: Float[Array, " n_bins"]
+) -> Float[Array, " n_stars"]:
     """Bin the particle coordinates into a 2D image with the given bin edges for square pixels.
 
     This function takes the particle coordinates and bins them into a 2D image with the given bin edges.
@@ -41,4 +61,3 @@ def square_spaxel_assignment(coords: Float[Array, " n_stars 3"],
     # Flatten the 2D indices to 1D indices
     pixel_positions = x_indices + (number_of_bins * y_indices)
     return pixel_positions
-
