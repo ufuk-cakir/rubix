@@ -43,34 +43,38 @@ def test_convert_to_rubix(
 
 # Test prepare_input function
 @patch("rubix.core.data.os.path.join")
-@patch("rubix.core.data.load_galaxy_data")
 @patch("rubix.core.data.center_particles")
-def test_prepare_input(mock_center_particles, mock_load_galaxy_data, mock_path_join):
+def test_prepare_input(mock_center_particles, mock_path_join):
     mock_path_join.return_value = "/path/to/output/rubix_galaxy.h5"
-    mock_load_galaxy_data.return_value = {
+    particle_data = {
         "particle_data": {
             "stars": {
                 "coords": [[1, 2, 3]],
-                "velocities": [[4, 5, 6]],
+                "velocity": [[4, 5, 6]],
                 "metallicity": [0.1],
                 "mass": [1000],
                 "age": [4.5],
             },
-            "subhalo_center": [0, 0, 0],
-        }
+        },
+        "subhalo_center": [0, 0, 0],
     }
-    mock_center_particles.return_value = ([[1, 2, 3]], [[4, 5, 6]])
+    units = {
+        "galaxy": {"center": "kpc", "halfmassrad_stars": "kpc", "redshift": ""},
+        "stars": {"mass": "Msun"},
+    }
+    mock_load_galaxy_data = (particle_data, units)
+    with patch("rubix.core.data.load_galaxy_data", return_value=mock_load_galaxy_data):
+        mock_center_particles.return_value = ([[1, 2, 3]], [[4, 5, 6]])
 
-    coords, velocities, metallicity, mass, age = prepare_input(config_dict)
+        coords, velocities, metallicity, mass, age = prepare_input(config_dict)
 
-    assert coords == [[1, 2, 3]]
-    assert velocities == [[4, 5, 6]]
-    assert metallicity == [0.1]
-    assert mass == [1000]
-    assert age == [4.5]
+        assert coords == [[1, 2, 3]]
+        assert velocities == [[4, 5, 6]]
+        assert metallicity == [0.1]
+        assert mass == [1000]
+        assert age == [4.5]
 
-    mock_path_join.assert_called_once_with(
-        config_dict["output_path"], "rubix_galaxy.h5"
-    )
-    mock_load_galaxy_data.assert_called_once()
-    mock_center_particles.assert_called_once()
+        mock_path_join.assert_called_once_with(
+            config_dict["output_path"], "rubix_galaxy.h5"
+        )
+        mock_center_particles.assert_called_once()

@@ -9,6 +9,7 @@ import os
 
 
 def convert_to_rubix(config: Union[dict, str]):
+    # Check if the file already exists
     # Create the input handler based on the config and create rubix galaxy data
     if isinstance(config, str):
         config = read_yaml(config)
@@ -17,6 +18,10 @@ def convert_to_rubix(config: Union[dict, str]):
     logger_config = config["logger"] if "logger" in config else None
 
     logger = get_logger(logger_config)
+
+    if os.path.exists(os.path.join(config["output_path"], "rubix_galaxy.h5")):
+        logger.info("Rubix galaxy file already exists, skipping conversion")
+        return config["output_path"]
 
     # If the simulationtype is IllustrisAPI, get data from IllustrisAPI
 
@@ -39,11 +44,11 @@ def prepare_input(config: Union[dict, str]):
     file_path = os.path.join(file_path, "rubix_galaxy.h5")
 
     # Load the data from the file
-    data = load_galaxy_data(file_path)
+    data, units = load_galaxy_data(file_path)
 
     stellar_coordinates = data["particle_data"]["stars"]["coords"]
-    stellar_velocities = data["particle_data"]["stars"]["velocities"]
-    galaxy_center = data["particle_data"]["subhalo_center"]
+    stellar_velocities = data["particle_data"]["stars"]["velocity"]
+    galaxy_center = data["subhalo_center"]
 
     # Center the particles
     new_stellar_coordinates, new_stellar_velocities = center_particles(
@@ -63,4 +68,3 @@ def prepare_input(config: Union[dict, str]):
         stars_mass,
         stars_age,
     )
-

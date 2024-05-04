@@ -61,3 +61,19 @@ def square_spaxel_assignment(
     # Flatten the 2D indices to 1D indices
     pixel_positions = x_indices + (number_of_bins * y_indices)
     return pixel_positions
+
+
+def filter_particles_outside_aperture(
+    coords: Float[Array, " n_stars 3"],
+    spatial_bin_edges: Float[Array, " n_bins"],
+) -> Float[Array, " n_stars_inside_aperture 3"]:
+    """Mask the particles that are outside the aperture."""
+    min_value = spatial_bin_edges.min()
+    max_value = spatial_bin_edges.max()
+
+    mask = (coords[:, 0] >= min_value) & (coords[:, 0] <= max_value)
+    mask &= (coords[:, 1] >= min_value) & (coords[:, 1] <= max_value)
+
+    # Filter out all the particles that are outside the aperture
+
+    return coords[mask]

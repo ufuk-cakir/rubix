@@ -2,30 +2,24 @@ from jaxtyping import Float, Array
 from rubix.cosmology import RubixCosmology
 from rubix.telescope.utils import calculate_spatial_bin_edges, square_spaxel_assignment
 from rubix.telescope.base import BaseTelescope
+from rubix.telescope.factory import TelescopeFactory
 from jax.tree_util import Partial
+from .cosmology import get_cosmology
 
 
-def get_spaxel_assignment(
-    telescope: BaseTelescope,
-    coords: Float[Array, " n_stars 3"],
-    galaxy_dist_z: float,
-    cosmology: RubixCosmology,
-) -> Float[Array, " n_stars"]:
-    """Get the spaxel assignment function based on the telescope configuration.
+def get_telescope(config: dict) -> BaseTelescope:
+    """Get the telescope object based on the configuration."""
+
+    factory = TelescopeFactory()
+    telescope = factory.create_telescope(config["telescope"]["name"])
+    return telescope
 
 
-    Parameters
-    ----------
-    coords : jnp.array (n, 3)
-        The particle coordinates.
-
-    cosmology : RubixCosmology
-        The cosmology object.
-
-    dist_z : float
-        The redshift of the particles.
-    """
-
+def get_spaxel_assignment(config: dict) -> Float[Array, " n_stars"]:
+    """Get the spaxel assignment function based on the configuration."""
+    telescope = get_telescope(config)
+    galaxy_dist_z = config["galaxy"]["dist_z"]
+    cosmology = get_cosmology(config)
     # Calculate the spatial bin edges
     # TODO check if we need the spatial bin size somewhere? For now we dont use it
     spatial_bin_edges, spatial_bin_size = calculate_spatial_bin_edges(

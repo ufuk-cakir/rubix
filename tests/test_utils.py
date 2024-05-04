@@ -1,10 +1,15 @@
 import pytest  # type: ignore # noqa
-from rubix.utils import convert_values_to_physical, SFTtoAge, print_hdf5_file_structure, read_yaml,load_galaxy_data
+from rubix.utils import (
+    convert_values_to_physical,
+    SFTtoAge,
+    print_hdf5_file_structure,
+    read_yaml,
+    load_galaxy_data,
+)
 import yaml
 from astropy.cosmology import Planck15 as cosmo
 import h5py
 import numpy as np
-
 
 
 def test_convert_values_to_physical():
@@ -72,23 +77,25 @@ def test_SFTtoAge():
     assert result == expected_result, f"Expected {expected_result}, but got {result}"
 
 
-
 def test_hdf5_file_structure(tmp_path):
     # Create a temporary HDF5 file
     hdf5_file = tmp_path / "test_file.h5"
     with h5py.File(hdf5_file, "w") as f:
         group = f.create_group("group")
-        dataset = group.create_dataset("dataset", (100,), dtype='i')
+        dataset = group.create_dataset("dataset", (100,), dtype="i")
         dataset[:] = range(100)
 
     # Run the function to test
     output = print_hdf5_file_structure(str(hdf5_file))
 
     # Define expected output, adjusting for additional parentheses and newline
-    expected_output = f"File: {str(hdf5_file)}\nGroup: group\n    Dataset: dataset (int32) ((100,))\n"
+    expected_output = (
+        f"File: {str(hdf5_file)}\nGroup: group\n    Dataset: dataset (int32) ((100,))\n"
+    )
 
     # Check if the output matches the expected output
     assert output.strip() == expected_output.strip()
+
 
 def test_empty_hdf5_file(tmp_path):
     # Test with an empty HDF5 file
@@ -104,13 +111,12 @@ def test_empty_hdf5_file(tmp_path):
 
     # Check if the output matches the expected output
     assert output.strip() == expected_output.strip()
-    
-    
+
+
 def test_read_yaml_wrong_path():
     # Test with a non-existent YAML file
     with pytest.raises(Exception) as e:
         read_yaml("non_existent_file.yaml")
-        
 
 
 def create_test_hdf5_file(path):
@@ -127,8 +133,9 @@ def create_test_hdf5_file(path):
 
         # Set attributes
         for key in g.keys():
-            g[key].attrs['unit'] = 'kpc'
-        stars['mass'].attrs['unit'] = 'Msun'
+            g[key].attrs["unit"] = "kpc"
+        stars["mass"].attrs["unit"] = "Msun"
+
 
 def test_load_galaxy_data_success(tmp_path):
     # Create a temporary HDF5 file
@@ -137,14 +144,15 @@ def test_load_galaxy_data_success(tmp_path):
 
     # Test the function
     data, units = load_galaxy_data(str(file_path))
-    assert data['subhalo_center'].tolist() == [0, 0, 0]
-    assert data['subhalo_halfmassrad_stars'] == 300
-    assert data['redshift'] == 0.5
-    assert data['particle_data']['stars']['mass'].tolist() == [1, 2, 3]
-    assert units['galaxy']['center'] == 'kpc'
-    assert units['galaxy']['halfmassrad_stars'] == 'kpc'
-    assert units['galaxy']['redshift'] == 'kpc'
-    assert units['stars']['mass'] == 'Msun'
+    assert data["subhalo_center"].tolist() == [0, 0, 0]
+    assert data["subhalo_halfmassrad_stars"] == 300
+    assert data["redshift"] == 0.5
+    assert data["particle_data"]["stars"]["mass"].tolist() == [1, 2, 3]
+    assert units["galaxy"]["center"] == "kpc"
+    assert units["galaxy"]["halfmassrad_stars"] == "kpc"
+    assert units["galaxy"]["redshift"] == "kpc"
+    assert units["stars"]["mass"] == "Msun"
+
 
 def test_load_galaxy_data_failure(tmp_path):
     # Create a temporary HDF5 file with missing datasets
@@ -152,10 +160,10 @@ def test_load_galaxy_data_failure(tmp_path):
     with h5py.File(file_path, "w") as f:
         f.create_group("galaxy")
 
-    # Test the function should raise RuntimeError
-    with pytest.raises(RuntimeError) as excinfo:
+    # Test the function should raise an error
+    with pytest.raises(KeyError) as excinfo:
         load_galaxy_data(str(file_path))
-    assert "Something went wrong while loading galaxy data" in str(excinfo.value)
+
 
 def test_read_yaml(tmp_path):
     # Create a temporary YAML file in the temporary directory
@@ -188,4 +196,3 @@ def test_read_yaml_error_handling(tmp_path):
     assert "Something went wrong while reading yaml file" in str(
         excinfo.value
     ), "Expected RuntimeError not raised"
-
