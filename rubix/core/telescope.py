@@ -15,8 +15,8 @@ def get_telescope(config: dict) -> BaseTelescope:
     return telescope
 
 
-def get_spaxel_assignment(config: dict) -> Float[Array, " n_stars"]:
-    """Get the spaxel assignment function based on the configuration."""
+def get_spatial_bin_edges(config: dict) -> Float[Array, "n_bins"]:
+    """Get the spatial bin edges based on the configuration."""
     telescope = get_telescope(config)
     galaxy_dist_z = config["galaxy"]["dist_z"]
     cosmology = get_cosmology(config)
@@ -28,6 +28,15 @@ def get_spaxel_assignment(config: dict) -> Float[Array, " n_stars"]:
         dist_z=galaxy_dist_z,
         cosmology=cosmology,
     )
+    
+    return spatial_bin_edges
+
+
+def get_spaxel_assignment(config: dict) -> Float[Array, " n_stars"]:
+    """Get the spaxel assignment function based on the configuration."""
+    
+    telescope = get_telescope(config)
+    spatial_bin_edges = get_spatial_bin_edges(config)
 
     # Check which pixel type the telescope uses
     if telescope.pixel_type == "square":
