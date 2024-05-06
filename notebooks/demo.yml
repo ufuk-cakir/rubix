@@ -1,4 +1,34 @@
 
+
+
+config:
+  logger:
+    log_level: DEBUG
+    log_file_path: null
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  data:
+    name: IllustrisAPI
+    args:
+      api_key: {{}}
+      particle_type:
+        - stars
+      simulation: TNG50-1
+      snapshot: 99
+      save_data_path: data
+    load_galaxy_args:
+      id: 14
+      reuse: true
+  simulation:
+    name: IllustrisTNG
+    args:
+      path: data/galaxy-id-14.hdf5
+  output_path: output
+  ssp: 
+    template: 
+      name: BruzualCharlot2003 
+    method: cubic #interpolation method
+
+
 Transformers: 
   A: 
     name: add

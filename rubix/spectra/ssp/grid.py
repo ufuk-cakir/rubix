@@ -8,14 +8,14 @@ from rubix import config as rubix_config
 from typing import Dict
 from interpax import interp2d
 from jax.tree_util import Partial
-
+from dataclasses import dataclass
 SSP_UNITS = rubix_config["ssp"]["units"]
 
 
 
 
 
-
+@dataclass
 class SSPGrid():
     """
     Base class for all SSP
@@ -59,6 +59,7 @@ class SSPGrid():
         >>> age = 1e9
         >>> flux = lookup(metallicity, age)
         '''
+        
         # Bind the SSP grid to the interpolation function
         interp = Partial(interp2d, method = method, x = self.metallicity, y= self.age, f=self.flux)
         return interp
