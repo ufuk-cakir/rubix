@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, Mock
 
 # Assume the module name is rubix_conversion.py where the functions are located
 from rubix.core.data import convert_to_rubix, prepare_input
@@ -39,6 +39,40 @@ def test_convert_to_rubix(
     mock_logger.assert_called_once()
     mock_input_handler.assert_called_once()
     mock_illustris_api.assert_called_once()
+
+
+def test_rubix_file_already_exists():
+    # Mock configuration for the test
+    config = {
+        "output_path": "/fake/path",
+        "data": {"name": "IllustrisAPI", "args": {}, "load_galaxy_args": {}},
+    }
+
+    # Create a mock logger that does nothing
+    mock_logger = Mock()
+
+    with patch("rubix.core.data.os.path.exists", return_value=True) as mock_exists:
+        with patch(
+            "rubix.core.data.get_logger", return_value=mock_logger
+        ) as mock_get_logger:
+            # Call the function under test
+            result = convert_to_rubix(config)
+
+            # Check that the file existence check was performed correctly
+            mock_exists.assert_called_once_with("/fake/path/rubix_galaxy.h5")
+
+            # Check that the logger was created
+            mock_get_logger.assert_called_once_with(None)
+
+            # Ensure the function logs the right message and skips conversion
+            mock_logger.info.assert_called_with(
+                "Rubix galaxy file already exists, skipping conversion"
+            )
+
+            # Verify that the function returns the expected path without performing further actions
+            assert (
+                result == "/fake/path"
+            ), "Function should return the output path when file exists"
 
 
 # Test prepare_input function
