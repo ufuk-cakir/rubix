@@ -1,4 +1,4 @@
-
+# TODO maybe split this into multiple files
 logger:
   log_level: "DEBUG"
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -34,7 +34,7 @@ IllustrisHandler:
       GFM_InitialMass: mass
       GFM_Metallicity: metallicity
       Velocities: velocity
-      GFM_StellarFormationTime: age  # for this we convert SFT to age
+      GFM_StellarFormationTime: age # for this we convert SFT to age
 
   MAPPED_PARTICLE_KEYS:
     PartType4: stars
@@ -67,7 +67,6 @@ IllustrisHandler:
     - SubhaloData
     - PartType4
 
-
 #Defines the fields that are required and the units in which they are stored
 BaseHandler:
   galaxy:
@@ -81,3 +80,38 @@ BaseHandler:
       velocity: "kpc/s"
       metallicity: ""
       age: "Gyr"
+
+ssp:
+  # units of the SSP grid that is used internally in the code
+  # if a given SSP has different units, they are converted to the ones listed below
+  units:
+    age: Gyr
+    metallicity: ""
+    wavelength: Angstrom
+    flux: Lsun/Angstrom
+  templates:
+    BruzualCharlot2003:
+      name: "Bruzual & Charlot (2003)"
+      format: "HDF5" # Format of the template
+      source: "https://www.bruzual.org/bc03/"
+      file_name: "BC03lr.h5" # File name of the template, stored in templates directory
+      # Define the Fields in the template and their units
+      # This is used to convert them to the required units
+      fields: # Fields in the template and their units
+        # Name defines the name of the key stored in the hdf5 file
+        age:
+          name: "age"
+          units: "Gyr" # Age of the template
+          in_log: false # If the field is stored in log scale
+        metallicity:
+          name: "metallicity"
+          units: "" # Metallicity of the template
+          in_log: false # If the field is stored in log scale
+        wavelength:
+          name: "wavelength"
+          units: "Angstrom" # Wavelength of the template
+          in_log: false # If the field is stored in log scale
+        flux:
+          name: "flux"
+          units: "Lsun/Angstrom" # Luminosity of the template
+          in_log: false # If the field is stored in log scale

@@ -150,8 +150,8 @@ cython_debug/
 
 
 *.hdf5
-*.h5
 rubix/version.py
-
+notebooks/*.h5
+notebooks/output
 
 rubix/**/*.ipynb

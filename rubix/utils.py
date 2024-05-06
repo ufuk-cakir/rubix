@@ -4,7 +4,6 @@ import yaml
 import h5py
 
 
-
 def read_yaml(path_to_file: str) -> dict:
     """
     read_yaml Read yaml file into dictionary

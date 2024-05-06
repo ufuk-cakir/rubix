@@ -72,7 +72,6 @@ def test_SFTtoAge():
     assert result == expected_result, f"Expected {expected_result}, but got {result}"
 
 
-
 def test_hdf5_file_structure(tmp_path):
     # Create a temporary HDF5 file
     hdf5_file = tmp_path / "test_file.h5"
