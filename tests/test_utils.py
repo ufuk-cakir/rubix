@@ -165,6 +165,13 @@ def test_load_galaxy_data_failure(tmp_path):
         load_galaxy_data(str(file_path))
 
 
+def test_load_galaxy_data_file_does_not_exist(tmp_path):
+    # Create a temporary HDF5 file with missing datasets
+    # Test the function should raise an error
+    with pytest.raises(FileNotFoundError) as excinfo:
+        load_galaxy_data("wrong path")
+
+
 def test_read_yaml(tmp_path):
     # Create a temporary YAML file in the temporary directory
     test_file = tmp_path / "test.yaml"
