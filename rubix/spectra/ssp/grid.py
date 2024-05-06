@@ -4,14 +4,10 @@ from astropy import units as u
 import os
 import h5py
 import jax.numpy as jnp
+from rubix import config as rubix_config
+from typing import Dict
 
-# TODO move this to the config file
-SSP_UNITS = {
-    "age": "Gyr",
-    "metallicity": "",
-    "wavelength": "Angstrom",
-    "flux": "Lsun/Angstrom",
-}
+SSP_UNITS = rubix_config["ssp"]["units"]
 
 
 class SSPGrid(eqx.Module):
@@ -23,12 +19,14 @@ class SSPGrid(eqx.Module):
     metallicity: Float[Array, " metallicity_bins"]
     wavelength: Float[Array, " wavelength_bins"]
     flux: Float[Array, "age_bins metallicity_bins wavelength_bins"]
+    units: Dict[str, str] = eqx.field(default_factory=dict)
 
     def __init__(self, age, metallicity, wavelength, flux):
         self.age = jnp.asarray(age)
         self.metallicity = jnp.asarray(metallicity)
         self.wavelength = jnp.asarray(wavelength)
         self.flux = jnp.asarray(flux)
+        self.units = SSP_UNITS
 
     @staticmethod
     def convert_units(data, from_units, to_units):

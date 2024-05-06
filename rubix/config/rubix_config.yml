@@ -1,4 +1,3 @@
-
 # TODO maybe split this into multiple files
 logger:
   log_level: "DEBUG"
@@ -83,6 +82,13 @@ BaseHandler:
       age: "Gyr"
 
 ssp:
+  # units of the SSP grid that is used internally in the code
+  # if a given SSP has different units, they are converted to the ones listed below
+  units:
+    age: Gyr
+    metallicity: ""
+    wavelength: Angstrom
+    flux: Lsun/Angstrom
   templates:
     BruzualCharlot2003:
       name: "Bruzual & Charlot (2003)"
