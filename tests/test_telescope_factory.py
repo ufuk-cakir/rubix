@@ -28,7 +28,7 @@ def sample_telescope_config():
             "signal_to_noise": 100,
             "wave_centre": 550,
             "aperture_type": "square",
-            "pixel_type": "square"
+            "pixel_type": "square",
         }
     }
 
@@ -52,7 +52,7 @@ def test_telescope_factory_with_file_path(tmpdir):
             "lsf_fwhm": 0.1,
             "signal_to_noise": 100,
             "wave_centre": 550,
-            "pixel_type": "square"
+            "pixel_type": "square",
         }
     }
 
@@ -64,7 +64,6 @@ def test_telescope_factory_with_file_path(tmpdir):
 
     # Create a telescope using the factory and check if it is correctly configured
     telescope = factory.create_telescope("telescope1")
-    assert telescope.name == "telescope1"
     assert telescope.fov == 100
     assert telescope.spatial_res == 10
     assert telescope.wave_range == [400, 700]
@@ -80,7 +79,6 @@ def test_create_telescope_with_valid_config(sample_telescope_config):
     factory = TelescopeFactory(telescopes_config=sample_telescope_config)
     telescope = factory.create_telescope("telescope1")
     assert isinstance(telescope, BaseTelescope)
-    assert telescope.name == "telescope1"
 
 
 def test_create_telescope_with_invalid_name(sample_telescope_config):

@@ -34,11 +34,10 @@ class TelescopeFactory:
         config = self.telescopes_config[name]
 
         # Get some parameters from the config
-        sbin = np.floor(config["fov"] / config["spatial_res"])
+        sbin = np.floor(config["fov"] / config["spatial_res"]).astype(int)
         aperture_region = self._get_aperture(config["aperture_type"], sbin)
 
         telescope = BaseTelescope(
-            name=name,
             fov=config["fov"],
             spatial_res=config["spatial_res"],
             wave_range=config["wave_range"],
@@ -50,6 +49,7 @@ class TelescopeFactory:
             aperture_region=aperture_region,
             pixel_type=config["pixel_type"],
         )
+        telescope.__class__.__name__ = name
 
         return telescope
 

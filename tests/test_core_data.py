@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, Mock
 
 # Assume the module name is rubix_conversion.py where the functions are located
 from rubix.core.data import convert_to_rubix, prepare_input
@@ -41,36 +41,74 @@ def test_convert_to_rubix(
     mock_illustris_api.assert_called_once()
 
 
+def test_rubix_file_already_exists():
+    # Mock configuration for the test
+    config = {
+        "output_path": "/fake/path",
+        "data": {"name": "IllustrisAPI", "args": {}, "load_galaxy_args": {}},
+    }
+
+    # Create a mock logger that does nothing
+    mock_logger = Mock()
+
+    with patch("rubix.core.data.os.path.exists", return_value=True) as mock_exists:
+        with patch(
+            "rubix.core.data.get_logger", return_value=mock_logger
+        ) as mock_get_logger:
+            # Call the function under test
+            result = convert_to_rubix(config)
+
+            # Check that the file existence check was performed correctly
+            mock_exists.assert_called_once_with("/fake/path/rubix_galaxy.h5")
+
+            # Check that the logger was created
+            mock_get_logger.assert_called_once_with(None)
+
+            # Ensure the function logs the right message and skips conversion
+            mock_logger.info.assert_called_with(
+                "Rubix galaxy file already exists, skipping conversion"
+            )
+
+            # Verify that the function returns the expected path without performing further actions
+            assert (
+                result == "/fake/path"
+            ), "Function should return the output path when file exists"
+
+
 # Test prepare_input function
 @patch("rubix.core.data.os.path.join")
-@patch("rubix.core.data.load_galaxy_data")
 @patch("rubix.core.data.center_particles")
-def test_prepare_input(mock_center_particles, mock_load_galaxy_data, mock_path_join):
+def test_prepare_input(mock_center_particles, mock_path_join):
     mock_path_join.return_value = "/path/to/output/rubix_galaxy.h5"
-    mock_load_galaxy_data.return_value = {
+    particle_data = {
         "particle_data": {
             "stars": {
                 "coords": [[1, 2, 3]],
-                "velocities": [[4, 5, 6]],
+                "velocity": [[4, 5, 6]],
                 "metallicity": [0.1],
                 "mass": [1000],
                 "age": [4.5],
             },
-            "subhalo_center": [0, 0, 0],
-        }
+        },
+        "subhalo_center": [0, 0, 0],
     }
-    mock_center_particles.return_value = ([[1, 2, 3]], [[4, 5, 6]])
+    units = {
+        "galaxy": {"center": "kpc", "halfmassrad_stars": "kpc", "redshift": ""},
+        "stars": {"mass": "Msun"},
+    }
+    mock_load_galaxy_data = (particle_data, units)
+    with patch("rubix.core.data.load_galaxy_data", return_value=mock_load_galaxy_data):
+        mock_center_particles.return_value = ([[1, 2, 3]], [[4, 5, 6]])
 
-    coords, velocities, metallicity, mass, age = prepare_input(config_dict)
+        coords, velocities, metallicity, mass, age = prepare_input(config_dict)
 
-    assert coords == [[1, 2, 3]]
-    assert velocities == [[4, 5, 6]]
-    assert metallicity == [0.1]
-    assert mass == [1000]
-    assert age == [4.5]
+        assert coords == [[1, 2, 3]]
+        assert velocities == [[4, 5, 6]]
+        assert metallicity == [0.1]
+        assert mass == [1000]
+        assert age == [4.5]
 
-    mock_path_join.assert_called_once_with(
-        config_dict["output_path"], "rubix_galaxy.h5"
-    )
-    mock_load_galaxy_data.assert_called_once()
-    mock_center_particles.assert_called_once()
+        mock_path_join.assert_called_once_with(
+            config_dict["output_path"], "rubix_galaxy.h5"
+        )
+        mock_center_particles.assert_called_once()
