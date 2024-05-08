@@ -9,7 +9,7 @@ config:
   data:
     name: IllustrisAPI
     args:
-      api_key: {{}}
+      api_key: null
       particle_type:
         - stars
       simulation: TNG50-1
