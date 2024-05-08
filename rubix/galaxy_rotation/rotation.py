@@ -1,6 +1,7 @@
 from rubix import logger
 from jaxtyping import Array, Float
 import jax.numpy as jnp
+from jax.scipy.spatial.transform import Rotation
 
 def moment_of_inertia_tensor(positions, masses, halfmass_radius):
     """Calculate the moment of inertia tensor for a given set of positions and masses within the half-light radius.
@@ -100,35 +101,38 @@ def euler_rotation_matrix(alpha, beta, gamma):
         The rotation matrix.
     """
 
-    alpha = alpha/180*jnp.pi
-    beta = beta/180*jnp.pi
-    gamma = gamma/180*jnp.pi
+    #alpha = alpha/180*jnp.pi
+    #beta = beta/180*jnp.pi
+    #gamma = gamma/180*jnp.pi
     
     # Rotation around the x-axis
-    R_x = jnp.array([
-        [1, 0, 0],
-        [0, jnp.cos(alpha), -jnp.sin(alpha)],
-        [0, jnp.sin(alpha), jnp.cos(alpha)]
-    ])
-    
+    #R_x = jnp.array([
+    #    [1, 0, 0],
+    #    [0, jnp.cos(alpha), -jnp.sin(alpha)],
+    #    [0, jnp.sin(alpha), jnp.cos(alpha)]
+    #])
+    R_x = Rotation.from_euler('x', alpha, degrees=True)
+
     # Rotation around the y-axis (pitch)
-    R_y = jnp.array([
-        [jnp.cos(beta), 0, jnp.sin(beta)],
-        [0, 1, 0],
-        [-jnp.sin(beta), 0, jnp.cos(beta)]
-    ])
-    
+    #R_y = jnp.array([
+    #    [jnp.cos(beta), 0, jnp.sin(beta)],
+    #    [0, 1, 0],
+    #    [-jnp.sin(beta), 0, jnp.cos(beta)]
+    #])
+    R_y = Rotation.from_euler('y', beta, degrees=True)
+
     # Rotation around the z-axis (yaw)
-    R_z = jnp.array([
-        [jnp.cos(gamma), -jnp.sin(gamma), 0],
-        [jnp.sin(gamma), jnp.cos(gamma), 0],
-        [0, 0, 1]
-    ])
-    
+    #R_z = jnp.array([
+    #    [jnp.cos(gamma), -jnp.sin(gamma), 0],
+    #    [jnp.sin(gamma), jnp.cos(gamma), 0],
+    #    [0, 0, 1]
+    #])
+    R_z = Rotation.from_euler('z', gamma, degrees=True)
+
     # Combine the rotations by matrix multiplication: R = R_z * R_y * R_x
-    R = jnp.dot(R_z, jnp.dot(R_y, R_x))
+    R = R_z * R_y * R_x
     
-    return R
+    return R.as_matrix()
 
 def apply_rotation(positions, alpha, beta, gamma):
     """Apply a rotation to a set of positions given Euler angles.
