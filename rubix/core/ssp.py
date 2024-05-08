@@ -30,6 +30,8 @@ def get_lookup(config: dict) -> Callable:
     if "method" not in config["ssp"]:
         logger.debug("Method not defined, using default method: cubic")
         method = "cubic"
-    method = config["ssp"]["method"]
+    else:
+        logger.debug(f"Using method defined in config: {config['ssp']['method']}")
+        method = config["ssp"]["method"]
 
     return ssp.get_lookup(method=method)

@@ -35,7 +35,8 @@ dependencies = [
     "pyaml", 
     "jaxtyping",
     "equinox",
-    "jax[cpu]"
+    "jax[cpu]",
+    "interpax"
 ]
 
 [project.optional-dependencies]
