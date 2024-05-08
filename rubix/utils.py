@@ -3,6 +3,14 @@ import os
 from astropy.cosmology import Planck15 as cosmo
 import yaml
 import h5py
+from typing import Dict, Union
+
+
+def get_config(config: Union[str, Dict]) -> Dict:
+    if isinstance(config, str):
+        return read_yaml(config)
+    else:
+        return config
 
 
 def read_yaml(path_to_file: str) -> dict:
@@ -145,4 +153,3 @@ def load_galaxy_data(path_to_file: str):
                 units[key][field] = f[f"particles/{key}/{field}"].attrs["unit"]
 
     return galaxy_data, units
-

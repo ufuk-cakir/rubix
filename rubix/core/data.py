@@ -40,7 +40,7 @@ def convert_to_rubix(config: Union[dict, str]):
 
 def prepare_input(config: Union[dict, str]):
 
-    file_path = config["output_path"]
+    file_path = config["output_path"]  # type:ignore
     file_path = os.path.join(file_path, "rubix_galaxy.h5")
 
     # Load the data from the file
@@ -68,3 +68,8 @@ def prepare_input(config: Union[dict, str]):
         stars_mass,
         stars_age,
     )
+
+
+def get_rubix_data(config: Union[dict, str]):
+    convert_to_rubix(config)
+    return prepare_input(config)

@@ -1,0 +1,8 @@
+calc_ifu:
+  Transformers:
+    rotate_galaxy:
+      name: rotate_galaxy
+      depends_on: null
+      args: []
+      kwargs:
+        type: "face-on"
