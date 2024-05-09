@@ -5,7 +5,9 @@ from rubix.logger import get_logger
 from .data import get_rubix_data
 from pathlib import Path
 from .rotation import get_galaxy_rotation
+from .telescope import get_spaxel_assignment, get_split_data
 from typing import Union
+import time
 
 
 class RubixPipeline:
@@ -38,16 +40,17 @@ class RubixPipeline:
         return data
 
     def _get_pipeline_functions(self):
-
+        self.logger.info("Setting up the pipeline...")
+        self.logger.debug("Pipeline Configuration: %s", self.pipeline_config)
         rotate_galaxy = get_galaxy_rotation(self.user_config)
-
-        functions = [rotate_galaxy]
+        spaxel_assignment = get_spaxel_assignment(self.user_config)
+        split_data = get_split_data(self.user_config)
+        functions = [rotate_galaxy, spaxel_assignment, split_data]
         return functions
 
     def run(self):
         # Create the pipeline
-        self.logger.info("Setting up the pipeline...")
-        self.logger.debug("Pipeline Configuration: %s", self.pipeline_config)
+        time_start = time.time()
         functions = self._get_pipeline_functions()
         self._pipeline = pipeline.LinearTransformerPipeline(
             self.pipeline_config, functions
@@ -63,10 +66,13 @@ class RubixPipeline:
 
         # Running the pipeline
         self.logger.info("Running the pipeline on the input data...")
-
         output = self.func(self.data)
 
-        self.logger.info("Pipeline run completed")
+        time_end = time.time()
+
+        self.logger.info(
+            "Pipeline run completed in %.2f seconds.", time_end - time_start
+        )
         return output
 
     def gradient(self):

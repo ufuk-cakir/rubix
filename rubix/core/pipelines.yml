@@ -6,3 +6,20 @@ calc_ifu:
       args: []
       kwargs:
         type: "face-on"
+    # This does not work inside the pipeline since we need dynamic JAX arrays here, and its not suppoerted for jit
+    # filter_particles:
+    #   name: filter_particles
+    #   depends_on: rotate_galaxy
+    #   args: []
+    #   kwargs: {}
+    spaxel_assignment:
+      name: spaxel_assignment
+      depends_on: rotate_galaxy
+      args: []
+      kwargs: {}
+
+    split_data:
+      name: split_data
+      depends_on: spaxel_assignment
+      args: []
+      kwargs: {}

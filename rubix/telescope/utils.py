@@ -66,8 +66,24 @@ def square_spaxel_assignment(
 def filter_particles_outside_aperture(
     coords: Float[Array, " n_stars 3"],
     spatial_bin_edges: Float[Array, " n_bins"],
-) -> Float[Array, " n_stars_inside_aperture 3"]:
-    """Mask the particles that are outside the aperture."""
+) -> Float[Array, " n_stars"]:
+    """Mask the particles that are outside the aperture.
+
+    Returns a boolean mask that is True for particles that are inside the aperture and False for particles.
+
+    Parameters
+    ----------
+    coords : jnp.array (n, 3)
+        The particle coordinates.
+
+    spatial_bin_edges : jnp.array
+    The bin edges for the spatial bins.
+
+    Returns
+    -------
+    mask : jnp.array
+    A boolean mask that is True for particles that are inside the aperture and False for particles that are outside the aperture.
+    """
     min_value = spatial_bin_edges.min()
     max_value = spatial_bin_edges.max()
 
@@ -76,4 +92,32 @@ def filter_particles_outside_aperture(
 
     # Filter out all the particles that are outside the aperture
 
-    return coords[mask]
+    return mask
+
+
+# TODO: there is a better way to to this without loops
+def restructure_data(masses, metallicities, ages, indices, num_pixels):
+    # Calculate the number of particles per pixel
+    particle_count = jnp.bincount(indices, minlength=num_pixels)
+
+    # Determine the maximum number of particles in any pixel
+    max_particles = particle_count.max()
+
+    # Create an array filled with zeros where rows correspond to pixels
+    # and columns correspond to particles in that pixel
+    masses_structured = jnp.zeros((num_pixels, max_particles))
+    metallicities_structured = jnp.zeros((num_pixels, max_particles))
+    ages_structured = jnp.zeros((num_pixels, max_particles))
+
+    # Fill the structured array with masses
+    for i in range(num_pixels):
+        # Find the particles in the current pixel
+        mask = indices == i
+        # Place these in the structured array
+        masses_structured = masses.at[i, : mask.sum()].set(masses[mask])
+        metallicities_structured = metallicities.at[i, : mask.sum()].set(
+            metallicities[mask]
+        )
+        ages_structured = ages.at[i, : mask.sum()].set(ages[mask])
+
+    return masses_structured, metallicities_structured, ages_structured
