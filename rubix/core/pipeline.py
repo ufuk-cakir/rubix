@@ -6,6 +6,7 @@ from .data import get_rubix_data
 from pathlib import Path
 from .rotation import get_galaxy_rotation
 from .telescope import get_spaxel_assignment, get_split_data
+from .ssp import get_ssp
 from typing import Union
 import time
 
@@ -18,9 +19,10 @@ class RubixPipeline:
             self.user_config["pipeline"]["name"]
         )
         self.logger = get_logger(self.user_config["logger"])
-
+        self.ssp = get_ssp(self.user_config)
         self.data = self._prepare_data()
         self.func = None
+        
 
     def _prepare_data(self):
         # Get the data
