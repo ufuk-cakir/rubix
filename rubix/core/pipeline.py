@@ -27,16 +27,17 @@ class RubixPipeline:
         self.logger.info("Getting rubix data...")
         coords, velocities, metallicity, mass, age = get_rubix_data(self.user_config)
         self.logger.info(f"Data loaded with {len(coords)} particles.")
-
         # Setup the data dictionary
         # TODO: This is a temporary solution, we need to figure out a better way to handle the data
         data = {
+            "n_particles": len(coords),
             "coords": coords,
             "velocities": velocities,
             "metallicity": metallicity,
             "mass": mass,
             "age": age,
         }
+
         return data
 
     def _get_pipeline_functions(self):
@@ -44,8 +45,8 @@ class RubixPipeline:
         self.logger.debug("Pipeline Configuration: %s", self.pipeline_config)
         rotate_galaxy = get_galaxy_rotation(self.user_config)
         spaxel_assignment = get_spaxel_assignment(self.user_config)
-        split_data = get_split_data(self.user_config)
-        functions = [rotate_galaxy, spaxel_assignment, split_data]
+        # split_data = get_split_data(self.user_config, self.data["n_particles"])
+        functions = [rotate_galaxy, spaxel_assignment]
         return functions
 
     def run(self):

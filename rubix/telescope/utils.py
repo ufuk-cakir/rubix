@@ -98,26 +98,33 @@ def filter_particles_outside_aperture(
 # TODO: there is a better way to to this without loops
 def restructure_data(masses, metallicities, ages, indices, num_pixels):
     # Calculate the number of particles per pixel
-    particle_count = jnp.bincount(indices, minlength=num_pixels)
+    # particle_count = jnp.bincount(indices, minlength=num_pixels)
+    particle_count = jnp.bincount(indices, length=num_pixels)
 
     # Determine the maximum number of particles in any pixel
-    max_particles = particle_count.max()
+    max_particles = particle_count.max().astype(int)
 
-    # Create an array filled with zeros where rows correspond to pixels
-    # and columns correspond to particles in that pixel
+    # Initialize structured arrays
     masses_structured = jnp.zeros((num_pixels, max_particles))
     metallicities_structured = jnp.zeros((num_pixels, max_particles))
     ages_structured = jnp.zeros((num_pixels, max_particles))
 
-    # Fill the structured array with masses
+    # Process each pixel
     for i in range(num_pixels):
-        # Find the particles in the current pixel
-        mask = indices == i
-        # Place these in the structured array
-        masses_structured = masses.at[i, : mask.sum()].set(masses[mask])
-        metallicities_structured = metallicities.at[i, : mask.sum()].set(
-            metallicities[mask]
-        )
-        ages_structured = ages.at[i, : mask.sum()].set(ages[mask])
+        # Find the indices of particles in this pixel
+        particle_indices = jnp.flatnonzero(indices == i)
+        num_particles_in_pixel = particle_indices.size
+
+        # Update structured arrays with data from these particles
+        if num_particles_in_pixel > 0:  # Only update if there are particles
+            masses_structured = masses_structured.at[i, :num_particles_in_pixel].set(
+                masses[particle_indices]
+            )
+            metallicities_structured = metallicities_structured.at[
+                i, :num_particles_in_pixel
+            ].set(metallicities[particle_indices])
+            ages_structured = ages_structured.at[i, :num_particles_in_pixel].set(
+                ages[particle_indices]
+            )
 
     return masses_structured, metallicities_structured, ages_structured

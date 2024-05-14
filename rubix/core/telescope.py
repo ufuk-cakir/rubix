@@ -59,7 +59,7 @@ def get_spatial_bin_edges(config: dict) -> Float[Array, " n_bins"]:
     return spatial_bin_edges
 
 
-def get_split_data(config: dict) -> Callable:
+def get_split_data(config: dict, n_particles) -> Callable:
     telescope = get_telescope(config)
     n_pixels = telescope.sbin**2
 
@@ -72,6 +72,7 @@ def get_split_data(config: dict) -> Callable:
             input_data["age"],
             input_data["pixel_assignment"],
             n_pixels,
+            # n_particles,
         )
 
         # Reshape the data to match the number of GPUs

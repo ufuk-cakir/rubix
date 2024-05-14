@@ -18,8 +18,8 @@ calc_ifu:
       args: []
       kwargs: {}
 
-    split_data:
-      name: split_data
-      depends_on: spaxel_assignment
-      args: []
-      kwargs: {}
+      # split_data: Same: I dont think this works
+    #   name: split_data
+    #   depends_on: spaxel_assignment
+    #   args: []
+    #   kwargs: {}
