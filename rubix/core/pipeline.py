@@ -5,7 +5,8 @@ from rubix.logger import get_logger
 from .data import get_rubix_data
 from pathlib import Path
 from .rotation import get_galaxy_rotation
-from .telescope import get_spaxel_assignment, get_split_data
+from .telescope import get_spaxel_assignment
+from .ifu import get_calculate_spectra
 from .ssp import get_ssp
 from typing import Union
 import time
@@ -22,7 +23,6 @@ class RubixPipeline:
         self.ssp = get_ssp(self.user_config)
         self.data = self._prepare_data()
         self.func = None
-        
 
     def _prepare_data(self):
         # Get the data
@@ -47,8 +47,9 @@ class RubixPipeline:
         self.logger.debug("Pipeline Configuration: %s", self.pipeline_config)
         rotate_galaxy = get_galaxy_rotation(self.user_config)
         spaxel_assignment = get_spaxel_assignment(self.user_config)
+        calculate_spectra = get_calculate_spectra(self.user_config)
         # split_data = get_split_data(self.user_config, self.data["n_particles"])
-        functions = [rotate_galaxy, spaxel_assignment]
+        functions = [rotate_galaxy, spaxel_assignment, calculate_spectra]
         return functions
 
     def run(self):

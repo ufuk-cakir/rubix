@@ -1,4 +1,6 @@
 from rubix.galaxy import get_input_handler
+import jax
+import jax.numpy as jnp
 from typing import Union
 from rubix.utils import read_yaml
 from rubix.galaxy import IllustrisAPI
@@ -38,6 +40,27 @@ def convert_to_rubix(config: Union[dict, str]):
     return config["output_path"]
 
 
+def reshape_array(arr):
+    n_gpus = jax.device_count()
+    n_particles = arr.shape[0]
+
+    # Calculate the number of particles per GPU
+    particles_per_gpu = (n_particles + n_gpus - 1) // n_gpus
+
+    # Calculate the total number of particles after padding
+    total_particles = particles_per_gpu * n_gpus
+
+    # Pad the array with zeros if necessary
+    if total_particles > n_particles:
+        padding = total_particles - n_particles
+        arr = jnp.pad(arr, ((0, padding), (0, 0)), "constant")
+
+    # Reshape the array to (n_gpus, particles_per_gpu, arr.shape[1])
+    reshaped_arr = arr.reshape(n_gpus, particles_per_gpu, *arr.shape[1:])
+
+    return reshaped_arr
+
+
 def prepare_input(config: Union[dict, str]):
 
     file_path = config["output_path"]  # type:ignore
@@ -60,6 +83,14 @@ def prepare_input(config: Union[dict, str]):
     stars_metallicity = data["particle_data"]["stars"]["metallicity"]
     stars_mass = data["particle_data"]["stars"]["mass"]
     stars_age = data["particle_data"]["stars"]["age"]
+
+    # Reshape the arrays
+
+    new_stellar_coordinates = reshape_array(new_stellar_coordinates)
+    new_stellar_velocities = reshape_array(new_stellar_velocities)
+    stars_metallicity = reshape_array(stars_metallicity)
+    stars_mass = reshape_array(stars_mass)
+    stars_age = reshape_array(stars_age)
 
     return (
         new_stellar_coordinates,
