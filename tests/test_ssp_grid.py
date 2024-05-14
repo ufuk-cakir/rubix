@@ -100,8 +100,8 @@ def test_get_lookup():
     age_value = 4e9
     interpolated_flux = lookup(metallicity_value, age_value)
 
-    # Assert that the interpolated flux is NaN (outside the grid range)
-    assert jnp.isnan(interpolated_flux).all()
+    # Assert that the interpolated flux is 0 (outside the grid range)
+    assert jnp.all(interpolated_flux == 0)
 
     # Test interpolation at metallicity and age values on the grid boundary
     metallicity_value = 0.01

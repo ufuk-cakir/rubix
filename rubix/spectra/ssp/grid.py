@@ -33,7 +33,7 @@ class SSPGrid:
         self.flux = jnp.asarray(flux)
         # self.units = SSP_UNITS
 
-    def get_lookup(self, method="cubic"):
+    def get_lookup(self, method="cubic", extrap=0):
         """Returns a 2D interpolation function for the SSP grid.
 
         The function can be called with metallicity and age as arguments to get the flux at that metallicity and age.
@@ -42,6 +42,9 @@ class SSPGrid:
         ----------
         method : str
             The method to use for interpolation. Default is "cubic".
+        extrap: float, bool or tuple
+            The value to return for points outside the interpolation domain. Default is 0.
+            See https://interpax.readthedocs.io/en/latest/_api/interpax.Interpolator2D.html#interpax.Interpolator2D
 
         Returns
         -------
@@ -59,7 +62,12 @@ class SSPGrid:
 
         # Bind the SSP grid to the interpolation function
         interp = Partial(
-            interp2d, method=method, x=self.metallicity, y=self.age, f=self.flux
+            interp2d,
+            method=method,
+            x=self.metallicity,
+            y=self.age,
+            f=self.flux,
+            extrap=extrap,
         )
         interp.__doc__ = (
             "Interpolation function for SSP grid, args: f(metallicity, age)"
