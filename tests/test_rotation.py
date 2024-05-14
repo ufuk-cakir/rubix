@@ -1,6 +1,6 @@
 import pytest
-from rubix.galaxy_rotation.rotation import moment_of_inertia_tensor, rotation_matrix_from_inertia_tensor, apply_init_rotation, euler_rotation_matrix, apply_rotation
-from rubix.galaxy_rotation.factory import GalaxyRotationFactory
+from rubix.galaxy.alignment import moment_of_inertia_tensor, rotation_matrix_from_inertia_tensor, apply_init_rotation, euler_rotation_matrix, apply_rotation
+from rubix.galaxy.alignment import rotate_galaxy
 import jax.numpy as jnp
 import numpy as np
 
@@ -123,7 +123,7 @@ def test_apply_rotation():
     assert result_rotated_positions.all() == expected_rotated_positions.all(), f"Test failed. Expected other positions."
 
 
-def test_GalaxyRotationFactory():
+def test_rotate_galaxy():
 
     # Example positions, velocities, and masses
     positions = jnp.array([
@@ -150,7 +150,7 @@ def test_GalaxyRotationFactory():
     beta = 0
     gamma = 0
 
-    rotated_positions, rotated_velocities = GalaxyRotationFactory(positions, velocities, masses, halfmass_radius, alpha, beta, gamma)
+    rotated_positions, rotated_velocities = rotate_galaxy(positions, velocities, masses, halfmass_radius, alpha, beta, gamma)
 
     assert rotated_positions.shape == positions.shape
     assert rotated_velocities.shape == velocities.shape
