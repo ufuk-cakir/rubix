@@ -120,6 +120,16 @@ def test__init__():
     assert api.simulation == "TNG50-1"
     assert api.baseURL == "http://www.tng-project.org/api/TNG50-1/snapshots/99"
     assert "TNG50-1" in api.__str__()
+    
+
+def test_init_with_logger():
+    import logging
+    logger = logging.getLogger("test_logger")
+    
+    api = IllustrisAPI(api_key="test_key", logger=logger)
+    assert api.logger == logger
+
+
 
 
 def test_get_api_key(api_key):

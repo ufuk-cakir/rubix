@@ -1,4 +1,5 @@
 # Description: Utility functions for Rubix
+import os
 from astropy.cosmology import Planck15 as cosmo
 import yaml
 import h5py
@@ -10,9 +11,6 @@ def read_yaml(path_to_file: str) -> dict:
 
     Args:
         path_to_file (str): path to the file to read
-
-    Raises:
-        RuntimeError: When an error occurs during reading
 
     Returns:
         dict: Either the read yaml file in dictionary form, or an empty
@@ -88,9 +86,6 @@ def SFTtoAge(a):
     return cosmo.lookback_time((1 / a) - 1).value
 
 
-
-
-
 def print_hdf5_file_structure(file_path):
     return_string = f"File: {file_path}\n"
     with h5py.File(file_path, "r") as f:
@@ -110,8 +105,6 @@ def _print_hdf5_group_structure(group, indent=0):
     return return_string
 
 
-
-
 def load_galaxy_data(path_to_file: str):
     """
     load_galaxy_data Load galaxy data from a file
@@ -127,27 +120,29 @@ def load_galaxy_data(path_to_file: str):
     """
     galaxy_data = {}
     units = {}
-    try:
-        with h5py.File(path_to_file, "r") as f:
-            galaxy_data["subhalo_center"] = f["galaxy/center"][()]
-            galaxy_data["subhalo_halfmassrad_stars"] = f["galaxy/halfmassrad_stars"][()]
-            galaxy_data["redshift"] = f["galaxy/redshift"][()]
-            
-            units["galaxy"] = {}
-            for key in f["galaxy"].keys():
-                units["galaxy"][key] = f["galaxy"][key].attrs["unit"]
-            # Load the particle data
-            galaxy_data["particle_data"] = {}
-            for key in f["particles"].keys():
-                galaxy_data["particle_data"][key] = {}
-                units[key] = {}
-                for field in f["particles"][key].keys():
-                    galaxy_data["particle_data"][key][field] = f[f"particles/{key}/{field}"][()]
-                    units[key][field] = f[f"particles/{key}/{field}"].attrs["unit"]
-            
-            
-    except Exception as e:
-        raise RuntimeError(
-            f"Something went wrong while loading galaxy data from file {str(path_to_file)}"
-        ) from e
+    # Check if the file exists
+
+    if not os.path.exists(path_to_file):
+        raise FileNotFoundError(f"File {str(path_to_file)} does not exist")
+
+    with h5py.File(path_to_file, "r") as f:
+        galaxy_data["subhalo_center"] = f["galaxy/center"][()]
+        galaxy_data["subhalo_halfmassrad_stars"] = f["galaxy/halfmassrad_stars"][()]
+        galaxy_data["redshift"] = f["galaxy/redshift"][()]
+
+        units["galaxy"] = {}
+        for key in f["galaxy"].keys():
+            units["galaxy"][key] = f["galaxy"][key].attrs["unit"]
+        # Load the particle data
+        galaxy_data["particle_data"] = {}
+        for key in f["particles"].keys():
+            galaxy_data["particle_data"][key] = {}
+            units[key] = {}
+            for field in f["particles"][key].keys():
+                galaxy_data["particle_data"][key][field] = f[
+                    f"particles/{key}/{field}"
+                ][()]
+                units[key][field] = f[f"particles/{key}/{field}"].attrs["unit"]
+
     return galaxy_data, units
+

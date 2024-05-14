@@ -2,6 +2,7 @@ import os
 import requests
 import h5py
 from typing import List, Union
+from rubix import config
 
 
 class IllustrisAPI:
@@ -19,30 +20,7 @@ class IllustrisAPI:
     """
 
     URL = "http://www.tng-project.org/api/"
-    DEFAULT_FIELDS = {
-        "gas": [
-            "Coordinates",
-            "Density",
-            "Masses",
-            "ParticleIDs",
-            "GFM_Metallicity",
-            "SubfindHsml",
-            "StarFormationRate",
-            "InternalEnergy",
-            "Velocities",
-            "ElectronAbundance",
-            "GFM_Metals",
-        ],
-        "stars": [
-            "Coordinates",
-            "GFM_InitialMass",
-            # "Masses",
-            # "ParticleIDs",
-            "GFM_Metallicity",
-            "GFM_StellarFormationTime",
-            "Velocities",
-        ],
-    }
+    DEFAULT_FIELDS = config["IllustrisAPI"]["DEFAULT_FIELDS"]
 
     def __init__(
         self,
@@ -82,6 +60,8 @@ class IllustrisAPI:
         if logger is None:
             import logging
             self.logger = logging.getLogger(__name__)
+        else:
+            self.logger = logger
             
     def _get(self, path, params=None, name=None):
         """Get data from the Illustris API.
@@ -242,12 +222,15 @@ class IllustrisAPI:
             if not overwrite:
                 # If we should not overwrite it, check if we should reuse it
                 if reuse:
+                    self.logger.info(f"Reusing existing file galaxy-id-{id}.hdf5. If you want to download the data again, set reuse=False.")
                     return self._load_hdf5(filename=f"galaxy-id-{id}")
                 else: 
                     # If we should not reuse it, raise an error
                     raise ValueError(
                         f"File with name galaxy-id-{id}.hdf5 already exists. Please remove it before downloading the data, or set overwrite=True, or reuse=True to load the data."
                     )
+            else:
+                self.logger.info(f"Found existing file galaxy-id-{id}.hdf5, but overwrite is set to True. Overwriting the file.")
 
         # Check which particles we want to load
 
