@@ -52,7 +52,7 @@ def square_spaxel_assignment(
     )  # -1 to start indexing at 0
     y_indices = jnp.digitize(coords[:, 1], spatial_bin_edges) - 1
 
-    number_of_bins = len(spatial_bin_edges) - 1
+    number_of_bins = len(spatial_bin_edges) #- 1
 
     # Clip the indices to the valid range
     x_indices = jnp.clip(x_indices, 0, number_of_bins - 1)
