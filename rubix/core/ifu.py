@@ -9,9 +9,10 @@ def get_calculate_spectra(config: dict):
     lookup_pmap = get_lookup_pmap(config)
 
     def calculate_spectra(inputs: dict[str, jax.Array]):
-        logger.debug("Calculating IFU cube...")
-        spectra = lookup_pmap(inputs["metallicity"], inputs["age"]) * inputs["mass"]
-
+        logger.info("Calculating IFU cube...")
+        logger.debug(f"Input shapes: Metallicity: {inputs['metallicity'].shape}, Age: {inputs['age'].shape}")
+        spectra = lookup_pmap(inputs["metallicity"], inputs["age"])# * inputs["mass"]
+        logger.debug(f"Calculation Finished! Spectra shape: {spectra.shape}")
         inputs["spectra"] = spectra
         return inputs
 

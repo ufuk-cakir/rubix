@@ -2,7 +2,7 @@ from rubix.pipeline import linear_pipeline as pipeline
 from rubix.pipeline import transformer as transformer
 from rubix.utils import get_config
 from rubix.logger import get_logger
-from .data import get_rubix_data
+from .data import get_rubix_data, get_reshape_data
 from pathlib import Path
 from .rotation import get_galaxy_rotation
 from .telescope import get_spaxel_assignment
@@ -39,6 +39,8 @@ class RubixPipeline:
             "mass": mass,
             "age": age,
         }
+        
+        self.logger.debug("Data Shape: %s", {k: v.shape for k, v in data.items() if hasattr(v, "shape")})
 
         return data
 
@@ -48,8 +50,9 @@ class RubixPipeline:
         rotate_galaxy = get_galaxy_rotation(self.user_config)
         spaxel_assignment = get_spaxel_assignment(self.user_config)
         calculate_spectra = get_calculate_spectra(self.user_config)
+        reshape_data = get_reshape_data(self.user_config)
         # split_data = get_split_data(self.user_config, self.data["n_particles"])
-        functions = [rotate_galaxy, spaxel_assignment, calculate_spectra]
+        functions = [rotate_galaxy, spaxel_assignment, calculate_spectra, reshape_data]
         return functions
 
     def run(self):

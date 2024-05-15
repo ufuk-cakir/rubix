@@ -7,6 +7,7 @@ from rubix.galaxy import IllustrisAPI
 from rubix.utils import load_galaxy_data
 from rubix.logger import get_logger
 from rubix.galaxy.alignment import center_particles
+from typing import Callable
 import os
 
 
@@ -86,11 +87,11 @@ def prepare_input(config: Union[dict, str]):
 
     # Reshape the arrays
 
-    new_stellar_coordinates = reshape_array(new_stellar_coordinates)
-    new_stellar_velocities = reshape_array(new_stellar_velocities)
-    stars_metallicity = reshape_array(stars_metallicity)
-    stars_mass = reshape_array(stars_mass)
-    stars_age = reshape_array(stars_age)
+    #new_stellar_coordinates = reshape_array(new_stellar_coordinates)
+    #new_stellar_velocities = reshape_array(new_stellar_velocities)
+    #stars_metallicity = reshape_array(stars_metallicity)
+    #stars_mass = reshape_array(stars_mass)
+    #stars_age = reshape_array(stars_age)
 
     return (
         new_stellar_coordinates,
@@ -104,3 +105,13 @@ def prepare_input(config: Union[dict, str]):
 def get_rubix_data(config: Union[dict, str]):
     convert_to_rubix(config)
     return prepare_input(config)
+
+
+def get_reshape_data(config: Union[dict, str])->Callable:
+    
+    def reshape_data(input_data:dict, keys = ["coords", "velocities", "metallicity", "mass", "age", "pixel_assignment"])->dict:
+        for key in keys:
+            input_data[key] = reshape_array(input_data[key])
+    
+        return input_data
+    return reshape_data
