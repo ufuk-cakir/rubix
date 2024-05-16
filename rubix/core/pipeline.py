@@ -6,7 +6,7 @@ from .data import get_rubix_data, get_reshape_data
 from pathlib import Path
 from .rotation import get_galaxy_rotation
 from .telescope import get_spaxel_assignment
-from .ifu import get_calculate_spectra
+from .ifu import get_calculate_spectra, get_scale_spectrum_by_mass
 from .ssp import get_ssp
 from typing import Union
 import time
@@ -39,8 +39,11 @@ class RubixPipeline:
             "mass": mass,
             "age": age,
         }
-        
-        self.logger.debug("Data Shape: %s", {k: v.shape for k, v in data.items() if hasattr(v, "shape")})
+
+        self.logger.debug(
+            "Data Shape: %s",
+            {k: v.shape for k, v in data.items() if hasattr(v, "shape")},
+        )
 
         return data
 
@@ -51,8 +54,15 @@ class RubixPipeline:
         spaxel_assignment = get_spaxel_assignment(self.user_config)
         calculate_spectra = get_calculate_spectra(self.user_config)
         reshape_data = get_reshape_data(self.user_config)
+        scale_spectrum_by_mass = get_scale_spectrum_by_mass(self.user_config)
         # split_data = get_split_data(self.user_config, self.data["n_particles"])
-        functions = [rotate_galaxy, spaxel_assignment, calculate_spectra, reshape_data]
+        functions = [
+            rotate_galaxy,
+            spaxel_assignment,
+            calculate_spectra,
+            reshape_data,
+            scale_spectrum_by_mass,
+        ]
         return functions
 
     def run(self):
