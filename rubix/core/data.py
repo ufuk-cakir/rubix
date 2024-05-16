@@ -1,15 +1,14 @@
-from rubix.galaxy import get_input_handler
-import numpy as np
+import os
+from typing import Callable, Union
+
 import jax
 import jax.numpy as jnp
-from typing import Union
-from rubix.utils import read_yaml
-from rubix.galaxy import IllustrisAPI
-from rubix.utils import load_galaxy_data
-from rubix.logger import get_logger
+import numpy as np
+
+from rubix.galaxy import IllustrisAPI, get_input_handler
 from rubix.galaxy.alignment import center_particles
-from typing import Callable
-import os
+from rubix.logger import get_logger
+from rubix.utils import load_galaxy_data, read_yaml
 
 
 def convert_to_rubix(config: Union[dict, str]):
@@ -29,6 +28,7 @@ def convert_to_rubix(config: Union[dict, str]):
 
     # If the simulationtype is IllustrisAPI, get data from IllustrisAPI
 
+    # TODO: we can do this more elgantly
     if config["data"]["name"] == "IllustrisAPI":
         logger.info("Loading data from IllustrisAPI")
         api = IllustrisAPI(**config["data"]["args"], logger=logger)
@@ -65,12 +65,13 @@ def reshape_array(arr):
 
 def prepare_input(config: Union[dict, str]):
 
-    logger_config = config["logger"] if "logger" in config else None
+    logger_config = config["logger"] if "logger" in config else None  # type:ignore
     logger = get_logger(logger_config)
     file_path = config["output_path"]  # type:ignore
     file_path = os.path.join(file_path, "rubix_galaxy.h5")
 
     # Load the data from the file
+    # TODO: maybe also pass the units here, currently this is not used
     data, units = load_galaxy_data(file_path)
 
     stellar_coordinates = data["particle_data"]["stars"]["coords"]
