@@ -1,4 +1,5 @@
 from rubix.galaxy import get_input_handler
+import numpy as np
 import jax
 import jax.numpy as jnp
 from typing import Union
@@ -64,6 +65,8 @@ def reshape_array(arr):
 
 def prepare_input(config: Union[dict, str]):
 
+    logger_config = config["logger"] if "logger" in config else None
+    logger = get_logger(logger_config)
     file_path = config["output_path"]  # type:ignore
     file_path = os.path.join(file_path, "rubix_galaxy.h5")
 
@@ -87,11 +90,32 @@ def prepare_input(config: Union[dict, str]):
 
     # Reshape the arrays
 
-    #new_stellar_coordinates = reshape_array(new_stellar_coordinates)
-    #new_stellar_velocities = reshape_array(new_stellar_velocities)
-    #stars_metallicity = reshape_array(stars_metallicity)
-    #stars_mass = reshape_array(stars_mass)
-    #stars_age = reshape_array(stars_age)
+    # new_stellar_coordinates = reshape_array(new_stellar_coordinates)
+    # new_stellar_velocities = reshape_array(new_stellar_velocities)
+    # stars_metallicity = reshape_array(stars_metallicity)
+    # stars_mass = reshape_array(stars_mass)
+    # stars_age = reshape_array(stars_age)
+
+    # check if we should only use a subset of the data for testing and memory reasons
+
+    if "subset" in config["data"]:  # type:ignore
+        if config["data"]["subset"]["use_subset"]:  # type:ignore
+            size = config["data"]["subset"]["subset_size"]  # type:ignore
+            # Randomly sample indices
+            indices = np.random.choice(
+                np.arange(new_stellar_coordinates.shape[0]),
+                size=size,  # type:ignore
+                replace=False,
+            )  # type:ignore
+
+            new_stellar_coordinates = new_stellar_coordinates[indices]
+            new_stellar_velocities = new_stellar_velocities[indices]
+            stars_metallicity = stars_metallicity[indices]
+            stars_mass = stars_mass[indices]
+            stars_age = stars_age[indices]
+            logger.warning(
+                f"The Subset value is set in config. Using only subset of size {size}"
+            )
 
     return (
         new_stellar_coordinates,
@@ -107,11 +131,15 @@ def get_rubix_data(config: Union[dict, str]):
     return prepare_input(config)
 
 
-def get_reshape_data(config: Union[dict, str])->Callable:
-    
-    def reshape_data(input_data:dict, keys = ["coords", "velocities", "metallicity", "mass", "age", "pixel_assignment"])->dict:
+def get_reshape_data(config: Union[dict, str]) -> Callable:
+
+    def reshape_data(
+        input_data: dict,
+        keys=["coords", "velocities", "metallicity", "mass", "age", "pixel_assignment"],
+    ) -> dict:
         for key in keys:
             input_data[key] = reshape_array(input_data[key])
-    
+
         return input_data
+
     return reshape_data
