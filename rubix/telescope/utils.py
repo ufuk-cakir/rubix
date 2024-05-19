@@ -20,6 +20,25 @@ def calculate_spatial_bin_edges(
     return spatial_bin_edges, spatial_bin_size
 
 
+# TODO: check what the difference is to calculate_wave_bins
+def calculate_wave_seq(
+    wave_range: Tuple[float, float], wave_res: float
+) -> Float[Array, " n_bins"]:
+    """Calculate the bin edges for the wavelength bins."""
+    return jnp.arange(wave_range[0], wave_range[1], wave_res)
+
+
+def calculate_wave_edges(
+    wave_bin_edges: Float[Array, " n_bins"], wave_res: float
+) -> Float[Array, " n_bins"]:
+    """Calculate the bin edges for the wavelength bins."""
+
+    wave_start = wave_bin_edges[0] - (wave_res / 2)
+    wave_end = wave_bin_edges[-1] + (wave_res / 2)
+    wave_bins = jnp.arange(wave_start, wave_end, wave_res)
+    return wave_bins
+
+
 def square_spaxel_assignment(
     coords: Float[Array, " n_stars 3"], spatial_bin_edges: Float[Array, " n_bins"]
 ) -> Float[Array, " n_stars"]:
@@ -52,7 +71,7 @@ def square_spaxel_assignment(
     )  # -1 to start indexing at 0
     y_indices = jnp.digitize(coords[:, 1], spatial_bin_edges) - 1
 
-    number_of_bins = len(spatial_bin_edges) #- 1
+    number_of_bins = len(spatial_bin_edges)  # - 1
 
     # Clip the indices to the valid range
     x_indices = jnp.clip(x_indices, 0, number_of_bins - 1)

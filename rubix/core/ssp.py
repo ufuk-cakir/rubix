@@ -21,7 +21,7 @@ def get_ssp(config: dict):
     return ssp
 
 
-def get_lookup(config: dict) -> Callable:
+def _get_lookup(config: dict) -> Callable:
     logger_config = config.get("logger", None)
     logger = get_logger(logger_config)
 
@@ -39,18 +39,18 @@ def get_lookup(config: dict) -> Callable:
     return lookup
 
 
-def get_lookup_vmap(config: dict) -> Callable:
+def _get_lookup_vmap(config: dict) -> Callable:
     """
     Get the lookup function for the SSP template defined in the configuration
 
     Loads the SSP template defined in the configuration and returns the lookup function for the template.
     """
-    lookup = get_lookup(config)
+    lookup = _get_lookup(config)
     lookup_vmap = jax.vmap(lookup, in_axes=(0, 0))
     return lookup_vmap
 
 
 def get_lookup_pmap(config: dict) -> Callable:
-    lookup_vmap = get_lookup_vmap(config)
+    lookup_vmap = _get_lookup_vmap(config)
     lookup_pmap = jax.pmap(lookup_vmap, in_axes=(0, 0))
     return lookup_pmap

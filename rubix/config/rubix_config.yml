@@ -13,11 +13,9 @@ constants:
   G_CONSTANT_CGS: 6.67430e-11
   G_IN_KPCMSOLKMS2: 4.3009e-6
   S_TO_YR: 3.171e-8
-  MASS_OF_PROTON: 1.67262e-24  # grams
-  ADIABATIC_INDEX: 1.6666666666666667  # heat is contained
-  BOLTZMANN_CONSTANT: 1.38066e-16  # cm^2 g s^-2 K-1
-
-
+  MASS_OF_PROTON: 1.67262e-24 # grams
+  ADIABATIC_INDEX: 1.6666666666666667 # heat is contained
+  BOLTZMANN_CONSTANT: 1.38066e-16 # cm^2 g s^-2 K-1
 
 logger:
   log_level: "DEBUG"
@@ -135,3 +133,8 @@ ssp:
           name: "flux"
           units: "Lsun/Angstrom" # Luminosity of the template
           in_log: false # If the field is stored in log scale
+
+ifu:
+  # Configuration Related to IFU calculation
+  doppler:
+    velocity_direction: "y" # The velocity component used to calculate doppler shift
