@@ -21,11 +21,29 @@ def get_ssp(config: dict):
     return ssp
 
 
+
 def get_lookup(config: dict) -> Callable:
+    """
+    Get the lookup function for the SSP template defined in the configuration
+
+    Loads the SSP template defined in the configuration and returns the lookup function for the template.
+    """
     logger_config = config.get("logger", None)
     logger = get_logger(logger_config)
+    # Check if field exists
+    if "ssp" not in config:
+        raise ValueError("Configuration does not contain 'ssp' field")
 
-    ssp = get_ssp(config)
+    # Check if template exists
+    if "template" not in config["ssp"]:
+        raise ValueError("Configuration does not contain 'template' field")
+    # Check if name exists
+    if "name" not in config["ssp"]["template"]:
+        raise ValueError("Configuration does not contain 'name' field")
+
+    # Get the ssp template
+    logger.debug(f"Getting SSP template: {config['ssp']['template']['name']}")
+    ssp = get_ssp_template(config["ssp"]["template"]["name"])
 
     # Check if method is defined
     if "method" not in config["ssp"]:
@@ -35,8 +53,8 @@ def get_lookup(config: dict) -> Callable:
         logger.debug(f"Using method defined in config: {config['ssp']['method']}")
         method = config["ssp"]["method"]
 
-    lookup = ssp.get_lookup(method=method)
-    return lookup
+    return ssp.get_lookup(method=method)
+
 
 
 def get_lookup_vmap(config: dict) -> Callable:
