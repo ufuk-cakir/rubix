@@ -109,7 +109,9 @@ def get_velocity_component(
     elif isinstance(vec, jax.Array) and vec.ndim == 1:
         return _get_velocity_component_single(vec, direction)
     else:
-        raise ValueError("Got wrong shapes.")
+        raise ValueError(
+            f"Got wrong shapes. Expected vec.ndim =2 or vec.ndim=1, but got vec.ndim = {vec.ndim}"
+        )
 
 
 def _velocity_doppler_shift_single(

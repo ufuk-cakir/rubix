@@ -5,7 +5,6 @@ from rubix.telescope.utils import (
     calculate_spatial_bin_edges,
     square_spaxel_assignment,
     filter_particles_outside_aperture,
-    restructure_data,
 )
 from rubix.telescope.base import BaseTelescope
 from rubix.telescope.factory import TelescopeFactory
@@ -22,24 +21,24 @@ def get_telescope(config: dict) -> BaseTelescope:
     return telescope
 
 
-def get_filter_particles(config: dict):
-    """Get the function to filter particles outside the aperture."""
-    spatial_bin_edges = get_spatial_bin_edges(config)
-
-    def filter_particles(input_data: dict):
-        mask = filter_particles_outside_aperture(
-            input_data["coords"], spatial_bin_edges
-        )
-
-        input_data["coords"] = input_data["coords"][mask]
-        input_data["velocities"] = input_data["velocities"][mask]
-        input_data["masses"] = input_data["masses"][mask]
-        input_data["age"] = input_data["age"][mask]
-        input_data["metallicity"] = input_data["metallicity"][mask]
-
-        return input_data
-
-    return filter_particles
+# def get_filter_particles(config: dict):
+#     """Get the function to filter particles outside the aperture."""
+#     spatial_bin_edges = get_spatial_bin_edges(config)
+#
+#     def filter_particles(input_data: dict):
+#         mask = filter_particles_outside_aperture(
+#             input_data["coords"], spatial_bin_edges
+#         )
+#
+#         input_data["coords"] = input_data["coords"][mask]
+#         input_data["velocities"] = input_data["velocities"][mask]
+#         input_data["masses"] = input_data["masses"][mask]
+#         input_data["age"] = input_data["age"][mask]
+#         input_data["metallicity"] = input_data["metallicity"][mask]
+#
+#         return input_data
+#
+#     return filter_particles
 
 
 def get_spatial_bin_edges(config: dict) -> Float[Array, " n_bins"]:
@@ -59,31 +58,31 @@ def get_spatial_bin_edges(config: dict) -> Float[Array, " n_bins"]:
     return spatial_bin_edges
 
 
-def get_split_data(config: dict, n_particles) -> Callable:
-    telescope = get_telescope(config)
-    n_pixels = telescope.sbin**2
-
-    def split_data(input_data: dict) -> dict:
-        # Split the data into two parts
-
-        masses, metallicity, ages = restructure_data(
-            input_data["mass"],
-            input_data["metallicity"],
-            input_data["age"],
-            input_data["pixel_assignment"],
-            n_pixels,
-            # n_particles,
-        )
-
-        # Reshape the data to match the number of GPUs
-
-        input_data["masses"] = masses
-        input_data["metallicity"] = metallicity
-        input_data["age"] = ages
-
-        return input_data
-
-    return split_data
+# def get_split_data(config: dict, n_particles) -> Callable:
+#     telescope = get_telescope(config)
+#     n_pixels = telescope.sbin**2
+#
+#     def split_data(input_data: dict) -> dict:
+#         # Split the data into two parts
+#
+#         masses, metallicity, ages = restructure_data(
+#             input_data["mass"],
+#             input_data["metallicity"],
+#             input_data["age"],
+#             input_data["pixel_assignment"],
+#             n_pixels,
+#             # n_particles,
+#         )
+#
+#         # Reshape the data to match the number of GPUs
+#
+#         input_data["masses"] = masses
+#         input_data["metallicity"] = metallicity
+#         input_data["age"] = ages
+#
+#         return input_data
+#
+#     return split_data
 
 
 def get_spaxel_assignment(config: dict) -> Callable:
