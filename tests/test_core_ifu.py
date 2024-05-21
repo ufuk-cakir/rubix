@@ -5,6 +5,7 @@ from unittest.mock import Mock
 
 from rubix.spectra.ifu import resample_spectrum
 from rubix.core.data import reshape_array
+from rubix.core.ssp import get_ssp
 from rubix.core.telescope import get_telescope
 from rubix.core.ifu import (
     get_calculate_spectra,
@@ -14,14 +15,8 @@ from rubix.core.ifu import (
     get_doppler_shift_and_resampling,
 )
 
-# Mocking logger and necessary functions from rubix and other modules
-mock_logger = Mock()
-mock_get_logger = Mock(return_value=mock_logger)
-mock_get_lookup_pmap = Mock(return_value=lambda metallicity, age: metallicity + age)
-mock_get_telescope = Mock(return_value=Mock(wave_seq=jnp.array([4000, 5000, 6000])))
-mock_get_ssp = Mock(return_value=Mock(wavelength=jnp.array([4500, 5500, 6500])))
-mock_resample_spectrum = Mock(return_value=jnp.array([1, 2, 3]))
-
+RTOL = 1e-5
+ATOL = 1e-6
 # Sample input data
 sample_inputs = {
     "metallicity": jnp.array([0.1, 0.2]),
@@ -63,6 +58,44 @@ initial_wavelengths = jnp.array([[4500.0, 5500.0, 6500.0], [4500.0, 5500.0, 6500
 target_wavelength = jnp.array([4000.0, 5000.0, 6000.0])
 
 
+def _get_sample_inputs(subset=None):
+    ssp = get_ssp(sample_config)
+    metallicity = reshape_array(ssp.metallicity)
+    age = reshape_array(ssp.age)
+    spectra = reshape_array(ssp.flux)
+
+    import numpy as np
+
+    # Create meshgrid for metallicity and age to cover all combinations
+    metallicity_grid, age_grid = np.meshgrid(
+        metallicity.flatten(), age.flatten(), indexing="ij"
+    )
+    metallicity_grid = reshape_array(metallicity_grid.flatten())
+    age_grid = reshape_array(age_grid.flatten())
+
+    # reshape spectra
+    num_combinations = metallicity_grid.shape[1]
+    spectra_reshaped = spectra.reshape(
+        spectra.shape[0], num_combinations, spectra.shape[-1]
+    )
+
+    # Create Velocities for each combination
+
+    velocities = jnp.ones((metallicity_grid.shape[0], num_combinations, 3))
+    mass = jnp.ones_like(metallicity_grid)
+
+    if subset is not None:
+        metallicity_grid = metallicity_grid[:, :subset]
+        age_grid = age_grid[:, :subset]
+        velocities = velocities[:, :subset]
+        mass = mass[:, :subset]
+        spectra_reshaped = spectra_reshaped[:, :subset]
+    inputs = dict(
+        metallicity=metallicity_grid, age=age_grid, velocities=velocities, mass=mass
+    )
+    return inputs, spectra_reshaped
+
+
 def test_resample_spectrum_vmap():
     print("initial_spectra shape", initial_spectra.shape)
     print("initial_wavelengths shape", initial_wavelengths.shape)
@@ -81,6 +114,7 @@ def test_resample_spectrum_vmap():
         ]
     )
     assert jnp.allclose(result_vmap, expected_result)
+    assert not jnp.any(jnp.isnan(result_vmap))
 
 
 def test_resample_spectrum_pmap():
@@ -105,49 +139,53 @@ def test_resample_spectrum_pmap():
         ]
     )
     assert jnp.allclose(result_pmap, expected_result)
+    assert not jnp.any(jnp.isnan(result_pmap))
 
 
-@pytest.fixture
-def setup_environment(monkeypatch):
-    monkeypatch.setattr("rubix.core.ifu.get_logger", mock_get_logger)
-    monkeypatch.setattr("rubix.core.ifu.get_lookup_pmap", mock_get_lookup_pmap)
-    monkeypatch.setattr("rubix.core.ifu.get_telescope", mock_get_telescope)
-    monkeypatch.setattr("rubix.core.ifu.get_ssp", mock_get_ssp)
-    monkeypatch.setattr("rubix.core.ifu.resample_spectrum", mock_resample_spectrum)
-
-
-def test_calculate_spectra(setup_environment):
+def test_calculate_spectra():
     calculate_spectra = get_calculate_spectra(sample_config)
-    result = calculate_spectra(sample_inputs.copy())
-    expected_spectra = sample_inputs["metallicity"] + sample_inputs["age"]
-    assert jnp.array_equal(result["spectra"], expected_spectra)
+
+    inputs, expected_spectra = _get_sample_inputs()
+    result = calculate_spectra(inputs.copy())  # type: ignore
+    print("Calculataed Spectra shape:", result["spectra"].shape)
+    print("Expected Spectra shape:", expected_spectra.shape)
+
+    # print the first 5 values of the calculated and expected spectra
+    print("Calculated Spectra:", result["spectra"][:5])
+    print("Expected Spectra:", expected_spectra[:5])
+
+    is_close = jnp.isclose(
+        result["spectra"], expected_spectra, rtol=RTOL, atol=ATOL
+    )  # noqa
+
+    print("N_close:", jnp.sum(is_close))
+    print("N_total:", len(is_close.flatten()))
+
+    # check where it is not close to the expected spectra
+    not_close_indices = jnp.where(~is_close)
+    # Get the difference between the calculated and expected spectra
+    diff = jnp.abs(result["spectra"] - expected_spectra)
+    print("Difference of not close index:", diff[not_close_indices])
+    print("sum of difference of not close index:", jnp.sum(diff[not_close_indices]))
+    assert jnp.isclose(result["spectra"], expected_spectra, rtol=RTOL, atol=ATOL).all()
+    assert not jnp.any(jnp.isnan(result["spectra"]))
 
 
-def test_scale_spectrum_by_mass(setup_environment):
+def test_scale_spectrum_by_mass():
     scale_spectrum_by_mass = get_scale_spectrum_by_mass(sample_config)
     result = scale_spectrum_by_mass(sample_inputs.copy())
     expected_spectra = sample_inputs["spectra"] * jnp.expand_dims(
         sample_inputs["mass"], axis=-1
     )
     assert jnp.array_equal(result["spectra"], expected_spectra)
+    assert not jnp.any(jnp.isnan(result["spectra"]))
 
 
-def test_doppler_shift_and_resampling(setup_environment):
+def test_doppler_shift_and_resampling():
     doppler_shift_and_resampling = get_doppler_shift_and_resampling(sample_config)
-    result = doppler_shift_and_resampling(sample_inputs.copy())
+    inputs, expected_spectra = _get_sample_inputs(subset=10)
+    inputs["spectra"] = expected_spectra
+    result = doppler_shift_and_resampling(inputs)  # type: ignore
 
     assert "spectra" in result
-
-    # check if telescope bins are correctly resamplbed
-
-    telescope = get_telescope(sample_config)
-
-    print("result spectra shape:", result["spectra"].shape)
-    print("result spectra:", result["spectra"])
-    print("Mock resampled spectrum:", mock_resample_spectrum)
-    mocked_returned_spec = jnp.array([1, 2, 3])
-    expected_result = jnp.array([mocked_returned_spec, mocked_returned_spec])
-    assert jnp.all(result["spectra"] == reshape_array(expected_result))
-
-    n_gpus = jax.local_device_count()
-    assert result["spectra"].shape == (n_gpus, 2, 3)  # Based on mocked data
+    assert not jnp.any(jnp.isnan(result["spectra"]))

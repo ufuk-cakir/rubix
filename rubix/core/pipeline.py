@@ -36,6 +36,8 @@ class RubixPipeline:
         self.logger.info(f"Data loaded with {len(coords)} particles.")
         # Setup the data dictionary
         # TODO: This is a temporary solution, we need to figure out a better way to handle the data
+        # This works, because JAX can trace through the data dictionary
+        # Other option may be named tuples or data classes to have fixed keys
         data = {
             "n_particles": len(coords),
             "coords": coords,

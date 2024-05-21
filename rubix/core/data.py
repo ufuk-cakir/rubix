@@ -29,12 +29,13 @@ def convert_to_rubix(config: Union[dict, str]):
     # If the simulationtype is IllustrisAPI, get data from IllustrisAPI
 
     # TODO: we can do this more elgantly
-    if config["data"]["name"] == "IllustrisAPI":
-        logger.info("Loading data from IllustrisAPI")
-        api = IllustrisAPI(**config["data"]["args"], logger=logger)
-        api.load_galaxy(**config["data"]["load_galaxy_args"])
+    if "data" in config:
+        if config["data"]["name"] == "IllustrisAPI":
+            logger.info("Loading data from IllustrisAPI")
+            api = IllustrisAPI(**config["data"]["args"], logger=logger)
+            api.load_galaxy(**config["data"]["load_galaxy_args"])
 
-        # Load the saved data into the input handler
+            # Load the saved data into the input handler
     logger.info("Loading data into input handler")
     input_handler = get_input_handler(config, logger=logger)
     input_handler.to_rubix(output_path=config["output_path"])
@@ -99,24 +100,25 @@ def prepare_input(config: Union[dict, str]):
 
     # check if we should only use a subset of the data for testing and memory reasons
 
-    if "subset" in config["data"]:  # type:ignore
-        if config["data"]["subset"]["use_subset"]:  # type:ignore
-            size = config["data"]["subset"]["subset_size"]  # type:ignore
-            # Randomly sample indices
-            indices = np.random.choice(
-                np.arange(new_stellar_coordinates.shape[0]),
-                size=size,  # type:ignore
-                replace=False,
-            )  # type:ignore
+    if "data" in config:
+        if "subset" in config["data"]:  # type:ignore
+            if config["data"]["subset"]["use_subset"]:  # type:ignore
+                size = config["data"]["subset"]["subset_size"]  # type:ignore
+                # Randomly sample indices
+                indices = np.random.choice(
+                    np.arange(new_stellar_coordinates.shape[0]),
+                    size=size,  # type:ignore
+                    replace=False,
+                )  # type:ignore
 
-            new_stellar_coordinates = new_stellar_coordinates[indices]
-            new_stellar_velocities = new_stellar_velocities[indices]
-            stars_metallicity = stars_metallicity[indices]
-            stars_mass = stars_mass[indices]
-            stars_age = stars_age[indices]
-            logger.warning(
-                f"The Subset value is set in config. Using only subset of size {size}"
-            )
+                new_stellar_coordinates = new_stellar_coordinates[indices]
+                new_stellar_velocities = new_stellar_velocities[indices]
+                stars_metallicity = stars_metallicity[indices]
+                stars_mass = stars_mass[indices]
+                stars_age = stars_age[indices]
+                logger.warning(
+                    f"The Subset value is set in config. Using only subset of size {size}"
+                )
 
     return (
         new_stellar_coordinates,

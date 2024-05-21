@@ -192,3 +192,5 @@ def test_resample_spectrum():
     print("Computed Resampled Spectrum:", resampled_spectrum)
     print("Expected Resampled Spectrum:", expected_resampled_spectrum)
     assert jnp.allclose(resampled_spectrum, expected_resampled_spectrum, rtol=1e-5)
+    # assert that it does not contain nan values
+    assert not jnp.any(jnp.isnan(resampled_spectrum))
