@@ -26,6 +26,7 @@ def get_calculate_spectra(config: dict):
         spectra = lookup_pmap(inputs["metallicity"], inputs["age"])  # * inputs["mass"]
         logger.debug(f"Calculation Finished! Spectra shape: {spectra.shape}")
         inputs["spectra"] = spectra
+        # jax.debug.print("Calculate Spectra: Spectra {}", spectra)
         return inputs
 
     return calculate_spectra
@@ -39,6 +40,7 @@ def get_scale_spectrum_by_mass(config: dict):
         logger.info("Scaling Spectra by Mass...")
         mass = jnp.expand_dims(inputs["mass"], axis=-1)
         inputs["spectra"] = inputs["spectra"] * mass
+        # jax.debug.print("mass mult: Spectra {}", inputs["spectra"])
         return inputs
 
     return scale_spectrum_by_mass
@@ -112,10 +114,13 @@ def get_doppler_shift_and_resampling(config: dict):
         logger.debug(f"Telescope Wave Seq: {telescope.wave_seq.shape}")
         # Function to resample the spectrum to the telescope wavelength grid
         resample_spectrum_pmap = get_resample_spectrum_pmap(telescope_wavelenght)
+        # jax.debug.print("doppler shifted ssp wave {}", doppler_shifted_ssp_wave)
+        # jax.debug.print("Spectra before resampling {}", inputs["spectra"])
         spectrum_resampled = resample_spectrum_pmap(
             inputs["spectra"], doppler_shifted_ssp_wave
         )
         inputs["spectra"] = spectrum_resampled
+        # jax.debug.print("doppler shift and resampl: Spectra {}", inputs["spectra"])
         return inputs
 
     return doppler_shift_and_resampling

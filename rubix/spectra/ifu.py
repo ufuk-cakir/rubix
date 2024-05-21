@@ -200,13 +200,19 @@ def resample_spectrum(
 
     # Interpolate the wavelegnth to the telescope grid
     particle_lum = jnp.interp(target_wavelength, initial_wavelength, initial_spectrum)
-
     # New total luminosity
     new_total_lum = jnp.sum(particle_lum * calculate_diff(target_wavelength))
 
     # Factor to conserve flux in the new spectrum
+
     scale_factor = total_lum / new_total_lum
-
+    scale_factor = jnp.nan_to_num(
+        scale_factor, nan=0.0
+    )  # Otherwise we get NaNs if new_total_lum is zero
     lum = particle_lum * scale_factor
-
+    # jax.debug.print("total_lum: {}", total_lum)
+    # jax.debug.print("new_total_lum: {}", new_total_lum)
+    # jax.debug.print("scale_factor: {}", scale_factor)
+    # jax.debug.print("resampled spectrum: {}", lum)
+    # jax.debug.print("intrinsic_wave_diff: {}", intrinsic_wave_diff)
     return lum

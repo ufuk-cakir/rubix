@@ -138,7 +138,6 @@ def test_get_lookup_vmap():
             "method": "cubic",
         },
     }
-    lookup = get_lookup(config)
     lookup_vmap = get_lookup_vmap(config)
     assert callable(lookup_vmap)
     inputs, ssp_spectra = _get_sample_inputs()
@@ -153,6 +152,32 @@ def test_get_lookup_vmap():
     inputs["metallicity"] = inputs["metallicity"] + 1e7
     inputs["age"] = inputs["age"] + 1e7
     spectrum = lookup_vmap(inputs["metallicity"], inputs["age"])
+
+    assert not jnp.isnan(spectrum).all()
+    assert (spectrum == 0).all()
+
+
+def test_get_lookup_pmap():
+    config = {
+        "ssp": {
+            "template": {"name": TEMPLATE_NAME},
+            "method": "cubic",
+        },
+    }
+    lookup_pmap = get_lookup_pmap(config)
+    assert callable(lookup_pmap)
+    inputs, ssp_spectra = _get_sample_inputs()
+    spectrum = lookup_pmap(inputs["metallicity"], inputs["age"])
+
+    print("SSP_Spectra shape:", ssp_spectra.shape)
+    print("Spectrum shape:", spectrum.shape)
+    print("Spectrum example", spectrum[0, 0])
+    assert jnp.allclose(spectrum, ssp_spectra, rtol=RTOL, atol=ATOL)
+
+    # check out of bounds
+    inputs["metallicity"] = inputs["metallicity"] + 1e7
+    inputs["age"] = inputs["age"] + 1e7
+    spectrum = lookup_pmap(inputs["metallicity"], inputs["age"])
 
     assert not jnp.isnan(spectrum).all()
     assert (spectrum == 0).all()

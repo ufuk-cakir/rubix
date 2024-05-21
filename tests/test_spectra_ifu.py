@@ -194,3 +194,32 @@ def test_resample_spectrum():
     assert jnp.allclose(resampled_spectrum, expected_resampled_spectrum, rtol=1e-5)
     # assert that it does not contain nan values
     assert not jnp.any(jnp.isnan(resampled_spectrum))
+
+
+def test_resample_spectrum_if_spec_is_zero():
+    initial_spectrum = jnp.array([1.0, 2.0, 3.0, 4.0, 5.0]) * 0
+    initial_wavelength = jnp.array([4000.0, 5000.0, 6000.0, 7000.0, 8000.0])
+    target_wavelength = jnp.array([4500.0, 5500.0, 6500.0, 7500.0])
+
+    resampled_spectrum = resample_spectrum(
+        initial_spectrum, initial_wavelength, target_wavelength
+    )
+
+    # Calculate expected resampled spectrum using correct interpolation
+    in_range_mask = (initial_wavelength >= jnp.min(target_wavelength)) & (
+        initial_wavelength <= jnp.max(target_wavelength)
+    )
+    intrinsic_wave_diff = calculate_diff(initial_wavelength) * in_range_mask
+    total_lum = jnp.sum(initial_spectrum * intrinsic_wave_diff)
+    particle_lum = jnp.interp(target_wavelength, initial_wavelength, initial_spectrum)
+    new_total_lum = jnp.sum(particle_lum * calculate_diff(target_wavelength))
+    scale_factor = total_lum / new_total_lum
+    scale_factor = jnp.nan_to_num(scale_factor, nan=0.0)
+    expected_resampled_spectrum = particle_lum * scale_factor
+
+    print("Computed Resampled Spectrum:", resampled_spectrum)
+    print("Expected Resampled Spectrum:", expected_resampled_spectrum)
+    assert jnp.allclose(resampled_spectrum, expected_resampled_spectrum, rtol=1e-5)
+    # assert that it does not contain nan values
+    assert not jnp.any(jnp.isnan(resampled_spectrum))
+    assert (resampled_spectrum == 0).all()

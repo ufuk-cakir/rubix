@@ -66,6 +66,9 @@ class RubixPipeline:
             self.user_config
         )
         # split_data = get_split_data(self.user_config, self.data["n_particles"])
+
+        import jax
+
         functions = [
             rotate_galaxy,
             spaxel_assignment,
@@ -74,6 +77,7 @@ class RubixPipeline:
             scale_spectrum_by_mass,
             doppler_shift_and_resampling,
         ]
+
         return functions
 
     def run(self):
