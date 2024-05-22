@@ -1,9 +1,10 @@
 import os
-from typing import Callable, Union
+from typing import Callable, Tuple, Union
 
 import jax
 import jax.numpy as jnp
 import numpy as np
+from jaxtyping import Array, Float
 
 from rubix.galaxy import IllustrisAPI, get_input_handler
 from rubix.galaxy.alignment import center_particles
@@ -12,6 +13,20 @@ from rubix.utils import load_galaxy_data, read_yaml
 
 
 def convert_to_rubix(config: Union[dict, str]):
+    """Converts the data to Rubix format
+
+    This function converts the data to Rubix format. The data can be loaded from an API or from a file, is then
+    converted to Rubix format and saved to a file. If the file already exists, the conversion is skipped.
+
+    Parameters
+    ----------
+    config: dict or str
+        The configuration for the conversion. This can be a dictionary or a path to a YAML file containing the configuration.
+
+    Returns
+    -------
+    str: The path to the output file
+    """
     # Check if the file already exists
     # Create the input handler based on the config and create rubix galaxy data
     if isinstance(config, str):
@@ -43,7 +58,25 @@ def convert_to_rubix(config: Union[dict, str]):
     return config["output_path"]
 
 
-def reshape_array(arr):
+def reshape_array(
+    arr: Float[Array, "n_particles n_features"]
+) -> Float[Array, "n_gpus particles_per_gpu n_features"]:
+    """Reshapes an array to be compatible with JAX parallelization
+
+    The function reshapes an array of shape (n_particles, n_features) to an array of shape (n_gpus, particles_per_gpu, n_features).
+
+    Padding with zero is added if necessary to ensure that the number of particles per GPU is the same for all GPUs.
+
+    Parameters
+    ----------
+    arr: jnp.ndarray
+        The array to reshape
+
+    Returns
+    -------
+    jnp.ndarray
+        The reshaped array
+    """
     n_gpus = jax.device_count()
     n_particles = arr.shape[0]
 
@@ -64,7 +97,13 @@ def reshape_array(arr):
     return reshaped_arr
 
 
-def prepare_input(config: Union[dict, str]):
+def prepare_input(config: Union[dict, str]) -> Tuple[
+    Float[Array, "n_particles 3"],
+    Float[Array, "n_particles 3"],
+    Float[Array, " n_particles"],
+    Float[Array, " n_particles"],
+    Float[Array, " n_particles"],
+]:
 
     logger_config = config["logger"] if "logger" in config else None  # type:ignore
     logger = get_logger(logger_config)
@@ -90,16 +129,7 @@ def prepare_input(config: Union[dict, str]):
     stars_mass = data["particle_data"]["stars"]["mass"]
     stars_age = data["particle_data"]["stars"]["age"]
 
-    # Reshape the arrays
-
-    # new_stellar_coordinates = reshape_array(new_stellar_coordinates)
-    # new_stellar_velocities = reshape_array(new_stellar_velocities)
-    # stars_metallicity = reshape_array(stars_metallicity)
-    # stars_mass = reshape_array(stars_mass)
-    # stars_age = reshape_array(stars_age)
-
-    # check if we should only use a subset of the data for testing and memory reasons
-
+    # Check if we should only use a subset of the data for testing and memory reasons
     if "data" in config:
         if "subset" in config["data"]:  # type:ignore
             if config["data"]["subset"]["use_subset"]:  # type:ignore
@@ -129,17 +159,34 @@ def prepare_input(config: Union[dict, str]):
     )
 
 
-def get_rubix_data(config: Union[dict, str]):
+def get_rubix_data(config: Union[dict, str]) -> Tuple[
+    Float[Array, "n_particles 3"],
+    Float[Array, "n_particles 3"],
+    Float[Array, " n_particles"],
+    Float[Array, " n_particles"],
+    Float[Array, " n_particles"],
+]:
+    """Returns the Rubix data
+
+    First converts the data to Rubix format and then prepares the input data.
+
+
+    """
     convert_to_rubix(config)
     return prepare_input(config)
 
 
 def get_reshape_data(config: Union[dict, str]) -> Callable:
+    """Returns a function to reshape the data
+
+    Maps the `reshape_array` function to the input data dictionary.
+    """
 
     def reshape_data(
         input_data: dict,
         keys=["coords", "velocities", "metallicity", "mass", "age", "pixel_assignment"],
     ) -> dict:
+        # TODO:Maybe write this more elegantly
         for key in keys:
             input_data[key] = reshape_array(input_data[key])
 

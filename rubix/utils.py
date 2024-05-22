@@ -4,6 +4,7 @@ from astropy.cosmology import Planck15 as cosmo
 import yaml
 import h5py
 from typing import Dict, Union
+from pathlib import Path
 
 
 def get_config(config: Union[str, Dict]) -> Dict:
@@ -11,6 +12,17 @@ def get_config(config: Union[str, Dict]) -> Dict:
         return read_yaml(config)
     else:
         return config
+
+
+def get_pipeline_config(name: str):
+    config_path = str(Path(__file__).parent / "pipelines.yml")
+    pipelines_config = get_config(config_path)
+
+    # Get the pipeline configuration
+    if name not in pipelines_config:
+        raise ValueError(f"Pipeline {name} not found in the configuration")
+    config = pipelines_config[name]
+    return config
 
 
 def read_yaml(path_to_file: str) -> dict:

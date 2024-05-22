@@ -1,35 +1,78 @@
+import time
+from pathlib import Path
+from typing import Union
+
+from rubix.logger import get_logger
 from rubix.pipeline import linear_pipeline as pipeline
 from rubix.pipeline import transformer as transformer
-from rubix.utils import get_config
-from rubix.logger import get_logger
-from .data import get_rubix_data, get_reshape_data
-from pathlib import Path
-from .rotation import get_galaxy_rotation
-from .telescope import get_spaxel_assignment, get_telescope
+from rubix.utils import get_config, get_pipeline_config
+
+from .data import get_reshape_data, get_rubix_data
 from .ifu import (
     get_calculate_spectra,
-    get_scale_spectrum_by_mass,
     get_doppler_shift_and_resampling,
+    get_scale_spectrum_by_mass,
 )
+from .rotation import get_galaxy_rotation
 from .ssp import get_ssp
-from typing import Union
-import time
+from .telescope import get_spaxel_assignment, get_telescope
 
 
 class RubixPipeline:
+    """
+    RubixPipeline is responsible for setting up and running the data processing pipeline.
+
+    Parameters
+    ----------
+    user_config : dict or str
+        User configuration for the pipeline.
+
+    Attributes
+    ----------
+    user_config : dict
+        Parsed user configuration.
+    pipeline_config : dict
+        Configuration for the pipeline.
+    logger : Logger
+        Logger instance for logging messages.
+    ssp : object
+        Stellar population synthesis model.
+    telescope : object
+        Telescope configuration.
+    data : dict
+        Dictionary containing particle data.
+    func : callable
+        Compiled pipeline function to process data.
+
+    Examples
+    --------
+    >>> from rubix.core.pipeline import RubixPipeline
+    >>> config = "path/to/config.yml"
+    >>> pipeline = RubixPipeline(config)
+    >>> output = pipeline.run()
+    >>> ssp_model = pipeline.ssp
+    >>> telescope = pipeline.telescope
+    """
 
     def __init__(self, user_config: Union[dict, str]):
         self.user_config = get_config(user_config)
-        self.pipeline_config = _get_pipeline_config(
-            self.user_config["pipeline"]["name"]
-        )
+        self.pipeline_config = get_pipeline_config(self.user_config["pipeline"]["name"])
         self.logger = get_logger(self.user_config["logger"])
         self.ssp = get_ssp(self.user_config)
         self.telescope = get_telescope(self.user_config)
         self.data = self._prepare_data()
         self.func = None
 
-    def _prepare_data(self):
+    def _prepare_data(self) -> dict:
+        """
+        Prepares and loads the data for the pipeline.
+
+        Returns
+        -------
+        dict
+            Dictionary containing particle data with keys:
+            'n_particles', 'coords', 'velocities', 'metallicity', 'mass', and 'age'.
+        """
         # Get the data
         self.logger.info("Getting rubix data...")
         coords, velocities, metallicity, mass, age = get_rubix_data(self.user_config)
@@ -54,9 +97,19 @@ class RubixPipeline:
 
         return data
 
-    def _get_pipeline_functions(self):
+    def _get_pipeline_functions(self) -> list:
+        """
+        Sets up the pipeline functions.
+
+        Returns
+        -------
+        list
+            List of functions to be used in the pipeline.
+        """
         self.logger.info("Setting up the pipeline...")
         self.logger.debug("Pipeline Configuration: %s", self.pipeline_config)
+
+        # TODO: maybe there is a nicer way to load the functions from the yaml config?
         rotate_galaxy = get_galaxy_rotation(self.user_config)
         spaxel_assignment = get_spaxel_assignment(self.user_config)
         calculate_spectra = get_calculate_spectra(self.user_config)
@@ -65,9 +118,6 @@ class RubixPipeline:
         doppler_shift_and_resampling = get_doppler_shift_and_resampling(
             self.user_config
         )
-        # split_data = get_split_data(self.user_config, self.data["n_particles"])
-
-        import jax
 
         functions = [
             rotate_galaxy,
@@ -80,7 +130,16 @@ class RubixPipeline:
 
         return functions
 
-    def run(self):
+    # TODO: currently returns dict, but later should return only the IFU cube
+    def run(self) -> dict:
+        """
+        Runs the data processing pipeline.
+
+        Returns
+        -------
+        dict
+            Output of the pipeline after processing the input data.
+        """
         # Create the pipeline
         time_start = time.time()
         functions = self._get_pipeline_functions()
@@ -107,16 +166,6 @@ class RubixPipeline:
         )
         return output
 
+    # TODO: implement gradient calculation
     def gradient(self):
         raise NotImplementedError("Gradient calculation is not implemented yet")
-
-
-def _get_pipeline_config(name: str):
-    config_path = str(Path(__file__).parent / "pipelines.yml")
-    pipelines_config = get_config(config_path)
-
-    # Get the pipeline configuration
-    if name not in pipelines_config:
-        raise ValueError(f"Pipeline {name} not found in the configuration")
-    config = pipelines_config[name]
-    return config

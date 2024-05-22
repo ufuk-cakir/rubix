@@ -21,6 +21,42 @@ def get_telescope(config: dict) -> BaseTelescope:
     return telescope
 
 
+def get_spatial_bin_edges(config: dict) -> Float[Array, " n_bins"]:
+    """Get the spatial bin edges based on the configuration."""
+    telescope = get_telescope(config)
+    galaxy_dist_z = config["galaxy"]["dist_z"]
+    cosmology = get_cosmology(config)
+    # Calculate the spatial bin edges
+    # TODO: check if we need the spatial bin size somewhere? For now we dont use it
+    spatial_bin_edges, spatial_bin_size = calculate_spatial_bin_edges(
+        fov=telescope.fov,
+        spatial_bins=telescope.sbin,
+        dist_z=galaxy_dist_z,
+        cosmology=cosmology,
+    )
+
+    return spatial_bin_edges
+
+
+def get_spaxel_assignment(config: dict) -> Callable:
+    """Get the spaxel assignment function based on the configuration."""
+    telescope = get_telescope(config)
+    if telescope.pixel_type not in ["square"]:
+        raise ValueError(f"Pixel type {telescope.pixel_type} not supported")
+    spatial_bin_edges = get_spatial_bin_edges(config)
+
+    def spaxel_assignment(input_data: dict) -> dict:
+        pixel_assignment = square_spaxel_assignment(
+            input_data["coords"], spatial_bin_edges
+        )
+        input_data["pixel_assignment"] = pixel_assignment
+        input_data["spatial_bin_edges"] = spatial_bin_edges
+        return input_data
+
+    return spaxel_assignment
+
+
+# Not used, leaving here as reference for now
 # def get_filter_particles(config: dict):
 #     """Get the function to filter particles outside the aperture."""
 #     spatial_bin_edges = get_spatial_bin_edges(config)
@@ -39,23 +75,6 @@ def get_telescope(config: dict) -> BaseTelescope:
 #         return input_data
 #
 #     return filter_particles
-
-
-def get_spatial_bin_edges(config: dict) -> Float[Array, " n_bins"]:
-    """Get the spatial bin edges based on the configuration."""
-    telescope = get_telescope(config)
-    galaxy_dist_z = config["galaxy"]["dist_z"]
-    cosmology = get_cosmology(config)
-    # Calculate the spatial bin edges
-    # TODO: check if we need the spatial bin size somewhere? For now we dont use it
-    spatial_bin_edges, spatial_bin_size = calculate_spatial_bin_edges(
-        fov=telescope.fov,
-        spatial_bins=telescope.sbin,
-        dist_z=galaxy_dist_z,
-        cosmology=cosmology,
-    )
-
-    return spatial_bin_edges
 
 
 # def get_split_data(config: dict, n_particles) -> Callable:
@@ -83,21 +102,3 @@ def get_spatial_bin_edges(config: dict) -> Float[Array, " n_bins"]:
 #         return input_data
 #
 #     return split_data
-
-
-def get_spaxel_assignment(config: dict) -> Callable:
-    """Get the spaxel assignment function based on the configuration."""
-    telescope = get_telescope(config)
-    if telescope.pixel_type not in ["square"]:
-        raise ValueError(f"Pixel type {telescope.pixel_type} not supported")
-    spatial_bin_edges = get_spatial_bin_edges(config)
-
-    def spaxel_assignment(input_data: dict) -> dict:
-        pixel_assignment = square_spaxel_assignment(
-            input_data["coords"], spatial_bin_edges
-        )
-        input_data["pixel_assignment"] = pixel_assignment
-        input_data["spatial_bin_edges"] = spatial_bin_edges
-        return input_data
-
-    return spaxel_assignment

@@ -1,7 +1,9 @@
-from rubix.spectra.ssp.factory import get_ssp_template
 from typing import Callable
-from rubix.logger import get_logger
+
 import jax
+
+from rubix.logger import get_logger
+from rubix.spectra.ssp.factory import get_ssp_template
 
 
 def get_ssp(config: dict):
@@ -22,6 +24,11 @@ def get_ssp(config: dict):
 
 
 def get_lookup(config: dict) -> Callable:
+    """Loads the SSP template defined in the configuration and returns the lookup function for the template.
+
+    The lookup function is a function that takes in the metallicity and age of a star and returns the spectrum of the star.
+    This is later used to vmap over the stars metallicities and ages, and pmap over multiple GPUs.
+    """
     logger_config = config.get("logger", None)
     logger = get_logger(logger_config)
 
@@ -43,7 +50,8 @@ def get_lookup_vmap(config: dict) -> Callable:
     """
     Get the lookup function for the SSP template defined in the configuration
 
-    Loads the SSP template defined in the configuration and returns the lookup function for the template.
+    Loads the SSP template defined in the configuration and returns the lookup function for the template,
+    vmapped over the stars metallicities and ages.
     """
     lookup = get_lookup(config)
     lookup_vmap = jax.vmap(lookup, in_axes=(0, 0))
@@ -51,6 +59,9 @@ def get_lookup_vmap(config: dict) -> Callable:
 
 
 def get_lookup_pmap(config: dict) -> Callable:
+    """
+    Get the pmap version of the lookup function for the SSP template defined in the configuration.
+    """
     lookup_vmap = get_lookup_vmap(config)
-    lookup_pmap = jax.pmap(lookup_vmap, in_axes=(0, 0))
+    lookup_pmap = jax.pmap(lookup_vmap, in_axes=(0, 0))  # type: ignore
     return lookup_pmap
