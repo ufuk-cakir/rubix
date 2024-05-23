@@ -15,8 +15,9 @@ def get_config(config: Union[str, Dict]) -> Dict:
 
 
 def get_pipeline_config(name: str):
-    config_path = str(Path(__file__).parent / "pipelines.yml")
-    pipelines_config = get_config(config_path)
+    from rubix import config
+
+    pipelines_config = config["pipelines"]
 
     # Get the pipeline configuration
     if name not in pipelines_config:
