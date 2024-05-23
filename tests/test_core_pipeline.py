@@ -24,8 +24,9 @@ def setup_environment(monkeypatch):
     # Monkeypatch the necessary data functions to return dummy data
     monkeypatch.setattr("rubix.core.pipeline.get_rubix_data", dummy_get_rubix_data)
 
-
-file_path = os.path.join(os.path.dirname(__file__), "data/galaxy-id-14.hdf5")
+dir_path = os.path.dirname(os.path.realpath(__file__))
+file_path = os.path.join(dir_path, "data/galaxy-id-14.hdf5")
+output_path = os.path.join(dir_path, "output")
 # Dummy user configuration
 user_config = {
     "pipeline": {"name": "calc_ifu"},
@@ -41,7 +42,7 @@ user_config = {
         },
     },
     "data": {"subset": {"use_subset": True, "subset_size": 5}},
-    "output_path": "output",
+    "output_path": output_path,
     "telescope": {"name": "MUSE"},
     "cosmology": {"name": "PLANCK15"},
     "galaxy": {"dist_z": 0.1},
