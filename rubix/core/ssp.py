@@ -17,7 +17,6 @@ def get_ssp(config: dict):
     # Check if name exists
     if "name" not in config["ssp"]["template"]:
         raise ValueError("Configuration does not contain 'name' field")
-
     ssp = get_ssp_template(config["ssp"]["template"]["name"])
 
     return ssp
@@ -41,7 +40,7 @@ def get_lookup(config: dict) -> Callable:
     else:
         logger.debug(f"Using method defined in config: {config['ssp']['method']}")
         method = config["ssp"]["method"]
-
+        
     lookup = ssp.get_lookup(method=method)
     return lookup
 
