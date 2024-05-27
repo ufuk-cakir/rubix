@@ -115,3 +115,35 @@ ssp:
           name: "flux"
           units: "Lsun/Angstrom" # Luminosity of the template
           in_log: false # If the field is stored in log scale
+          
+    Mastar_CB19_SLOG_1_5:
+      name: "Mastar Charlot & Bruzual (2019)"
+      # more information on how those models are synthesized: Appendix A of Sanchez et al. 2022
+      # https://arxiv.org/pdf/2206.07062
+      format: "PyPipe3D" # Format of the template
+      source: "http://ifs.astroscu.unam.mx/pyPipe3D/templates/"
+      file_name: "MaStar_CB19.slog_1_5.fits.gz" # File name of the template, stored in templates directory
+      # Define the Fields in the template and their units
+      # This is used to convert them to the required units
+      fields: # Fields in the template and their units
+        # Name defines the name of the key stored in the hdf5 file
+        age:
+          name: "age"
+          units: "Gyr" # Age of the template
+          in_log: false # If the field is stored in log scale
+        metallicity:
+          name: "metallicity"
+          units: "" # Metallicity of the template
+          in_log: false # If the field is stored in log scale
+        wavelength:
+          name: "wavelength"
+          units: "Angstrom" # Wavelength of the template
+          in_log: false # If the field is stored in log scale
+        mass_to_light:
+          name: "mass_to_light"
+          units: "" #no idea what pyPipe3D used here...
+          in_log: false
+        flux:
+          name: "flux"
+          units: '1E-16 erg/s/cm^2' # Luminosity of the template
+          in_log: false # If the field is stored in log scale
