@@ -392,8 +392,6 @@ class pyPipe3DSSPGrid:
                     data = ages
                 elif field_name == 'metallicity':
                     data = metallicities
-                elif field_name == 'mass_to_light':
-                    data = mass_to_light
                 else:
                     raise ValueError(f'Field {field_name} not recognized')
                 
