@@ -49,17 +49,33 @@ def prepare_input(config: Union[dict, str]):
     stellar_coordinates = data["particle_data"]["stars"]["coords"]
     stellar_velocities = data["particle_data"]["stars"]["velocity"]
     galaxy_center = data["subhalo_center"]
+    gas_coordinates = data["particle_data"]["gas"]["coords"]
+    gas_velocities = data["particle_data"]["gas"]["velocity"]
 
     # Center the particles
     new_stellar_coordinates, new_stellar_velocities = center_particles(
         stellar_coordinates, stellar_velocities, galaxy_center
     )
+    new_gas_coordinates, new_gas_velocities = center_particles(
+        gas_coordinates, gas_velocities, galaxy_center
+    )
 
-    # Load the metallicity and age data
+    # Load the metallicity and age data for stars
 
     stars_metallicity = data["particle_data"]["stars"]["metallicity"]
     stars_mass = data["particle_data"]["stars"]["mass"]
     stars_age = data["particle_data"]["stars"]["age"]
+
+    # Load the metallicity, mass, density, hsml, sfr, internal energy, electron abundance and metals data for gas
+
+    gas_metallicity = data["particle_data"]["gas"]["metallicity"]
+    gas_mass = data["particle_data"]["gas"]["mass"]
+    gas_density = data["particle_data"]["gas"]["density"]
+    gas_hsml = data["particle_data"]["gas"]["hsml"]
+    gas_sfr = data["particle_data"]["gas"]["sfr"]
+    gas_internal_energy = data["particle_data"]["gas"]["internal_energy"]
+    gas_electron_abundance = data["particle_data"]["gas"]["electron_abundance"]
+    gas_metals = data["particle_data"]["gas"]["metals"]
 
     return (
         new_stellar_coordinates,
@@ -67,4 +83,14 @@ def prepare_input(config: Union[dict, str]):
         stars_metallicity,
         stars_mass,
         stars_age,
+        new_gas_coordinates,
+        new_gas_velocities,
+        gas_metallicity,
+        gas_mass,
+        gas_density,
+        gas_hsml,
+        gas_sfr,
+        gas_internal_energy,
+        gas_electron_abundance,
+        gas_metals,
     )

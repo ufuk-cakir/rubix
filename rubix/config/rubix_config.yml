@@ -29,7 +29,19 @@ IllustrisAPI:
 
 IllustrisHandler:
   MAPPED_FIELDS:
-    PartType4:
+    PartType0: #gas
+      Coordinates: coords
+      Density: density
+      Masses: mass
+      ParticleIDs: particle_ids
+      GFM_Metallicity: metallicity
+      SubfindHsml: hsml
+      StarFormationRate: sfr
+      InternalEnergy: internal_energy
+      Velocities: velocity
+      ElectronAbundance: electron_abundance
+      GFM_Metals: metals
+    PartType4: #stars
       Coordinates: coords
       GFM_InitialMass: mass
       GFM_Metallicity: metallicity
@@ -38,7 +50,7 @@ IllustrisHandler:
 
   MAPPED_PARTICLE_KEYS:
     PartType4: stars
-    # Currently only PartType4 is supported
+    PartType0: gas
 
   SIMULATION_META_KEYS:
     name: SimulationName
@@ -51,6 +63,18 @@ IllustrisHandler:
     halfmassrad_stars: halfmassrad_stars
 
   UNITS:
+    gas:
+      coords: cm
+      density: g/cm^3
+      mass: g
+      particle_ids: ""
+      metallicity: ""
+      hsml: cm
+      sfr: Msun/yr
+      internal_energy: erg/g
+      velocity: cm/s
+      electron_abundance: ""
+      metals: ""
     stars:
       coords: cm
       mass: g
@@ -66,6 +90,7 @@ IllustrisHandler:
     - Header
     - SubhaloData
     - PartType4
+    - PartType0
 
 #Defines the fields that are required and the units in which they are stored
 BaseHandler:
@@ -80,6 +105,17 @@ BaseHandler:
       velocity: "kpc/s"
       metallicity: ""
       age: "Gyr"
+    gas:
+      coords: "kpc"
+      density: "Msun/pc^3"
+      mass: "Msun"
+      metallicity: ""
+      hsml: "kpc"
+      sfr: "Msun/yr"
+      internal_energy: "erg/g"
+      velocity: "kpc/s"
+      electron_abundance: ""
+      metals: ""
 
 ssp:
   # units of the SSP grid that is used internally in the code
