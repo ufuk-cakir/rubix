@@ -4,7 +4,6 @@ import jax.numpy as jnp
 from astropy import units as u
 import os, wget
 import h5py
-import jax.numpy as jnp
 from rubix import config as rubix_config
 from typing import Dict
 from interpax import interp2d
@@ -106,13 +105,15 @@ class SSPGrid:
             print(f'[SSPModels] File {file_path} not found. Downloading it from {config["url"]}')
             try:
                 wget.download(config["url"], file_location) 
+                # check what wget errors actually might be raised.
             except OSError as err:
                 print(f'[SSPModels] OS error: {err}')
+                raise FileNotFoundError(f"Could not download file {config["file_name"]} from url {config["url"]}.")  
             except Exception as ex:
                 print(f'[SSPModels] Unexpected {ex=}, {type(ex)=}')
-                raise ValueError(f"Could not download file {file_path} from url {config["url"]}.")    
-        
-        return file_path
+                raise FileNotFoundError(f"Could not download file {config["file_name"]} from url {config["url"]}.")    
+        else:
+            return file_path
 
     @classmethod
     def from_file(cls, config: dict, file_location: str) -> "SSPGrid":
@@ -145,8 +146,7 @@ class SSPGrid:
         grid.__class__.__name__ = config["name"]
         return grid
 
-@SSPGrid
-class HDF5SSPGrid:
+class HDF5SSPGrid(SSPGrid):
     """
     Class for SSP models stored in HDF5 format.
     Mainly used for custom collection of Bruzual & Charlot 2003 models and MILES models .
@@ -198,8 +198,7 @@ class HDF5SSPGrid:
         grid.__class__.__name__ = config["name"]
         return grid
     
-@SSPGrid
-class pyPipe3DSSPGrid:
+class pyPipe3DSSPGrid(SSPGrid):
     """
     Class for all SSP models supported by the pyPipe3D project.
     See http://ifs.astroscu.unam.mx/pyPipe3D/templates/ for more information.
@@ -251,7 +250,7 @@ class pyPipe3DSSPGrid:
         crpix = h[f'CRPIX{wave_axis}']
         if not cdelt:
             cdelt = 1
-        return crval + cdelt*(np.arange(naxis) + 1 - crpix)
+        return crval + cdelt*(jnp.arange(naxis) + 1 - crpix)
     
     @staticmethod
     def get_normalization_wavelength(header, wavelength, flux_models, n_models):
@@ -286,9 +285,9 @@ class pyPipe3DSSPGrid:
             wave_norm = header['WAVENORM']
         except Exception as ex:
             _closer = 1e-6
-            probable_wavenorms = np.hstack([wavelength[(np.abs(flux_models[i] - 1) < _closer)]
+            probable_wavenorms = jnp.hstack([wavelength[(jnp.abs(flux_models[i] - 1) < _closer)]
                                         for i in range(n_models)])
-            wave_norm = np.median(probable_wavenorms)
+            wave_norm = jnp.median(probable_wavenorms)
         
             print(f'[SSPModels] {ex}')
             print(f'[SSPModels] setting normalization wavelength to {wave_norm} A')
@@ -320,7 +319,7 @@ class pyPipe3DSSPGrid:
         array like
             Mass-to-light value at the normalization wavelength.
         """
-        ages = np.zeros(n_models, dtype='float')
+        ages = jnp.zeros(n_models, dtype='float')
         Zs = ages.copy()
         mtol = ages.copy()
         for i in range(n_models):
@@ -334,12 +333,12 @@ class pyPipe3DSSPGrid:
                 _age = _age[:-3]
             else:
                 mult = 1  # Gyr
-            age = mult*np.float64(_age)
+            age = mult*jnp.float64(_age)
             _Z = name_read_split[1].split('.')[0]
-            Z = np.float64(_Z.replace('z', '0.'))
+            Z = jnp.float64(_Z.replace('z', '0.'))
             ages[i] = age
             Zs[i] = Z
-            mtol[i] = 1/np.float64(header[f'NORM{i}'])
+            mtol[i] = 1/jnp.float64(header[f'NORM{i}'])
             
         return jnp.unique(ages), jnp.unique(Zs), mtol
 

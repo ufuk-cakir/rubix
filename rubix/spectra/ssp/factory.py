@@ -29,5 +29,5 @@ def get_ssp_template(name: str) -> SSPGrid:
 
 
     else:
-        raise ValueError("Currently only HDF5 format is supported for SSP templates.")
+        raise ValueError("Currently only HDF5 format and fits files in the format of pyPipe3D format are supported for SSP templates.")
 
