@@ -36,8 +36,7 @@ dependencies = [
     "jaxtyping",
     "equinox",
     "jax[cpu]",
-    "interpax",
-    "wget"
+    "interpax"
 ]
 
 [project.optional-dependencies]

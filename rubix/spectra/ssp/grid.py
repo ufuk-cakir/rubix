@@ -2,8 +2,9 @@ from jaxtyping import Float, Array
 import equinox as eqx
 import jax.numpy as jnp
 from astropy import units as u
-import os, wget
+import os
 import h5py
+import requests
 from rubix import config as rubix_config
 from typing import Dict
 from interpax import interp2d
@@ -104,14 +105,17 @@ class SSPGrid:
         if not os.path.exists(file_path):
             print(f'[SSPModels] File {file_path} not found. Downloading it from {config["url"]}')
             try:
-                wget.download(config["url"], file_location) 
-                # check what wget errors actually might be raised.
-            except OSError as err:
-                print(f'[SSPModels] OS error: {err}')
-                raise FileNotFoundError(f"Could not download file {config['file_name']} from url {config["url"]}.")  
-            except Exception as ex:
-                print(f'[SSPModels] Unexpected {ex=}, {type(ex)=}')
-                raise FileNotFoundError(f"Could not download file {config['file_name']} from url {config["url"]}.")    
+                response = requests.get(config["url"])
+                response.raise_for_status()
+
+                if response.status_code == 200:
+                    with open(file_path, "wb") as f:
+                        f.write(response.content)
+                    print(f'[SSPModels] File {config["file_name"]} downloaded successfully!')
+                else:
+                    raise FileNotFoundError(f"Could not download file {config['file_name']} from url {config['url']}.")
+            except requests.exceptions.HTTPError as err:
+                raise ValueError(err)  
         else:
             return file_path
 
@@ -357,7 +361,7 @@ class pyPipe3DSSPGrid(SSPGrid):
         SSPGrid
             The SSP grid in the correct units.
         """
-        if config.get("format", "").lower() != "fits":
+        if config.get("format", "").lower() != "pypipe3d":
             raise ValueError("Configured file format is not fits.")
 
         file_path = cls.checkout_SSP_template(config, file_location)
