@@ -108,10 +108,10 @@ class SSPGrid:
                 # check what wget errors actually might be raised.
             except OSError as err:
                 print(f'[SSPModels] OS error: {err}')
-                raise FileNotFoundError(f"Could not download file {config["file_name"]} from url {config["url"]}.")  
+                raise FileNotFoundError(f"Could not download file {config['file_name']} from url {config["url"]}.")  
             except Exception as ex:
                 print(f'[SSPModels] Unexpected {ex=}, {type(ex)=}')
-                raise FileNotFoundError(f"Could not download file {config["file_name"]} from url {config["url"]}.")    
+                raise FileNotFoundError(f"Could not download file {config['file_name']} from url {config["url"]}.")    
         else:
             return file_path
 
