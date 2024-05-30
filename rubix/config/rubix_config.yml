@@ -143,3 +143,4 @@ ssp:
           name: "flux"
           units: 'Lsun/Msun' # Luminosity of the template
           in_log: false # If the field is stored in log scale
+
