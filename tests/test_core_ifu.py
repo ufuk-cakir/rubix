@@ -60,9 +60,18 @@ target_wavelength = jnp.array([4000.0, 5000.0, 6000.0])
 
 def _get_sample_inputs(subset=None):
     ssp = get_ssp(sample_config)
-    metallicity = reshape_array(ssp.metallicity)
+    '''metallicity = reshape_array(ssp.metallicity)
     age = reshape_array(ssp.age)
-    spectra = reshape_array(ssp.flux)
+    spectra = reshape_array(ssp.flux)'''
+    metallicity = ssp.metallicity
+    age = ssp.age
+    spectra = ssp.flux
+    
+    print("Metallicity shape: ", metallicity.shape)
+    print("Age shape: ", age.shape)
+    print("Spectra shape: ", spectra.shape)
+    print(".............")
+    
 
     import numpy as np
 
@@ -72,6 +81,15 @@ def _get_sample_inputs(subset=None):
     )
     metallicity_grid = reshape_array(metallicity_grid.flatten())
     age_grid = reshape_array(age_grid.flatten())
+    print("Metallicity grid shape: ", metallicity_grid.shape)
+    print("Age grid shape: ", age_grid.shape)
+    
+    spectra = spectra.reshape(-1, spectra.shape[-1])
+    print("spectra after reshape: ", spectra.shape)
+    spectra = reshape_array(spectra)
+
+    print("spectra after reshape_array call: ", spectra.shape)
+
 
     # reshape spectra
     num_combinations = metallicity_grid.shape[1]
@@ -79,6 +97,7 @@ def _get_sample_inputs(subset=None):
         spectra.shape[0], num_combinations, spectra.shape[-1]
     )
 
+    
     # Create Velocities for each combination
 
     velocities = jnp.ones((metallicity_grid.shape[0], num_combinations, 3))
@@ -128,16 +147,8 @@ def test_resample_spectrum_pmap():
     resample_spectrum_pmap = get_resample_spectrum_pmap(target_wavelength)
     result_pmap = resample_spectrum_pmap(initial_spectra, initial_wavelengths)
 
-    expected_result = jnp.stack(
-        [
-            resample_spectrum(
-                initial_spectra[0, 0], initial_wavelengths[0, 0], target_wavelength
-            ),
-            resample_spectrum(
-                initial_spectra[0, 1], initial_wavelengths[0, 1], target_wavelength
-            ),
-        ]
-    )
+    expected_result = jnp.array([resample_spectrum(initial_spectra[0,0], initial_wavelengths[0,0], target_wavelength), resample_spectrum(initial_spectra[1,0], initial_wavelengths[1,0], target_wavelength)])
+    expected_result = reshape_array(expected_result)
     assert jnp.allclose(result_pmap, expected_result)
     assert not jnp.any(jnp.isnan(result_pmap))
 

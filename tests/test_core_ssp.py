@@ -32,9 +32,18 @@ sample_config = {
 
 def _get_sample_inputs(subset=None):
     ssp = get_ssp(sample_config)
-    metallicity = reshape_array(ssp.metallicity)
+    '''metallicity = reshape_array(ssp.metallicity)
     age = reshape_array(ssp.age)
-    spectra = reshape_array(ssp.flux)
+    spectra = reshape_array(ssp.flux)'''
+    metallicity = ssp.metallicity
+    age = ssp.age
+    spectra = ssp.flux
+    
+    print("Metallicity shape: ", metallicity.shape)
+    print("Age shape: ", age.shape)
+    print("Spectra shape: ", spectra.shape)
+    print(".............")
+    
 
     import numpy as np
 
@@ -44,6 +53,15 @@ def _get_sample_inputs(subset=None):
     )
     metallicity_grid = reshape_array(metallicity_grid.flatten())
     age_grid = reshape_array(age_grid.flatten())
+    print("Metallicity grid shape: ", metallicity_grid.shape)
+    print("Age grid shape: ", age_grid.shape)
+    
+    spectra = spectra.reshape(-1, spectra.shape[-1])
+    print("spectra after reshape: ", spectra.shape)
+    spectra = reshape_array(spectra)
+
+    print("spectra after reshape_array call: ", spectra.shape)
+
 
     # reshape spectra
     num_combinations = metallicity_grid.shape[1]
@@ -51,6 +69,7 @@ def _get_sample_inputs(subset=None):
         spectra.shape[0], num_combinations, spectra.shape[-1]
     )
 
+    
     # Create Velocities for each combination
 
     velocities = jnp.ones((metallicity_grid.shape[0], num_combinations, 3))
@@ -66,8 +85,6 @@ def _get_sample_inputs(subset=None):
         metallicity=metallicity_grid, age=age_grid, velocities=velocities, mass=mass
     )
     return inputs, spectra_reshaped
-
-
 def test_get_lookup_with_valid_config():
     config = {
         "ssp": {

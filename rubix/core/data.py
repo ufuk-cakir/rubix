@@ -57,7 +57,6 @@ def convert_to_rubix(config: Union[dict, str]):
 
     return config["output_path"]
 
-
 def reshape_array(
     arr: Float[Array, "n_particles n_features"]
 ) -> Float[Array, "n_gpus particles_per_gpu n_features"]:
@@ -79,7 +78,13 @@ def reshape_array(
     """
     n_gpus = jax.device_count()
     n_particles = arr.shape[0]
+    
+    # Check if arr is 1D or 2D
+    is_1d = arr.ndim == 1
 
+    if is_1d:
+        # Convert 1D array to 2D by adding a second dimension
+        arr = arr[:, None]
     # Calculate the number of particles per GPU
     particles_per_gpu = (n_particles + n_gpus - 1) // n_gpus
 
@@ -94,8 +99,11 @@ def reshape_array(
     # Reshape the array to (n_gpus, particles_per_gpu, arr.shape[1])
     reshaped_arr = arr.reshape(n_gpus, particles_per_gpu, *arr.shape[1:])
 
-    return reshaped_arr
 
+    if is_1d:
+        # Remove the second dimension added for 1D case
+        reshaped_arr = reshaped_arr.squeeze(-1)
+    return reshaped_arr
 
 def prepare_input(config: Union[dict, str]) -> Tuple[
     Float[Array, "n_particles 3"],
