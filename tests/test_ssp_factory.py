@@ -62,7 +62,7 @@ def test_get_ssp_template_invalid_format():
 
         assert (
             str(excinfo.value)
-            == "Currently only HDF5 format is supported for SSP templates."
+            == "Currently only HDF5 format and fits files in the format of pyPipe3D format are supported for SSP templates."
         )
 
 
@@ -72,7 +72,7 @@ def test_get_ssp_template_error_loading_file():
     print("before", config["ssp"])
     suppored_templates = config["ssp"]["templates"]
 
-    # get   the first template
+    # get the first template
     template_name = list(suppored_templates.keys())[0]
     suppored_templates[template_name]["file_name"] = "invalid_file"
 
@@ -85,3 +85,24 @@ def test_get_ssp_template_error_loading_file():
             get_ssp_template(template_name)
 
     assert "No such file or directory" in str(excinfo.value)
+
+
+def test_checkout_ssp_template_from_url():
+
+    config = get_config()
+    print("before", config["ssp"])
+    suppored_templates = config["ssp"]["templates"]
+
+    # get the first template
+    template_name = list(suppored_templates.keys())[0]
+    suppored_templates[template_name]["url"] = "invalid_url"
+    suppored_templates[template_name]["format"] = "HDF5"
+
+    config["ssp"]["templates"] = suppored_templates
+    print(config["ssp"])
+    with patch("rubix.spectra.ssp.factory.rubix_config", config):
+        with pytest.raises(FileNotFoundError) as excinfo:
+            print("template_name", template_name)
+            get_ssp_template(template_name)
+
+    assert "Could not download file" in str(excinfo.value)
