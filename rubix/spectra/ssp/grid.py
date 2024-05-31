@@ -33,7 +33,7 @@ class SSPGrid:
         self.flux = jnp.asarray(flux)
         # self.units = SSP_UNITS
 
-    def get_lookup(self, method="cubic", extrap=0):
+    def get_lookup_interpolation(self, method="cubic", extrap=0):
         """Returns a 2D interpolation function for the SSP grid.
 
         The function can be called with metallicity and age as arguments to get the flux at that metallicity and age.
@@ -54,7 +54,7 @@ class SSPGrid:
         Examples
         --------
         >>> grid = SSPGrid(...)
-        >>> lookup = grid.get_lookup()
+        >>> lookup = grid.get_lookup_interpolation()
         >>> metallicity = 0.02
         >>> age = 1e9
         >>> flux = lookup(metallicity, age)

@@ -11,7 +11,7 @@ from rubix.spectra.ifu import (
     velocity_doppler_shift,
 )
 
-from .ssp import get_lookup_pmap, get_ssp
+from .ssp import get_lookup_interpolation_pmap, get_ssp
 from .telescope import get_telescope
 
 
@@ -22,14 +22,16 @@ def get_calculate_spectra(config: dict) -> Callable:
     and parallelizes the funciton across all GPUs
     """
     logger = get_logger(config.get("logger", None))
-    lookup_pmap = get_lookup_pmap(config)
+    lookup_interpolation_pmap = get_lookup_interpolation_pmap(config)
 
     def calculate_spectra(inputs: dict[str, jax.Array]) -> dict[str, jax.Array]:
         logger.info("Calculating IFU cube...")
         logger.debug(
             f"Input shapes: Metallicity: {inputs['metallicity'].shape}, Age: {inputs['age'].shape}"
         )
-        spectra = lookup_pmap(inputs["metallicity"], inputs["age"])  # * inputs["mass"]
+        spectra = lookup_interpolation_pmap(
+            inputs["metallicity"], inputs["age"]
+        )  # * inputs["mass"]
         logger.debug(f"Calculation Finished! Spectra shape: {spectra.shape}")
         inputs["spectra"] = spectra
         # jax.debug.print("Calculate Spectra: Spectra {}", spectra)

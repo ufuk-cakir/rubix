@@ -1,6 +1,7 @@
 import time
-from pathlib import Path
 from typing import Union
+
+import jax
 
 from rubix.logger import get_logger
 from rubix.pipeline import linear_pipeline as pipeline
@@ -159,6 +160,7 @@ class RubixPipeline:
         self.logger.info("Running the pipeline on the input data...")
         output = self.func(self.data)
 
+        jax.block_until_ready(output)
         time_end = time.time()
 
         self.logger.info(

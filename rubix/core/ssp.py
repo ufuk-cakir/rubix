@@ -22,7 +22,7 @@ def get_ssp(config: dict):
     return ssp
 
 
-def get_lookup(config: dict) -> Callable:
+def get_lookup_interpolation(config: dict) -> Callable:
     """Loads the SSP template defined in the configuration and returns the lookup function for the template.
 
     The lookup function is a function that takes in the metallicity and age of a star and returns the spectrum of the star.
@@ -40,27 +40,27 @@ def get_lookup(config: dict) -> Callable:
     else:
         logger.debug(f"Using method defined in config: {config['ssp']['method']}")
         method = config["ssp"]["method"]
-        
-    lookup = ssp.get_lookup(method=method)
+
+    lookup = ssp.get_lookup_interpolation(method=method)
     return lookup
 
 
-def get_lookup_vmap(config: dict) -> Callable:
+def get_lookup_interpolation_vmap(config: dict) -> Callable:
     """
     Get the lookup function for the SSP template defined in the configuration
 
     Loads the SSP template defined in the configuration and returns the lookup function for the template,
     vmapped over the stars metallicities and ages.
     """
-    lookup = get_lookup(config)
+    lookup = get_lookup_interpolation(config)
     lookup_vmap = jax.vmap(lookup, in_axes=(0, 0))
     return lookup_vmap
 
 
-def get_lookup_pmap(config: dict) -> Callable:
+def get_lookup_interpolation_pmap(config: dict) -> Callable:
     """
     Get the pmap version of the lookup function for the SSP template defined in the configuration.
     """
-    lookup_vmap = get_lookup_vmap(config)
+    lookup_vmap = get_lookup_interpolation_vmap(config)
     lookup_pmap = jax.pmap(lookup_vmap, in_axes=(0, 0))  # type: ignore
     return lookup_pmap
