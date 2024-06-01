@@ -2,11 +2,11 @@ from jaxtyping import Float, Array
 import equinox as eqx
 import jax.numpy as jnp
 from astropy import units as u
+from astropy.io import fits
 import os
 import h5py
 import requests
 from rubix import config as rubix_config
-from typing import Dict
 from interpax import interp2d
 from jax.tree_util import Partial
 from dataclasses import dataclass
