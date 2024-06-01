@@ -5,6 +5,7 @@ from rubix.utils import (
     print_hdf5_file_structure,
     read_yaml,
     load_galaxy_data,
+    get_config,
 )
 import yaml
 from astropy.cosmology import Planck15 as cosmo
@@ -203,3 +204,17 @@ def test_read_yaml_error_handling(tmp_path):
     assert "Something went wrong while reading yaml file" in str(
         excinfo.value
     ), "Expected RuntimeError not raised"
+
+
+def test_get_config_with_dict():
+    config = {"test_key": "test_value"}
+    result = get_config(config)
+    assert result == config
+
+
+def test_get_config_with_str(mocker):
+    config_file = "config.yaml"
+    expected_result = {"key": "value"}
+    mocker.patch("rubix.utils.read_yaml", return_value=expected_result)
+    result = get_config(config_file)
+    assert result == expected_result

@@ -7,7 +7,16 @@ def get_logger(config = None):
     if config is None:
         config = rubix_config["logger"]
     logger = logging.getLogger("rubix")
+    
+    # If user gets logger for the first time, print the version
+    if not logger.handlers:
+        first_time = True
+    else:
+        first_time = False
+       
+    
     logger.setLevel(getattr(logging, config["log_level"].upper(), "INFO"))
+    
     # Clear existing handlers
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
@@ -21,6 +30,8 @@ def get_logger(config = None):
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
+
+    
     # File Handler
     if config["log_file_path"]:
         # Ensure directory exists
@@ -30,5 +41,16 @@ def get_logger(config = None):
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
         logger.info(f"Logging to file: {config['log_file_path']}")
+
+    if first_time:
+
+        logger.info(r"""
+   ___  __  _____  _____  __
+  / _ \/ / / / _ )/  _/ |/_/
+ / , _/ /_/ / _  |/ /_>  <  
+/_/|_|\____/____/___/_/|_|  
+                            
+""")
+        logger.info(f"Rubix version: {version.__version__}")
 
     return logger

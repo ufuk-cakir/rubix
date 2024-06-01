@@ -1,4 +1,22 @@
 # TODO maybe split this into multiple files
+
+constants:
+  LSOL_TO_ERG: 3.828e33
+  MPC_TO_CM: 3.08568e24
+  SPEED_OF_LIGHT: 299792.458
+  CM_TO_KPC: 3.24078e-22
+  CMS_TO_KMS: 1e-5
+  G_TO_MSOL: 5.02785e-34
+  GCM1_TO_MSOLKM1: 5.02785e-29
+  GCM3_TO_MSOLKM3: 5.02785e-28
+  GCM3_TO_MSOLKPC3: 1.477e31
+  G_CONSTANT_CGS: 6.67430e-11
+  G_IN_KPCMSOLKMS2: 4.3009e-6
+  S_TO_YR: 3.171e-8
+  MASS_OF_PROTON: 1.67262e-24 # grams
+  ADIABATIC_INDEX: 1.6666666666666667 # heat is contained
+  BOLTZMANN_CONSTANT: 1.38066e-16 # cm^2 g s^-2 K-1
+
 logger:
   log_level: "DEBUG"
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -115,3 +133,8 @@ ssp:
           name: "flux"
           units: "Lsun/Angstrom" # Luminosity of the template
           in_log: false # If the field is stored in log scale
+
+ifu:
+  # Configuration Related to IFU calculation
+  doppler:
+    velocity_direction: "y" # The velocity component used to calculate doppler shift

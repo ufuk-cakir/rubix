@@ -2,6 +2,7 @@ from rubix.cosmology import RubixCosmology
 
 
 def get_cosmology(config: dict):
+    """Get the cosmology from the configuration"""
     if config["cosmology"]["name"].upper() == "PLANCK15":
         from rubix.cosmology import PLANCK15
 
