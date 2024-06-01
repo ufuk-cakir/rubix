@@ -26,6 +26,6 @@ def gaussian_kernel_2d(m: int, n: int, sigma: float) -> Float[Array, "m n"]:
     x = jnp.arange(-((m - 1) / 2), ((m - 1) / 2) + 1)
     y = jnp.arange(-((n - 1) / 2), ((n - 1) / 2) + 1)
     X, Y = jnp.meshgrid(x, y, indexing="ij")
-    hg = jnp.exp(-(X**2 + Y**2) / (2 * sigma**2))
-    kernel = hg / jnp.sum(hg)
-    return kernel
+    values = jnp.exp(-(X**2 + Y**2) / (2 * sigma**2))
+    normalized = values / jnp.sum(values)
+    return normalized
