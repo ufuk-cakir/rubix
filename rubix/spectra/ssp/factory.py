@@ -23,9 +23,9 @@ def get_ssp_template(name: str) -> SSPGrid:
         )
 
     if config[name]["format"].lower() == "hdf5":
-        return HDF5SSPGrid.from_hdf5(config[name], file_location=TEMPLATE_PATH)
+        return HDF5SSPGrid.from_file(config[name], file_location=TEMPLATE_PATH)
     elif config[name]["format"].lower() == "pypipe3d":
-        return pyPipe3DSSPGrid.from_fits(config[name], file_location=TEMPLATE_PATH)
+        return pyPipe3DSSPGrid.from_file(config[name], file_location=TEMPLATE_PATH)
 
 
     else:
