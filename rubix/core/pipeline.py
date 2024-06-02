@@ -13,6 +13,7 @@ from .ifu import (
     get_calculate_spectra,
     get_doppler_shift_and_resampling,
     get_scale_spectrum_by_mass,
+    get_calculate_datacube,
 )
 from .rotation import get_galaxy_rotation
 from .ssp import get_ssp
@@ -120,6 +121,7 @@ class RubixPipeline:
         doppler_shift_and_resampling = get_doppler_shift_and_resampling(
             self.user_config
         )
+        calculate_datacube = get_calculate_datacube(self.user_config)
         convolve_psf = get_convolve_psf(self.user_config)
         functions = [
             rotate_galaxy,
@@ -128,6 +130,7 @@ class RubixPipeline:
             reshape_data,
             scale_spectrum_by_mass,
             doppler_shift_and_resampling,
+            calculate_datacube,
             convolve_psf,
         ]
 

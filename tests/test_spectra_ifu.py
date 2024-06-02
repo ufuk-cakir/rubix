@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 import jax.numpy as jnp
 from rubix.spectra.ifu import (
     calculate_diff,
@@ -9,6 +10,7 @@ from rubix.spectra.ifu import (
     cosmological_doppler_shift,
     velocity_doppler_shift,
     get_velocity_component,
+    calculate_cube,
 )
 
 # Assuming the functions are imported from the module
@@ -223,3 +225,29 @@ def test_resample_spectrum_if_spec_is_zero():
     # assert that it does not contain nan values
     assert not jnp.any(jnp.isnan(resampled_spectrum))
     assert (resampled_spectrum == 0).all()
+
+
+def test_calculate_cube():
+    # Test data
+    spectra = jnp.array([[100, 200, 300], [400, 500, 600], [700, 800, 900], [1, 2, 3]])
+    spaxel_index = jnp.array([0, 1, 1, 3])
+    num_spaxels = 2
+
+    # Expected result
+    expected_cube = jnp.array(
+        [[[100, 200, 300], [1100, 1300, 1500]], [[0, 0, 0], [1, 2, 3]]]
+    )
+
+    # Call the function
+    result_cube = calculate_cube(spectra, spaxel_index, num_spaxels)
+
+    print("Expected Cube:", expected_cube)
+    print("Computed Cube:", result_cube)
+
+    print("Expected cube: bin 0:", expected_cube[0, 0])
+    print("Computed cube: bin 0:", result_cube[0, 0])
+
+    print("Expected cube: bin 1:", expected_cube[0, 1])
+    print("Computed cube: bin 1:", result_cube[0, 1])
+    # Assertion
+    np.testing.assert_array_equal(result_cube, expected_cube)

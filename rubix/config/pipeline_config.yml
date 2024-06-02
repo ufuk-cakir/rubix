@@ -40,8 +40,14 @@ calc_ifu:
       depends_on: scale_spectrum_by_mass
       args: []
       kwargs: {}
-    convolve_psf:
-      name: convolve_psf
+
+    calculate_datacube:
+      name: calculate_datacube
       depends_on: doppler_shift_and_resampling
       args: []
       kwargs: {}
+    convolve_psf:
+          name: convolve_psf
+          depends_on: calculate_datacube
+          args: []
+          kwargs: {}
