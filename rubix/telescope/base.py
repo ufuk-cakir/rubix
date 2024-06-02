@@ -1,7 +1,5 @@
 from jaxtyping import Float, Array
 import equinox as eqx
-from rubix.cosmology import RubixCosmology
-from .utils import calculate_spatial_bin_edges, square_spaxel_assignment
 
 
 class BaseTelescope(eqx.Module):
@@ -15,3 +13,5 @@ class BaseTelescope(eqx.Module):
     sbin: int
     aperture_region: Float[Array, " sbin*sbin"]
     pixel_type: str
+    wave_seq: Float[Array, " n_bins"]
+    wave_edges: Float[Array, " n_bins"]

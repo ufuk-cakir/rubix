@@ -43,6 +43,7 @@ dependencies = [
 tests = [
     "pytest",
     "pytest-cov",
+    "pytest-mock",
     "nbval",
     "jax[cpu]", 
     "pre-commit"

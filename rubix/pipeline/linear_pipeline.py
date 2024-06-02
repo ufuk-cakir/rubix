@@ -193,4 +193,4 @@ class LinearTransformerPipeline(apl.AbstractPipeline):
                 static_args=static_args, static_kwargs=static_kwargs
             )
 
-        return self.compiled_expression(*args, **kwargs)
+        return self.compiled_expression(*args, **kwargs)  # type: ignore

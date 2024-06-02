@@ -20,6 +20,25 @@ def calculate_spatial_bin_edges(
     return spatial_bin_edges, spatial_bin_size
 
 
+# TODO: check what the difference is to calculate_wave_bins
+def calculate_wave_seq(
+    wave_range: Tuple[float, float], wave_res: float
+) -> Float[Array, " n_bins"]:
+    """Calculate the bin edges for the wavelength bins."""
+    return jnp.arange(wave_range[0], wave_range[1], wave_res)
+
+
+def calculate_wave_edges(
+    wave_bin_edges: Float[Array, " n_bins"], wave_res: float
+) -> Float[Array, " n_bins"]:
+    """Calculate the bin edges for the wavelength bins."""
+
+    wave_start = wave_bin_edges[0] - (wave_res / 2)
+    wave_end = wave_bin_edges[-1] + (wave_res / 2)
+    wave_bins = jnp.arange(wave_start, wave_end, wave_res)
+    return wave_bins
+
+
 def square_spaxel_assignment(
     coords: Float[Array, " n_stars 3"], spatial_bin_edges: Float[Array, " n_bins"]
 ) -> Float[Array, " n_stars"]:
@@ -52,7 +71,7 @@ def square_spaxel_assignment(
     )  # -1 to start indexing at 0
     y_indices = jnp.digitize(coords[:, 1], spatial_bin_edges) - 1
 
-    number_of_bins = len(spatial_bin_edges) - 1
+    number_of_bins = len(spatial_bin_edges)  # - 1
 
     # Clip the indices to the valid range
     x_indices = jnp.clip(x_indices, 0, number_of_bins - 1)
@@ -66,8 +85,24 @@ def square_spaxel_assignment(
 def filter_particles_outside_aperture(
     coords: Float[Array, " n_stars 3"],
     spatial_bin_edges: Float[Array, " n_bins"],
-) -> Float[Array, " n_stars_inside_aperture 3"]:
-    """Mask the particles that are outside the aperture."""
+) -> Float[Array, " n_stars"]:
+    """Mask the particles that are outside the aperture.
+
+    Returns a boolean mask that is True for particles that are inside the aperture and False for particles.
+
+    Parameters
+    ----------
+    coords : jnp.array (n, 3)
+        The particle coordinates.
+
+    spatial_bin_edges : jnp.array
+    The bin edges for the spatial bins.
+
+    Returns
+    -------
+    mask : jnp.array
+    A boolean mask that is True for particles that are inside the aperture and False for particles that are outside the aperture.
+    """
     min_value = spatial_bin_edges.min()
     max_value = spatial_bin_edges.max()
 
@@ -76,4 +111,41 @@ def filter_particles_outside_aperture(
 
     # Filter out all the particles that are outside the aperture
 
-    return coords[mask]
+    return mask
+
+
+#
+# # TODO: there is a better way to to this without loops
+# currently not used
+# def restructure_data(masses, metallicities, ages, indices, num_pixels):
+#     # Calculate the number of particles per pixel
+#     # particle_count = jnp.bincount(indices, minlength=num_pixels)
+#     particle_count = jnp.bincount(indices, length=num_pixels)
+#
+#     # Determine the maximum number of particles in any pixel
+#     max_particles = particle_count.max().astype(int)
+#
+#     # Initialize structured arrays
+#     masses_structured = jnp.zeros((num_pixels, max_particles))
+#     metallicities_structured = jnp.zeros((num_pixels, max_particles))
+#     ages_structured = jnp.zeros((num_pixels, max_particles))
+#
+#     # Process each pixel
+#     for i in range(num_pixels):
+#         # Find the indices of particles in this pixel
+#         particle_indices = jnp.flatnonzero(indices == i)
+#         num_particles_in_pixel = particle_indices.size
+#
+#         # Update structured arrays with data from these particles
+#         if num_particles_in_pixel > 0:  # Only update if there are particles
+#             masses_structured = masses_structured.at[i, :num_particles_in_pixel].set(
+#                 masses[particle_indices]
+#             )
+#             metallicities_structured = metallicities_structured.at[
+#                 i, :num_particles_in_pixel
+#             ].set(metallicities[particle_indices])
+#             ages_structured = ages_structured.at[i, :num_particles_in_pixel].set(
+#                 ages[particle_indices]
+#             )
+#
+#     return masses_structured, metallicities_structured, ages_structured
