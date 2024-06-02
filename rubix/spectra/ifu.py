@@ -216,3 +216,30 @@ def resample_spectrum(
     # jax.debug.print("resampled spectrum: {}", lum)
     # jax.debug.print("intrinsic_wave_diff: {}", intrinsic_wave_diff)
     return lum
+
+
+def calculate_cube(
+    spectra: Float[Array, "n_stars n_wave_bins"],
+    spaxel_index: Float[Array, " n_stars"],
+    num_spaxels: int,
+) -> Float[Array, "num_spaxels num_spaxels n_wave_bins"]:
+    """Calculate the spectral data cube
+
+    Sum up the spectra of all stars in each spaxel to get the spectral data cube.
+
+    Parameters
+    ----------
+    spectra : array-like
+        The spectra of all stars.
+    spaxel_index : array-like
+        The spaxel index of each star. This defines into which telescope pixel the star falls.
+    num_spaxels : int
+        The number of spaxels.
+    Returns
+    -------
+    array-like
+        The spectral data cube.
+    """
+    datacube = jax.ops.segment_sum(spectra, spaxel_index, num_segments=num_spaxels**2)
+    datacube = datacube.reshape(num_spaxels, num_spaxels, spectra.shape[-1])
+    return datacube
