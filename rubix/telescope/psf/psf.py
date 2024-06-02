@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 from jax.scipy.signal import convolve2d
 from jaxtyping import Array, Float
-
+from jax import vmap
 from .kernels import gaussian_kernel_2d
 
 
@@ -50,15 +50,8 @@ def apply_psf(
     Float[Array, "n_pixel n_pixel wave_bins"]
         The datacube convolved with the PSF kernel.
     """
-    datacube_dimensions = datacube.shape
-
     # Convolve each plane of the datacube with the PSF kernel
-    convolved = jnp.array(
-        [
-            _convolve_plane(datacube[:, :, i], psf_kernel)
-            for i in range(datacube_dimensions[2])
-        ]
-    )
+    # Vmap the convolution operation over the spectral dimension
+    convolved = vmap(_convolve_plane, in_axes=(2, None))(datacube, psf_kernel)
     transposed = jnp.transpose(convolved, (1, 2, 0))  # Reorder to original shape
-
     return transposed

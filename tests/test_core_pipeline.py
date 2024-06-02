@@ -24,6 +24,7 @@ def setup_environment(monkeypatch):
     # Monkeypatch the necessary data functions to return dummy data
     monkeypatch.setattr("rubix.core.pipeline.get_rubix_data", dummy_get_rubix_data)
 
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
 file_path = os.path.join(dir_path, "data/galaxy-id-14.hdf5")
 output_path = os.path.join(dir_path, "output")
@@ -43,7 +44,10 @@ user_config = {
     },
     "data": {"subset": {"use_subset": True, "subset_size": 5}},
     "output_path": output_path,
-    "telescope": {"name": "MUSE"},
+    "telescope": {
+        "name": "MUSE",
+        "psf": {"name": "gaussian", "size": 5, "sigma": 0.6},
+    },
     "cosmology": {"name": "PLANCK15"},
     "galaxy": {"dist_z": 0.1},
     "ssp": {
