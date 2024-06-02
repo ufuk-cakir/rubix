@@ -8,6 +8,52 @@ from rubix import config
 from rubix.logger import get_logger
 
 
+def create_rubix_galaxy(
+    file_path: str,
+    particle_data: dict,
+    galaxy_data: dict,
+    simulation_metadata: dict,
+    units: dict,
+    config: dict,
+    logger: logging.Logger,
+):
+    logger.debug("Creating Rubix file at path: %s", file_path)
+
+    with h5py.File(file_path, "w") as f:
+        # Create groups
+        meta_group = f.create_group("meta")
+        galaxy_group = f.create_group("galaxy")
+        particle_group = f.create_group("particles")
+
+        # Save the simulation metadata
+        for key, value in simulation_metadata.items():
+            meta_group.create_dataset(key, data=value)
+
+        # Save the galaxy data: Create a dataset for each field and add the units as attributes
+        for key, value in galaxy_data.items():
+            logger.debug(
+                f"Converting {key} for galaxy data into {config['galaxy'][key]}"
+            )
+            value = u.Quantity(value, units["galaxy"][key]).to(config["galaxy"][key])
+            galaxy_group.create_dataset(key, data=value)
+            galaxy_group[key].attrs["unit"] = config["galaxy"][key]
+
+        # Save the particle data: Create a dataset for each field and add the units as attributes
+        for key in particle_data:
+            particle_group.create_group(key)
+            for field, value in particle_data[key].items():
+                logger.debug(
+                    f"Converting {field} for particle type {key} into {config['particles'][key][field]}"
+                )
+                value = u.Quantity(value, units[key][field]).to(
+                    config["particles"][key][field]
+                )
+                particle_group[key].create_dataset(field, data=value)  # type: ignore
+                particle_group[key][field].attrs["unit"] = config["particles"][key][field]  # type: ignore
+
+    logger.info(f"Rubix file saved at {file_path}")
+
+
 class BaseHandler(ABC):
     def __init__(self, logger_config=None):
         """Initializes the BaseHandler class"""
@@ -32,7 +78,7 @@ class BaseHandler(ABC):
 
     def to_rubix(self, output_path: str):
         self._logger.debug("Converting to Rubix format..")
-        
+
         os.makedirs(output_path, exist_ok=True)
 
         # Get the data
@@ -48,44 +94,18 @@ class BaseHandler(ABC):
 
         # Create the Rubix h5 file
         file_path = os.path.join(output_path, "rubix_galaxy.h5")
-        with h5py.File(file_path, "w") as f:
-            # Create groups
-            meta_group = f.create_group("meta")
-            galaxy_group = f.create_group("galaxy")
-            particle_group = f.create_group("particles")
-
-            # Save the simulation metadata as
-            for key, value in simulation_metadata.items():
-                meta_group.create_dataset(key, data=value)
-
-            # Save the galaxy data: Create a dataset for each field and add the units as attributes
-            for key, value in galaxy_data.items():
-                self._logger.debug(
-                    f"Converting {key} for galaxy data into {self.config['galaxy'][key]}"
-                )
-
-                # Convert the units to the correct ones defined in the config
-                value = u.Quantity(value, units["galaxy"][key]).to(
-                    self.config["galaxy"][key]
-                )
-                galaxy_group.create_dataset(key, data=value)
-                galaxy_group[key].attrs["unit"] = self.config["galaxy"][key]
-
-            # Save the particle data: Create a dataset for each field and add the units as attributes
-            for key in particle_data:
-                particle_group.create_group(key)
-                for field, value in particle_data[key].items():
-                    self._logger.debug(
-                        f"Converting {field} for particle type {key} into {self.config['particles'][key][field]}"
-                    )
-                    value = u.Quantity(value, units[key][field]).to(
-                        self.config["particles"][key][field]
-                    )
-
-                    particle_group[key].create_dataset(field, data=value)  # type: ignore
-                    particle_group[key][field].attrs["unit"] = self.config["particles"][key][field]  # type: ignore
-
         self._logger.info(f"Rubix file saved at {file_path}")
+
+        # Create the Rubix file
+        create_rubix_galaxy(
+            file_path,
+            particle_data,
+            galaxy_data,
+            simulation_metadata,
+            units,
+            self.config,
+            self._logger,
+        )
 
     def _check_data(self, particle_data, galaxy_data, simulation_metadata, units):
         # Check if all required fields are present
