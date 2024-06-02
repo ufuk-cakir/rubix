@@ -234,7 +234,9 @@ def calculate_cube(
     spaxel_index : array-like
         The spaxel index of each star. This defines into which telescope pixel the star falls.
     num_spaxels : int
-        The number of spaxels.
+        The number of spaxels in one direction of the telescope aperture. The resulting number of telescope bins is `num_spaxels^2`.
+        Assumes that the maximum value in `spaxel_index` does not exceed this value.
+
     Returns
     -------
     array-like
