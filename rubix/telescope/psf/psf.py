@@ -2,10 +2,31 @@ import jax.numpy as jnp
 from jax.scipy.signal import convolve2d
 from jaxtyping import Array, Float
 
+from .kernels import gaussian_kernel_2d
+
 
 def _convolve_plane(plane, kernel):
     """Convolve a single plane of a datacube with a kernel."""
     return convolve2d(plane, kernel, mode="same")
+
+
+def get_psf_kernel(name: str, m: int, n: int, **kwargs) -> Float[Array, "m n"]:
+    """Get a point spread function (PSF) kernel.
+    Parameters
+    ----------
+    name : str
+        The name of the PSF kernel to get.
+    **kwargs
+        Additional keyword arguments to pass to the PSF kernel function.
+    Returns
+    -------
+    Float[Array, "m n"]
+        The PSF kernel.
+    """
+    if name == "gaussian":
+        return gaussian_kernel_2d(m=m, n=n, **kwargs)
+    else:
+        raise ValueError(f"Unknown PSF kernel name: {name}")
 
 
 def apply_psf(
