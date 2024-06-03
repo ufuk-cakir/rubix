@@ -123,6 +123,7 @@ class RubixPipeline:
         )
         calculate_datacube = get_calculate_datacube(self.user_config)
         convolve_psf = get_convolve_psf(self.user_config)
+        
         functions = [
             rotate_galaxy,
             spaxel_assignment,
