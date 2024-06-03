@@ -18,6 +18,8 @@ from .rotation import get_galaxy_rotation
 from .ssp import get_ssp
 from .telescope import get_spaxel_assignment, get_telescope
 
+from .lsf import get_convolve_lsf
+
 
 class RubixPipeline:
     """
@@ -120,6 +122,7 @@ class RubixPipeline:
             self.user_config
         )
 
+        convolve_lsf = get_convolve_lsf(self.user_config)
         functions = [
             rotate_galaxy,
             spaxel_assignment,
@@ -127,6 +130,7 @@ class RubixPipeline:
             reshape_data,
             scale_spectrum_by_mass,
             doppler_shift_and_resampling,
+            convolve_lsf,
         ]
 
         return functions
