@@ -9,6 +9,7 @@ from rubix.spectra.ifu import (
     cosmological_doppler_shift,
     resample_spectrum,
     velocity_doppler_shift,
+    calculate_cube,
 )
 
 from .ssp import get_lookup_interpolation_pmap, get_ssp
@@ -128,3 +129,25 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
         return inputs
 
     return doppler_shift_and_resampling
+
+
+def get_calculate_datacube(config: dict) -> Callable:
+    logger = get_logger(config.get("logger", None))
+    telescope = get_telescope(config)
+    num_spaxels = telescope.sbin
+
+    # Bind the num_spaxels to the function
+    calculate_cube_fn = jax.tree_util.Partial(calculate_cube, num_spaxels=num_spaxels)
+    calculate_cube_pmap = jax.pmap(calculate_cube_fn)
+
+    def calculate_datacube(inputs: dict[str, jax.Array]) -> dict[str, jax.Array]:
+        logger.info("Calculating Data Cube...")
+        ifu_cubes = calculate_cube_pmap(
+            spectra=inputs["spectra"], spaxel_index=inputs["pixel_assignment"]
+        )
+        datacube = jnp.sum(ifu_cubes, axis=0)
+        logger.debug(f"Datacube Shape: {datacube.shape}")
+        inputs["datacube"] = datacube
+        return inputs
+
+    return calculate_datacube
