@@ -26,7 +26,7 @@ def get_convolve_lsf(config: dict) -> Callable:
         """Convolve the input datacube with the LSF."""
         logger.info("Convolving with LSF...")
         input["datacube"] = apply_lsf(
-            spectra=input["datacube"], lsf_sigma=sigma, wave_resolution=wave_resolution
+            datacube=input["datacube"], lsf_sigma=sigma, wave_resolution=wave_resolution
         )
         return input
 

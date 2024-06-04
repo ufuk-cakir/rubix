@@ -26,12 +26,36 @@ def _get_kernel(sigma: float, wave_res: float, factor: int = 12):
     return kernel
 
 
-def apply_lsf(
-    spectra: Float[Array, "n_stars wave_bins"],
+def apply_lsf_spectra(
+    spectra: Float[Array, "n_spectra wave_bins"],
     lsf_sigma: float,
     wave_resolution: float,
     extend_factor: int = 12,
-) -> Float[Array, "n_stars wave_bins"]:
+) -> Float[Array, "n_spectra wave_bins"]:
+    """Apply the Line Spread Function (LSF) to multiple spectra.
+
+    This function applies the LSF to multiple spectra in parallel using JAX's vmap.
+    Currently only supports a Gaussian kernel and fixed wave resolution across all spectra and wavelenghts.
+
+    Parameters
+    ----------
+    spectra : ndarray
+        The input spectra to apply the LSF to.
+    lsf_sigma : float
+        The sigma of the LSF. Currently a Gaussian kernel.
+
+    wave_resolution : float
+        The wave resolution of the spectra.
+
+    extend_factor : int
+        The factor to extend the kernel by.
+
+    Returns
+    -------
+    convolved : ndarray
+        The convolved spectra.
+
+    """
     kernel = _get_kernel(lsf_sigma, wave_resolution, factor=extend_factor)
 
     # Vmap the convolution across all stars
@@ -39,3 +63,43 @@ def apply_lsf(
 
     end = spectra.shape[1] + kernel.shape[0] - 1 - extend_factor
     return convolved[:, extend_factor:end]
+
+
+def apply_lsf(
+    datacube: Float[Array, "n1 n2 wave_bins"],
+    lsf_sigma: float,
+    wave_resolution: float,
+    extend_factor: int = 12,
+) -> Float[Array, "n1 n2 wave_bins"]:
+    """Apply the Line Spread Function (LSF) to a datacube.
+
+    This function first flattens the datacube, applies the LSF to the spectra, and then reshapes the datacube back to the original shape.
+
+    Parameters
+    ----------
+    datacube : ndarray
+        The input datacube to apply the LSF to.
+    lsf_sigma : float
+        The sigma of the LSF. Currently a Gaussian kernel.
+
+    wave_resolution : float
+        The wave resolution of the spectra inside the datacube.
+
+    extend_factor : int
+        The factor to extend the kernel by.
+
+    Returns
+    -------
+    convolved : ndarray
+        The convolved datacube.
+    """
+    dimensions = datacube.shape
+
+    # flatten the datacube
+    datacube = datacube.reshape(-1, dimensions[-1])
+
+    # Apply LSF to the spectra
+    convolved = apply_lsf_spectra(datacube, lsf_sigma, wave_resolution, extend_factor)
+    # Reshape back to the original shape
+    # This assumes that input and output shape after convolution are the same
+    return convolved.reshape(dimensions)
