@@ -43,7 +43,10 @@ user_config = {
     },
     "data": {"subset": {"use_subset": True, "subset_size": 5}},
     "output_path": output_path,
-    "telescope": {"name": "MUSE"},
+    "telescope": {
+        "name": "MUSE",
+        "psf": {"name": "gaussian", "size": 5, "sigma": 0.6},
+    },
     "cosmology": {"name": "PLANCK15"},
     "galaxy": {"dist_z": 0.1},
     "ssp": {
