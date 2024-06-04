@@ -10,7 +10,6 @@ IllustrisAPI:
       - Coordinates
       - Density
       - Masses
-      - ParticleIDs
       - GFM_Metallicity
       - SubfindHsml
       - StarFormationRate
@@ -33,7 +32,6 @@ IllustrisHandler:
       Coordinates: coords
       Density: density
       Masses: mass
-      ParticleIDs: particle_ids
       GFM_Metallicity: metallicity
       SubfindHsml: hsml
       StarFormationRate: sfr

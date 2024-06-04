@@ -5,6 +5,7 @@ import numpy as np
 from rubix.utils import convert_values_to_physical, SFTtoAge
 from rubix import config
 
+
 class IllustrisHandler(BaseHandler):
     MAPPED_FIELDS = config["IllustrisHandler"]["MAPPED_FIELDS"]
     # This Dictionary maps the particle name in the simulation to the name used in Rubix
@@ -36,9 +37,11 @@ class IllustrisHandler(BaseHandler):
         # Check if paths are valid
         if not os.path.exists(self.path):
             raise FileNotFoundError(f"File {self.path} not found")
-        self.simulation_metadata, self.particle_data, self.galaxy_data = (
-            self._load_data()
-        )
+        (
+            self.simulation_metadata,
+            self.particle_data,
+            self.galaxy_data,
+        ) = self._load_data()
 
     def get_particle_data(self):
         return self.particle_data
@@ -53,6 +56,11 @@ class IllustrisHandler(BaseHandler):
         return self.UNITS
 
     def _check_fields(self, f):
+        self._logger.debug("Checking if the fields are present in the file...")
+        self._logger.debug(f"Keys in the file: {f.keys()}")
+
+        self._logger.debug(f"Expected fields: {self.ILLUSTRIS_DATA}")
+
         for fields in self.ILLUSTRIS_DATA:
             if fields not in f:
                 raise ValueError(f"Field {fields} not found in the file")
@@ -60,7 +68,9 @@ class IllustrisHandler(BaseHandler):
     def _load_data(self):
         # open the file
         with h5py.File(self.path, "r") as f:
-            self._logger.debug("Loading data from Illustris file..")
+            self._logger.debug(
+                f"Loading data from Illustris file located in {self.path}.."
+            )
             # Check if the file has the required fields
             self._check_fields(f)
             # Get information from the header
@@ -70,9 +80,11 @@ class IllustrisHandler(BaseHandler):
             # these values are used to convert the values to physical units
             # PARTICLE_KEYS are the keys of the particle types in the file
 
-            self.TIME, self.HUBBLE_PARAM, self.PARTICLE_KEYS = (
-                self._get_data_from_header(f)
-            )
+            (
+                self.TIME,
+                self.HUBBLE_PARAM,
+                self.PARTICLE_KEYS,
+            ) = self._get_data_from_header(f)
             # Get simulation metadata
             simulation_metadata = self._get_metadata(f)
 
@@ -109,7 +121,6 @@ class IllustrisHandler(BaseHandler):
         return keys
 
     def _get_galaxy_data(self, f):
-
         redshift = f["Header"].attrs["Redshift"]
         center = self._get_center(f)
         halfmassrad_stars = self._get_halfmassrad_stars(f)
