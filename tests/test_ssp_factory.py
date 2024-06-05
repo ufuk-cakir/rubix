@@ -29,6 +29,7 @@ def test_get_ssp_template_existing_template():
     suppored_templates = config["ssp"]["templates"].copy()
 
     for template_name in suppored_templates:
+        print("template_name", template_name)
         template = get_ssp_template(template_name)
         template_class_name = config["ssp"]["templates"][template_name]["name"]
         assert template.__class__.__name__ == template_class_name
@@ -69,40 +70,18 @@ def test_get_ssp_template_invalid_format():
 def test_get_ssp_template_error_loading_file():
 
     config = get_config()
-    print("before", config["ssp"])
-    suppored_templates = config["ssp"]["templates"]
+    supported_templates = config["ssp"]["templates"]
 
     # get the first template
-    template_name = list(suppored_templates.keys())[0]
-    suppored_templates[template_name]["file_name"] = "invalid_file"
+    template_name = list(supported_templates.keys())[0]
+    supported_templates[template_name]["file_name"] = "invalid_file"
 
-    suppored_templates[template_name]["format"] = "HDF5"
-    config["ssp"]["templates"] = suppored_templates
-    print(config["ssp"])
+    supported_templates[template_name]["format"] = "HDF5"
+    config["ssp"]["templates"] = supported_templates
     with patch("rubix.spectra.ssp.factory.rubix_config", config):
         with pytest.raises(FileNotFoundError) as excinfo:
             print("template_name", template_name)
             get_ssp_template(template_name)
-
-    assert "No such file or directory" in str(excinfo.value)
-
-
-def test_checkout_ssp_template_from_url():
-
-    config = get_config()
-    print("before", config["ssp"])
-    suppored_templates = config["ssp"]["templates"]
-
-    # get the first template
-    template_name = list(suppored_templates.keys())[0]
-    suppored_templates[template_name]["url"] = "invalid_url"
-    suppored_templates[template_name]["format"] = "HDF5"
-
-    config["ssp"]["templates"] = suppored_templates
-    print(config["ssp"])
-    with patch("rubix.spectra.ssp.factory.rubix_config", config):
-        with pytest.raises(FileNotFoundError) as excinfo:
-            print("template_name", template_name)
-            get_ssp_template(template_name)
-
+        
     assert "Could not download file" in str(excinfo.value)
+

@@ -7,6 +7,8 @@ import os
 import h5py
 import requests
 from rubix import config as rubix_config
+from rubix.logger import get_logger
+import logging
 from interpax import interp2d
 from jax.tree_util import Partial
 from dataclasses import dataclass
@@ -27,7 +29,7 @@ class SSPGrid:
     # This does not work with jax.jit, gives error that str is not valid Jax type
     # units: Dict[str, str] = eqx.field(default_factory=dict)
 
-    def __init__(self, age, metallicity, wavelength, flux):
+    def __init__(self, age, metallicity, wavelength, flux, _logger=None):
         self.age = jnp.asarray(age)
         self.metallicity = jnp.asarray(metallicity)
         self.wavelength = jnp.asarray(wavelength)
@@ -100,22 +102,27 @@ class SSPGrid:
             The path to the file.
         """ 
 
+        _logger = get_logger()
         file_path = os.path.join(file_location, config["file_name"])
 
         if not os.path.exists(file_path):
-            print(f'[SSPModels] File {file_path} not found. Downloading it from {config["url"]}')
+            _logger.info(f'[SSPModels] File {file_path} not found. Downloading it from {config["source"]}')
             try:
-                response = requests.get(config["url"])
+                response = requests.get(config["source"]+config["file_name"])
                 response.raise_for_status()
 
                 if response.status_code == 200:
                     with open(file_path, "wb") as f:
                         f.write(response.content)
-                    print(f'[SSPModels] File {config["file_name"]} downloaded successfully!')
+                    _logger.info(f'[SSPModels] File {config["file_name"]} downloaded successfully!')
+                    return file_path
                 else:
-                    raise FileNotFoundError(f"Could not download file {config['file_name']} from url {config['url']}.")
-            except requests.exceptions.HTTPError as err:
-                raise ValueError(err)  
+                    raise FileNotFoundError(f"Could not download file {config['file_name']} from url {config['source']}.")
+            except requests.exceptions.RequestException as err:
+                _logger.error(f'[SSPModels] Error: {err}')
+            #except requests.exceptions.HTTPError as errh:
+            #    print("Http Error:",errh)
+            raise FileNotFoundError(f"Could not download file {config['file_name']} from url {config['source']}.")
         else:
             return file_path
 
@@ -141,10 +148,10 @@ class SSPGrid:
         # Initialize an empty zero length array for each field
         # in the SSP configuration.
         # Actual loading of templates needs to be implemented in the subclasses.
-
+        
         ssp_data = {}
-        for field_name in config["fields"].items():
-            ssp_data[field_name] = jnp.empty(0)
+        for field_name, field_info in config["fields"].items():
+            ssp_data[field_info["name"]] = jnp.empty(0)
 
         grid = cls(**ssp_data)
         grid.__class__.__name__ = config["name"]
@@ -185,6 +192,8 @@ class HDF5SSPGrid(SSPGrid):
 
         if config.get("format", "").lower() != "hdf5":
             raise ValueError("Configured file format is not HDF5.")
+
+        _logger = get_logger()
 
         file_path = cls.checkout_SSP_template(config, file_location)
         
@@ -256,46 +265,46 @@ class pyPipe3DSSPGrid(SSPGrid):
             cdelt = 1
         return crval + cdelt*(jnp.arange(naxis) + 1 - crpix)
     
-    @staticmethod
-    def get_normalization_wavelength(header, wavelength, flux_models, n_models):
-        """ 
-        Search for the normalization wavelength at the FITS header.
-        If the key WAVENORM does not exists in the header, sweeps all the
-        models looking for the wavelengths where the flux is closer to 1,
-        calculates the median of those wavelengths and returns it.
-
-        TODO: defines a better normalization wavelength if it's not present
-        in the header.
-
-        adapted from https://github.com/reginasar/TNG_MaNGA_mocks/blob/3229dd47b441aef380ef7dbfdf110f39e5c5a77c/sin_ifu_clean.py#L1466
-
-        Parameters
-        ----------
-        header : :class:`astropy.io.fits.header.Header`
-            FITS header with spectral data.
-    
-        wavelength : array like, wavelength of the model SSPs.
-
-        flux_models : array like, flux of the model SSPs.
-
-        n_models : int, number of models in the SSP grid.
-
-        Returns
-        -------
-        float
-            The normalization wavelength.
-        """
-        try:
-            wave_norm = header['WAVENORM']
-        except Exception as ex:
-            _closer = 1e-6
-            probable_wavenorms = jnp.hstack([wavelength[(jnp.abs(flux_models[i] - 1) < _closer)]
-                                        for i in range(n_models)])
-            wave_norm = jnp.median(probable_wavenorms)
-        
-            print(f'[SSPModels] {ex}')
-            print(f'[SSPModels] setting normalization wavelength to {wave_norm} A')
-        return wave_norm
+    #@staticmethod
+    #def get_normalization_wavelength(header, wavelength, flux_models, n_models):
+    #    """ 
+    #    Search for the normalization wavelength at the FITS header.
+    #    If the key WAVENORM does not exists in the header, sweeps all the
+    #    models looking for the wavelengths where the flux is closer to 1,
+    #    calculates the median of those wavelengths and returns it.
+    #
+    #    TODO: defines a better normalization wavelength if it's not present
+    #    in the header.
+    #
+    #    adapted from https://github.com/reginasar/TNG_MaNGA_mocks/blob/3229dd47b441aef380ef7dbfdf110f39e5c5a77c/sin_ifu_clean.py#L1466
+    #
+    #    Parameters
+    #    ----------
+    #    header : :class:`astropy.io.fits.header.Header`
+    #        FITS header with spectral data.
+    #
+    #    wavelength : array like, wavelength of the model SSPs.
+    #
+    #    flux_models : array like, flux of the model SSPs.
+    #
+    #    n_models : int, number of models in the SSP grid.
+    #
+    #    Returns
+    #    -------
+    #    float
+    #        The normalization wavelength.
+    #    """
+    #    try:
+    #        wave_norm = header['WAVENORM']
+    #    except Exception as ex:
+    #        _closer = 1e-6
+    #        probable_wavenorms = jnp.hstack([wavelength[(jnp.abs(flux_models[i] - 1) < _closer)]
+    #                                    for i in range(n_models)])
+    #        wave_norm = jnp.median(probable_wavenorms)
+    #    
+    #        print(f'[SSPModels] {ex}')
+    #        print(f'[SSPModels] setting normalization wavelength to {wave_norm} A')
+    #    return wave_norm
 
     @staticmethod    
     def get_tZ_models(header, n_models):
@@ -323,9 +332,10 @@ class pyPipe3DSSPGrid(SSPGrid):
         array like
             Mass-to-light value at the normalization wavelength.
         """
-        ages = jnp.zeros(n_models, dtype='float')
-        Zs = ages.copy()
-        mtol = ages.copy()
+        
+        ages = jnp.zeros(n_models, dtype=jnp.float64)
+        Zs = jnp.zeros(n_models, dtype=jnp.float64)
+        mtol = jnp.zeros(n_models, dtype=jnp.float64)
         for i in range(n_models):
             mult = {'Gyr': 1, 'Myr': 1/1000}
             name_read_split = header[f'NAME{i}'].split('_')
@@ -337,12 +347,15 @@ class pyPipe3DSSPGrid(SSPGrid):
                 _age = _age[:-3]
             else:
                 mult = 1  # Gyr
-            age = mult*jnp.float64(_age)
+            age = mult * jnp.float64(_age)
             _Z = name_read_split[1].split('.')[0]
             Z = jnp.float64(_Z.replace('z', '0.'))
-            ages[i] = age
-            Zs[i] = Z
-            mtol[i] = 1/jnp.float64(header[f'NORM{i}'])
+            ages = ages.at[i].set(age)
+            Zs = Zs.at[i].set(Z)
+            if jnp.float64(header[f'NORM{i}']) != 0:
+                mtol = mtol.at[i].set(1 / jnp.float64(header[f'NORM{i}']))
+            else:
+                mtol = mtol.at[i].set(1)
             
         return jnp.unique(ages), jnp.unique(Zs), mtol
 
@@ -381,7 +394,7 @@ class pyPipe3DSSPGrid(SSPGrid):
 
             # read in the flux of the models and multiply by the mass-to-light ratio to get the flux in Lsun/Msun
             # see also eq. A1 here https://arxiv.org/pdf/1811.04856.pdf
-            template_flux = f[0].data * m2l[:, None, None]
+            template_flux = jnp.array(f[0].data, dtype=jnp.float64) / m2l[:, None]
             # reshape and bring into the correct order of metallcity, age, wavelength
             # to conform with the SSPGrid dataclass
             flux_models = jnp.swapaxes(template_flux, 0, 1)
