@@ -20,7 +20,7 @@ def api_instance(api_key, tmp_path):
     return IllustrisAPI(
         api_key=api_key,
         save_data_path=str(save_data_path),
-        particle_type=["stars"],
+        particle_type=["stars", "gas"],
         simulation="TNG50-1",
         snapshot=99,
     )
@@ -68,13 +68,17 @@ def test_get_particle_data(
         "id": 11,
         "name": "Mock Subhalo",
         "PartType4": {field_name: ["mocked_data"]},
+        "PartType0": {field_name: ["mocked_data"]},   
     }
 
     requests_mock.get(mock_url, json=mock_response)
 
     mock_dataset = np.array([1.0, 2.0, 3.0])
+    mock_dataset_gas = np.array([4.0, 5.0, 6.0])
 
-    data = {"PartType4": {"Masses": mock_dataset}}
+    data = {"PartType4": {"Masses": mock_dataset},
+            "PartType0": {"Masses": mock_dataset_gas}
+            }
     mock_hdf5 = MagicMock()
 
     mock_hdf5.__enter__.return_value = data
@@ -93,6 +97,7 @@ def test_get_particle_data(
             "id": 11,
             "name": "Mock Subhalo",
             "PartType4": {field_name: ["mocked_data"]},
+            "PartType0": {field_name: ["mocked_data"]},
         }
         # Include the 'content-type' header in the mock response
         headers = {"content-type": "application/json"}
@@ -110,12 +115,17 @@ def test_get_particle_data(
             np.testing.assert_array_equal(
                 data["PartType4"][field_name], data_response["PartType4"][field_name]
             )
+            assert isinstance(data, dict)
+            assert field_name in data["PartType4"]
+            np.testing.assert_array_equal(
+                data["PartType4"][field_name], data_response["PartType4"][field_name]
+            )
 
 
 def test__init__():
     api = IllustrisAPI(api_key="test_key")
     assert api.headers == {"api-key": "test_key"}
-    assert api.particle_type == ["stars"]
+    assert api.particle_type == ["stars", "gas"]
     assert api.snapshot == 99
     assert api.simulation == "TNG50-1"
     assert api.baseURL == "http://www.tng-project.org/api/TNG50-1/snapshots/99"
@@ -248,7 +258,8 @@ def test_load_galaxy(api_instance, galaxy_data, subhalo_data):
     ) as mock_append_subhalo_data, patch.object(
         api_instance, "_load_hdf5", return_value=galaxy_data
     ) as mock_load_hdf5:
-        api_instance.DEFAULT_FIELDS = {"stars": "Masses"}
+        api_instance.DEFAULT_FIELDS = {"stars": "Masses",
+                                       "gas": "Masses"}
         result = api_instance.load_galaxy(id=id)
 
         # Verify the calls
@@ -259,7 +270,7 @@ def test_load_galaxy(api_instance, galaxy_data, subhalo_data):
         #     name=f"galaxy-id-{id}",
         # )
         mock_get.assert_called_once_with(
-            f"{api_instance.baseURL}/subhalos/{id}/cutout.hdf5?stars=Masses",
+            f"{api_instance.baseURL}/subhalos/{id}/cutout.hdf5?stars=Masses&gas=Masses",
             name=f"galaxy-id-{id}",
         )
         mock_get_subhalo.assert_called_once_with(id)
@@ -293,10 +304,11 @@ def test_load_galaxy_multiple_fields(api_instance, galaxy_data, subhalo_data):
     ) as mock_append_subhalo_data, patch.object(
         api_instance, "_load_hdf5", return_value=galaxy_data
     ) as mock_load_hdf5:
-        api_instance.DEFAULT_FIELDS = {"stars": ["Masses", "Coordinates"]}
+        api_instance.DEFAULT_FIELDS = {"stars": ["Masses", "Coordinates"],
+                                      "gas": ["Coordinates"]}
         result = api_instance.load_galaxy(id=id)
         mock_get.assert_called_once_with(
-            f"{api_instance.baseURL}/subhalos/{id}/cutout.hdf5?stars=Masses,Coordinates",
+            f"{api_instance.baseURL}/subhalos/{id}/cutout.hdf5?stars=Masses,Coordinates&gas=Coordinates",
             name=f"galaxy-id-{id}",
         )
         mock_get_subhalo.assert_called_once_with(id)
@@ -384,7 +396,7 @@ def test_load_hdf5_success(api_instance, tmp_path):
     file_path = tmp_path / f"{filename}.hdf5"
     test_data = {
         "PartType0": {"Density": np.array([1.0, 2.0, 3.0])},
-        "PartType1": {"Velocity": np.array([4.0, 5.0, 6.0])},
+        "PartType4": {"Velocity": np.array([4.0, 5.0, 6.0])},
     }
 
     with h5py.File(file_path, "w") as f:
@@ -429,7 +441,9 @@ def test_load_hdf5_ignore_header(api_instance, tmp_path):
         header = f.create_group("Header")
         header.create_dataset("SomeInfo", data=np.array([7.0, 8.0, 9.0]))
         parttype0 = f.create_group("PartType0")
-        parttype0.create_dataset("Density", data=np.array([1.0, 2.0, 3.0]))
+        parttype0.create_dataset("Masses", data=np.array([1.0, 2.0, 3.0]))
+        parttype4 = f.create_group("PartType4")
+        parttype4.create_dataset("Masses", data=np.array([4.0, 5.0, 6.0]))
 
     # Set the DATAPATH and load the file
     api_instance.DATAPATH = str(tmp_path)
@@ -440,7 +454,7 @@ def test_load_hdf5_ignore_header(api_instance, tmp_path):
     assert "PartType0" in loaded_data, "'PartType0' group not found in loaded data."
     np.testing.assert_array_equal(
         [1.0, 2.0, 3.0],
-        loaded_data["PartType0"]["Density"],
+        loaded_data["PartType0"]["Masses"],
         err_msg="'Density' data does not match.",
     )
 
@@ -450,7 +464,8 @@ def test_load_hdf5_with_extension(api_instance, tmp_path):
     filename = "test_data_with_extension.hdf5"
     expected_filename_without_extension = "test_data_with_extension"
     file_path = tmp_path / filename
-    test_data = {"PartType0": {"Density": np.array([1.0, 2.0, 3.0])}}
+    test_data = {"PartType0": {"Masses": np.array([1.0, 2.0, 3.0])},
+                 "PartType4": {"Masses": np.array([4.0, 5.0, 6.0])}}
 
     with h5py.File(file_path, "w") as f:
         for type, fields in test_data.items():

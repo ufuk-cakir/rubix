@@ -65,7 +65,7 @@ IllustrisHandler:
       coords: cm
       density: g/cm^3
       mass: g
-      particle_ids: ""
+      #particle_ids: ""
       metallicity: ""
       hsml: cm
       sfr: Msun/yr

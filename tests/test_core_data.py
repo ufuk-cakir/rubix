@@ -89,26 +89,63 @@ def test_prepare_input(mock_center_particles, mock_path_join):
                 "mass": [1000],
                 "age": [4.5],
             },
+            "gas": {
+                "coords": [[7, 8, 9]],
+                "velocity": [[10, 11, 12]],
+                "metallicity": [0.2],
+                "mass": [2000],
+                "density": [1],
+                "hsml": [0.1],
+                "sfr": [0.1],
+                "internal_energy": [0.1],
+                "electron_abundance": [0.1],
+                "metals": [1]
+            }
         },
         "subhalo_center": [0, 0, 0],
     }
     units = {
         "galaxy": {"center": "kpc", "halfmassrad_stars": "kpc", "redshift": ""},
         "stars": {"mass": "Msun"},
+        "gas": {"mass": "Msun", "density": "Msun/kpc^3", "hsml": "kpc", "sfr": "Msun/yr", "internal_energy": "erg/g", "electron_abundance": "dimensionless", "metals": "dimensionless"}
     }
     mock_load_galaxy_data = (particle_data, units)
     with patch("rubix.core.data.load_galaxy_data", return_value=mock_load_galaxy_data):
-        mock_center_particles.return_value = ([[1, 2, 3]], [[4, 5, 6]])
+        #mock_center_particles_stars.return_value = ([[1, 2, 3]], [[4, 5, 6]])
+        #mock_center_particles_gas.return_value = ([[7, 8, 9]], [[10, 11, 12]])
+        mock_center_particles.return_value = ([[1, 2, 3], [7, 8, 9]], [[4, 5, 6], [10, 11, 12]])
 
-        coords, velocities, metallicity, mass, age = prepare_input(config_dict)
+        result = prepare_input(config_dict)
 
-        assert coords == [[1, 2, 3]]
-        assert velocities == [[4, 5, 6]]
-        assert metallicity == [0.1]
-        assert mass == [1000]
-        assert age == [4.5]
+        all_coords, all_velocities, stars_metallicity, stars_mass, stars_age, gas_coords, gas_velocities, gas_metallicity, gas_mass, gas_density, gas_hsml, gas_sfr, gas_internal_energy, gas_electron_abundance, gas_metals = result
 
-        mock_path_join.assert_called_once_with(
-            config_dict["output_path"], "rubix_galaxy.h5"
-        )
-        mock_center_particles.assert_called_once()
+        stars_coords = all_coords[:len(particle_data["particle_data"]["stars"]["coords"])]
+        gas_coords = all_coords[len(particle_data["particle_data"]["stars"]["coords"]):]
+
+        stars_velocities = all_velocities[:len(particle_data["particle_data"]["stars"]["velocity"])]
+        gas_velocities = all_velocities[len(particle_data["particle_data"]["stars"]["velocity"]):]
+
+        assert stars_coords == [[1, 2, 3]]
+        assert stars_velocities == [[4, 5, 6]]
+        assert stars_metallicity == [0.1]
+        assert stars_mass == [1000]
+        assert stars_age == [4.5]
+
+        assert gas_coords == [[7, 8, 9]]
+        assert gas_velocities == [[10, 11, 12]]
+        assert gas_metallicity == [0.2]
+        assert gas_mass == [2000]
+        assert gas_density == [1]
+        assert gas_hsml == [0.1]
+        assert gas_sfr == [0.1]
+        assert gas_internal_energy == [0.1]
+        assert gas_electron_abundance == [0.1]
+        assert gas_metals == [1]
+
+        assert mock_center_particles.call_count == 2
+
+        #mock_path_join.assert_called_once_with(
+        #    config_dict["output_path"], "rubix_galaxy.h5"
+        #)
+        #mock_center_particles.assert_called_once()
+

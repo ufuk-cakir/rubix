@@ -13,6 +13,18 @@ class ConcreteInputHandler(BaseHandler):
                 "metallicity": [0.1, 0.2, 0.3],
                 "velocity": [7, 8, 9],
                 "age": [10, 11, 12],
+            },
+            "gas": {
+                "coords": [1, 2, 3],
+                "density": [4, 5, 6],
+                "mass": [4, 5, 6],
+                "metallicity": [0.1, 0.2, 0.3],
+                "hsml": [7, 8, 9],
+                "sfr": [10, 11, 12],
+                "internal_energy": [0.1, 0.2, 0.3],
+                "velocity": [7, 8, 9],
+                "electron_abundance": [0.1, 0.2, 0.3],
+                "metals": [1, 2, 3],
             }
         }
 
@@ -29,6 +41,7 @@ class ConcreteInputHandler(BaseHandler):
         return {
             "galaxy": config["BaseHandler"]["galaxy"],
             "stars": config["BaseHandler"]["particles"]["stars"],
+            "gas": config["BaseHandler"]["particles"]["gas"],
         }
 
 
@@ -61,6 +74,17 @@ def test_convert_to_rubix_structure(input_handler, tmp_path):
         assert "metallicity" in f["particles/stars"]  # type: ignore
         assert "velocity" in f["particles/stars"]  # type: ignore
         assert "age" in f["particles/stars"]  # type: ignore
+        assert "gas" in f["particles"]  # type: ignore
+        assert "coords" in f["particles/gas"]  # type: ignore
+        assert "density" in f["particles/gas"]  # type: ignore
+        assert "mass" in f["particles/gas"]  # type: ignore
+        assert "metallicity" in f["particles/gas"]  # type: ignore
+        assert "hsml" in f["particles/gas"]  # type: ignore
+        assert "sfr" in f["particles/gas"]  # type: ignore
+        assert "internal_energy" in f["particles/gas"]  # type: ignore
+        assert "velocity" in f["particles/gas"]  # type: ignore
+        assert "electron_abundance" in f["particles/gas"]  # type: ignore
+        assert "metals" in f["particles/gas"]  # type: ignore
 
 
 def test_convert_to_rubix_correct_values(input_handler, tmp_path):
@@ -75,6 +99,16 @@ def test_convert_to_rubix_correct_values(input_handler, tmp_path):
         assert (f["particles/stars/metallicity"][()] == [0.1, 0.2, 0.3]).all()  # type: ignore
         assert (f["particles/stars/velocity"][()] == [7, 8, 9]).all()  # type: ignore
         assert (f["particles/stars/age"][()] == [10, 11, 12]).all()  # type: ignore
+        assert (f["particles/gas/coords"][()] == [1, 2, 3]).all()
+        assert (f["particles/gas/density"][()] == [4, 5, 6]).all()
+        assert (f["particles/gas/mass"][()] == [4, 5, 6]).all()
+        assert (f["particles/gas/metallicity"][()] == [0.1, 0.2, 0.3]).all()
+        assert (f["particles/gas/hsml"][()] == [7, 8, 9]).all()
+        assert (f["particles/gas/sfr"][()] == [10, 11, 12]).all()
+        assert (f["particles/gas/internal_energy"][()] == [0.1, 0.2, 0.3]).all()
+        assert (f["particles/gas/velocity"][()] == [7, 8, 9]).all()
+        assert (f["particles/gas/electron_abundance"][()] == [0.1, 0.2, 0.3]).all()
+        assert (f["particles/gas/metals"][()] == [1, 2, 3]).all()
         assert f["meta/TIME"][()] == 0  # type: ignore
         assert f["meta/NAME"][()] == b"TNG50-1"  # type: ignore
         assert f["meta/SUBHALO_ID"][()] == 0  # type: ignore
@@ -85,7 +119,7 @@ def test_units_are_correct(input_handler):
     assert units == {
         "galaxy": config["BaseHandler"]["galaxy"],
         "stars": config["BaseHandler"]["particles"]["stars"],
-        
+        "gas": config["BaseHandler"]["particles"]["gas"],
     }
 
 
@@ -104,6 +138,16 @@ def test_rubix_file_has_correct_units(input_handler, tmp_path):
         assert f["particles/stars/metallicity"].attrs["unit"] == config["particles"]["stars"]["metallicity"]
         assert f["particles/stars/velocity"].attrs["unit"] == config["particles"]["stars"]["velocity"]
         assert f["particles/stars/age"].attrs["unit"] == config["particles"]["stars"]["age"]
+        assert f["particles/gas/coords"].attrs["unit"] == config["particles"]["gas"]["coords"]
+        assert f["particles/gas/density"].attrs["unit"] == config["particles"]["gas"]["density"]
+        assert f["particles/gas/mass"].attrs["unit"] == config["particles"]["gas"]["mass"]
+        assert f["particles/gas/metallicity"].attrs["unit"] == config["particles"]["gas"]["metallicity"]
+        assert f["particles/gas/hsml"].attrs["unit"] == config["particles"]["gas"]["hsml"]
+        assert f["particles/gas/sfr"].attrs["unit"] == config["particles"]["gas"]["sfr"]
+        assert f["particles/gas/internal_energy"].attrs["unit"] == config["particles"]["gas"]["internal_energy"]
+        assert f["particles/gas/velocity"].attrs["unit"] == config["particles"]["gas"]["velocity"]
+        assert f["particles/gas/electron_abundance"].attrs["unit"] == config["particles"]["gas"]["electron_abundance"]
+        assert f["particles/gas/metals"].attrs["unit"] == config["particles"]["gas"]["metals"]
 
 
 def test_missing_galaxy_field_error(input_handler):
@@ -135,6 +179,15 @@ def test_missing_particle_type_error(input_handler):
     assert "Missing particle type stars in particle data" in str(excinfo.value)
 
 
+def test_missing_particle_type_error_gas(input_handler):
+    with pytest.raises(ValueError) as excinfo:
+        # Remove a required particle type
+        particle_data = input_handler.get_particle_data()
+        del particle_data["gas"]
+        input_handler._check_particle_data(particle_data, input_handler.get_units())
+    assert "Missing particle type gas in particle data" in str(excinfo.value)
+
+
 def test_missing_particle_field_error(input_handler):
     with pytest.raises(ValueError) as excinfo:
         # Remove a required field from a particle type
@@ -142,6 +195,17 @@ def test_missing_particle_field_error(input_handler):
         del particle_data["stars"]["coords"]
         input_handler._check_particle_data(particle_data, input_handler.get_units())
     assert "Missing field coords in particle data for particle type stars" in str(
+        excinfo.value
+    )
+    
+
+def test_missing_particle_field_error_gas(input_handler):
+    with pytest.raises(ValueError) as excinfo:
+        # Remove a required field from a particle type
+        particle_data = input_handler.get_particle_data()
+        del particle_data["gas"]["coords"]
+        input_handler._check_particle_data(particle_data, input_handler.get_units())
+    assert "Missing field coords in particle data for particle type gas" in str(
         excinfo.value
     )
 
@@ -152,5 +216,15 @@ def test_particle_field_unit_info_missing_error(input_handler):
         units = input_handler.get_units()
         particle_data = input_handler.get_particle_data()
         particle_data["stars"]["unsupported_field"] = 1
+        input_handler._check_particle_data(particle_data, units)
+    assert "Units for unsupported_field not found in units" in str(excinfo.value)
+
+
+def test_particle_field_unit_info_missing_error_gas(input_handler):
+    with pytest.raises(ValueError) as excinfo:
+        # Manually change a unit to an unsupported one
+        units = input_handler.get_units()
+        particle_data = input_handler.get_particle_data()
+        particle_data["gas"]["unsupported_field"] = 1
         input_handler._check_particle_data(particle_data, units)
     assert "Units for unsupported_field not found in units" in str(excinfo.value)

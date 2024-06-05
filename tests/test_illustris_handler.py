@@ -21,16 +21,27 @@ from rubix.utils import SFTtoAge
 def create_mock_hdf5(mock_data):
     def create_mock_data():
         conversion_factors = {"a_scaling": 0.0, "h_scaling": 0.0, "to_cgs": 0}
-        stars_dataset = MagicMock()
-        stars_dataset.attrs = conversion_factors
-        stars_dataset.__getitem__.return_value = mock_data
-        return stars_dataset
+        dataset = MagicMock()
+        dataset.attrs = conversion_factors
+        dataset.__getitem__.return_value = mock_data
+        return dataset
 
     coordindates = create_mock_data()
     masses = create_mock_data()
     metallicity = create_mock_data()
     age = create_mock_data()
     velocity = create_mock_data()
+
+    gas_coordindates = create_mock_data()
+    gas_density = create_mock_data()
+    gas_masses = create_mock_data()
+    gas_metallicity = create_mock_data()
+    gas_hsml = create_mock_data()
+    gas_sfr = create_mock_data()
+    gas_internal_energy = create_mock_data()
+    gas_velocity = create_mock_data()
+    gas_electron_abundance = create_mock_data()
+    gas_metals = create_mock_data()
 
     header_mock = MagicMock()
     header_mock.keys.return_value = ["Time", "HubbleParam"]
@@ -52,6 +63,18 @@ def create_mock_hdf5(mock_data):
             "GFM_Metallicity": metallicity,
             "GFM_StellarFormationTime": age,
             "Velocities": velocity,
+        },
+        "PartType0": {  # Add this block for gas particles
+            "Masses": gas_masses,
+            "Coordinates": gas_coordindates,
+            "GFM_Metallicity": gas_metallicity,
+            "Velocities": gas_velocity,
+            "Density": gas_density,
+            "SubfindHsml": gas_hsml,
+            "StarFormationRate": gas_sfr,
+            "InternalEnergy": gas_internal_energy,
+            "ElectronAbundance": gas_electron_abundance,
+            "GFM_Metals": gas_metals,
         },
         "SubhaloData": {
             "pos_x": np.array(1.0),
@@ -88,6 +111,7 @@ def test_load_data(mock_file, mock_exists):
     handler_simulation_metadata = handler.get_simulation_metadata()
 
     assert "stars" in handler_particle_data
+    assert "gas" in handler_particle_data
 
     for key in handler_particle_data:
         for subkey, value in handler_particle_data[key].items():
@@ -108,6 +132,18 @@ def test_load_data(mock_file, mock_exists):
             "metallicity": "",
             "velocity": "cm/s",
             "age": "Gyr",
+        },
+        "gas":{
+            "coords": "cm",
+            "mass": "g",
+            "metallicity": "",
+            "velocity": "cm/s",
+            "density": "g/cm^3",
+            "hsml": "cm",
+            "sfr": "Msun/yr",
+            "internal_energy": "erg/g",
+            "electron_abundance": "",
+            "metals": "",
         },
         "galaxy": {
             "center": "cm",
