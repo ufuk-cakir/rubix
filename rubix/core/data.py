@@ -146,6 +146,8 @@ def prepare_input(config: Union[dict, str]) -> Tuple[
             if config["data"]["subset"]["use_subset"]:  # type:ignore
                 size = config["data"]["subset"]["subset_size"]  # type:ignore
                 # Randomly sample indices
+                # Set random seed for reproducibility
+                np.random.seed(42)
                 indices = np.random.choice(
                     np.arange(new_stellar_coordinates.shape[0]),
                     size=size,  # type:ignore
