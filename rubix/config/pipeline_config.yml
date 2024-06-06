@@ -47,7 +47,13 @@ calc_ifu:
       args: []
       kwargs: {}
     convolve_psf:
-          name: convolve_psf
-          depends_on: calculate_datacube
-          args: []
-          kwargs: {}
+      name: convolve_psf
+      depends_on: calculate_datacube
+      args: []
+      kwargs: {}
+
+    apply_noise:
+      name: apply_noise
+      depends_on: convolve_lsf
+      args: []
+      kwargs: {}

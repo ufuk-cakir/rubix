@@ -3,6 +3,8 @@ from jax import random as jrandom
 
 from jaxtyping import Array, Float
 
+SUPPORTED_NOISE_DISTRIBUTIONS = ["normal", "uniform"]
+
 
 def sample_noise(shape, type="normal", key=None):
     """Sample noise from a normal or uniform distribution.

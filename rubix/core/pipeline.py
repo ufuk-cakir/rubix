@@ -19,6 +19,7 @@ from .rotation import get_galaxy_rotation
 from .ssp import get_ssp
 from .telescope import get_spaxel_assignment, get_telescope
 from .psf import get_convolve_psf
+from .noise import get_apply_noise
 
 
 class RubixPipeline:
@@ -123,7 +124,8 @@ class RubixPipeline:
         )
         calculate_datacube = get_calculate_datacube(self.user_config)
         convolve_psf = get_convolve_psf(self.user_config)
-        
+        apply_noise = get_apply_noise(self.user_config)
+
         functions = [
             rotate_galaxy,
             spaxel_assignment,
@@ -133,6 +135,7 @@ class RubixPipeline:
             doppler_shift_and_resampling,
             calculate_datacube,
             convolve_psf,
+            apply_noise,
         ]
 
         return functions
