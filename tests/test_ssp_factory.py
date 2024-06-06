@@ -3,7 +3,6 @@ from unittest.mock import patch
 from rubix.spectra.ssp.factory import get_ssp_template
 from copy import deepcopy
 
-
 # Fixture to reset the configuration after each test
 @pytest.fixture(autouse=True)
 def reset_config():
@@ -29,11 +28,20 @@ def test_get_ssp_template_existing_template():
     suppored_templates = config["ssp"]["templates"].copy()
 
     for template_name in suppored_templates:
-        print("template_name", template_name)
-        template = get_ssp_template(template_name)
-        template_class_name = config["ssp"]["templates"][template_name]["name"]
-        assert template.__class__.__name__ == template_class_name
+        if template_name != "FSPS":
+            print("template_name", template_name)
+            template = get_ssp_template(template_name)
+            template_class_name = config["ssp"]["templates"][template_name]["name"]
+            assert template.__class__.__name__ == template_class_name
 
+def test_get_ssp_template_fsps_template():
+    config = get_config()
+
+    template_name = "FSPS":
+    print("template_name", template_name)
+    template = get_ssp_template(template_name)
+    template_class_name = config["ssp"]["templates"][template_name]["name"]
+    assert template.__class__.__name__ == template_class_name
 
 def test_get_ssp_template_non_existing_template():
     template_name = "unknown_template"

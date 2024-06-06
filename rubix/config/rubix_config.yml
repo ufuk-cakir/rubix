@@ -161,6 +161,34 @@ ssp:
           name: "flux"
           units: 'Lsun/Angstrom' # Luminosity of the template
           in_log: false # If the field is stored in log scale
+    
+    FSPS:
+      name: "FSPS (Conroy et al. 2009)"
+      # more information on how those models are synthesized: https://github.com/cconroy20/fsps 
+      # and https://dfm.io/python-fsps/current/
+      format: "fsps" # Format of the template
+      source: "https://github.com/cconroy20/fsps" # note: we end with a slash, so that in combination with the file_name, the full URL is formed
+      file_name: "" # File name of the template, stored in templates directory
+      # Define the Fields in the template and their units
+      # This is used to convert them to the required units
+      fields: # Fields in the template and their units
+        # Name defines the name of the key stored in the hdf5 file
+        age:
+          name: "age"
+          units: "Gyr" # Age of the template
+          in_log: true # If the field is stored in log scale
+        metallicity:
+          name: "metallicity"
+          units: "" # Metallicity of the template
+          in_log: true # If the field is stored in log scale
+        wavelength:
+          name: "wavelength"
+          units: "Angstrom" # Wavelength of the template
+          in_log: false # If the field is stored in log scale
+        flux:
+          name: "flux"
+          units: 'Lsun/Hx' # Luminosity of the template as per pyFSPS documentation
+          in_log: false # If the field is stored in log scale
 
 ifu:
   # Configuration Related to IFU calculation

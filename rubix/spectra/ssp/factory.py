@@ -1,8 +1,7 @@
-from rubix.utils import read_yaml
 from rubix.spectra.ssp.grid import SSPGrid, HDF5SSPGrid, pyPipe3DSSPGrid
+from rubix.spectra.ssp.fsps_grid import retrieve_ssp_data_from_fsps
 from rubix import config as rubix_config
 from rubix.paths import TEMPLATE_PATH
-import os
 
 
 def get_ssp_template(name: str) -> SSPGrid:
@@ -26,8 +25,8 @@ def get_ssp_template(name: str) -> SSPGrid:
         return HDF5SSPGrid.from_file(config[name], file_location=TEMPLATE_PATH)
     elif config[name]["format"].lower() == "pypipe3d":
         return pyPipe3DSSPGrid.from_file(config[name], file_location=TEMPLATE_PATH)
-
-
+    elif config[name]["format"].lower() == "fsps":
+        return retrieve_ssp_data_from_fsps()
     else:
         raise ValueError("Currently only HDF5 format and fits files in the format of pyPipe3D format are supported for SSP templates.")
 
