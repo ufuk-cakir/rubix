@@ -48,6 +48,7 @@ user_config = {
     "telescope": {
         "name": "MUSE",
         "psf": {"name": "gaussian", "size": 5, "sigma": 0.6},
+        "lsf": {"sigma": 0.6},
     },
     "cosmology": {"name": "PLANCK15"},
     "galaxy": {
