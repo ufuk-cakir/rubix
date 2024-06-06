@@ -57,6 +57,7 @@ def convert_to_rubix(config: Union[dict, str]):
 
     return config["output_path"]
 
+
 def reshape_array(
     arr: Float[Array, "n_particles n_features"]
 ) -> Float[Array, "n_gpus particles_per_gpu n_features"]:
@@ -78,7 +79,7 @@ def reshape_array(
     """
     n_gpus = jax.device_count()
     n_particles = arr.shape[0]
-    
+
     # Check if arr is 1D or 2D
     is_1d = arr.ndim == 1
 
@@ -99,11 +100,11 @@ def reshape_array(
     # Reshape the array to (n_gpus, particles_per_gpu, arr.shape[1])
     reshaped_arr = arr.reshape(n_gpus, particles_per_gpu, *arr.shape[1:])
 
-
     if is_1d:
         # Remove the second dimension added for 1D case
         reshaped_arr = reshaped_arr.squeeze(-1)
     return reshaped_arr
+
 
 def prepare_input(config: Union[dict, str]) -> Tuple[
     Float[Array, "n_particles 3"],
@@ -111,6 +112,7 @@ def prepare_input(config: Union[dict, str]) -> Tuple[
     Float[Array, " n_particles"],
     Float[Array, " n_particles"],
     Float[Array, " n_particles"],
+    float,
 ]:
 
     logger_config = config["logger"] if "logger" in config else None  # type:ignore
@@ -125,6 +127,7 @@ def prepare_input(config: Union[dict, str]) -> Tuple[
     stellar_coordinates = data["particle_data"]["stars"]["coords"]
     stellar_velocities = data["particle_data"]["stars"]["velocity"]
     galaxy_center = data["subhalo_center"]
+    halfmassrad_stars = data["subhalo_halfmassrad_stars"]
 
     # Center the particles
     new_stellar_coordinates, new_stellar_velocities = center_particles(
@@ -143,6 +146,8 @@ def prepare_input(config: Union[dict, str]) -> Tuple[
             if config["data"]["subset"]["use_subset"]:  # type:ignore
                 size = config["data"]["subset"]["subset_size"]  # type:ignore
                 # Randomly sample indices
+                # Set random seed for reproducibility
+                np.random.seed(42)
                 indices = np.random.choice(
                     np.arange(new_stellar_coordinates.shape[0]),
                     size=size,  # type:ignore
@@ -164,6 +169,7 @@ def prepare_input(config: Union[dict, str]) -> Tuple[
         stars_metallicity,
         stars_mass,
         stars_age,
+        halfmassrad_stars,
     )
 
 
@@ -173,6 +179,7 @@ def get_rubix_data(config: Union[dict, str]) -> Tuple[
     Float[Array, " n_particles"],
     Float[Array, " n_particles"],
     Float[Array, " n_particles"],
+    float,
 ]:
     """Returns the Rubix data
 
