@@ -10,7 +10,8 @@ from rubix import config as rubix_config
 from rubix.logger import get_logger
 from interpax import interp2d
 from jax.tree_util import Partial
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
+from typing import List
 
 SSP_UNITS = rubix_config["ssp"]["units"]
 
@@ -27,7 +28,7 @@ class SSPGrid:
     flux: Float[Array, "metallicity_bins age_bins wavelength_bins"]
     # This does not work with jax.jit, gives error that str is not valid Jax type
     # units: Dict[str, str] = eqx.field(default_factory=dict)
-
+    
     def __init__(self, age, metallicity, wavelength, flux, _logger=None):
         self.age = jnp.asarray(age)
         self.metallicity = jnp.asarray(metallicity)
@@ -35,6 +36,9 @@ class SSPGrid:
         self.flux = jnp.asarray(flux)
         # self.units = SSP_UNITS
 
+    def keys(self) -> List[str]:
+        return [f.name for f in fields(self)]
+    
     def get_lookup_interpolation(self, method="cubic", extrap=0):
         """Returns a 2D interpolation function for the SSP grid.
 
@@ -333,9 +337,9 @@ class pyPipe3DSSPGrid(SSPGrid):
             Mass-to-light value at the normalization wavelength.
         """
         
-        ages = jnp.zeros(n_models, dtype=jnp.float64)
-        Zs = jnp.zeros(n_models, dtype=jnp.float64)
-        mtol = jnp.zeros(n_models, dtype=jnp.float64)
+        ages = jnp.zeros(n_models, dtype=jnp.float32)
+        Zs = jnp.zeros(n_models, dtype=jnp.float32)
+        mtol = jnp.zeros(n_models, dtype=jnp.float32)
         for i in range(n_models):
             mult = {'Gyr': 1, 'Myr': 1/1000}
             name_read_split = header[f'NAME{i}'].split('_')
@@ -347,13 +351,13 @@ class pyPipe3DSSPGrid(SSPGrid):
                 _age = _age[:-3]
             else:
                 mult = 1  # Gyr
-            age = mult * jnp.float64(_age)
+            age = mult * jnp.float32(_age)
             _Z = name_read_split[1].split('.')[0]
-            Z = jnp.float64(_Z.replace('z', '0.'))
+            Z = jnp.float32(_Z.replace('z', '0.'))
             ages = ages.at[i].set(age)
             Zs = Zs.at[i].set(Z)
-            if jnp.float64(header[f'NORM{i}']) != 0:
-                mtol = mtol.at[i].set(1 / jnp.float64(header[f'NORM{i}']))
+            if jnp.float32(header[f'NORM{i}']) != 0:
+                mtol = mtol.at[i].set(1 / jnp.float32(header[f'NORM{i}']))
             else:
                 mtol = mtol.at[i].set(1)
             
@@ -394,7 +398,7 @@ class pyPipe3DSSPGrid(SSPGrid):
 
             # read in the flux of the models and multiply by the mass-to-light ratio to get the flux in Lsun/Msun
             # see also eq. A1 here https://arxiv.org/pdf/1811.04856.pdf
-            template_flux = jnp.array(f[0].data, dtype=jnp.float64) / m2l[:, None]
+            template_flux = jnp.array(f[0].data, dtype=jnp.float32) / m2l[:, None]
             # reshape and bring into the correct order of metallcity, age, wavelength
             # to conform with the SSPGrid dataclass
             flux_models = template_flux.reshape(len(metallicities), len(ages), len(wavelength))

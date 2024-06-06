@@ -92,6 +92,15 @@ def test_from_hdf5_wrong_format():
         assert result is None
     assert str(e.value) == "Configured file format is not HDF5."
 
+def test_keys():
+    age = jnp.array([1e9, 2e9, 3e9])
+    metallicity = jnp.array([0.02, 0.04, 0.06])
+    wavelength = jnp.array([4000.0, 5000.0, 6000.0])
+    flux = jnp.array([[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], [[7.0, 8.0, 9.0], [10.0, 11.0, 12.0]], [[13.0, 14.0, 15.0], [16.0, 17.0, 18.0]]])
+    grid = SSPGrid(age, metallicity, wavelength, flux)
+    expected_keys = ["age", "metallicity", "wavelength", "flux"]
+    assert grid.keys() == expected_keys
+    
 @pytest.fixture
 def ssp_grid():
     # Create a sample SSP grid
