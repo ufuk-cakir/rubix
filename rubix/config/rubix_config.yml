@@ -122,7 +122,7 @@ ssp:
       # https://arxiv.org/pdf/2206.07062
       format: "PyPipe3D" # Format of the template
       source: "http://ifs.astroscu.unam.mx/pyPipe3D/templates/" # note: we end with a slash, so that in combination with the file_name, the full URL is formed
-      file_name: "MaStar_CB19.slog_1_5.fits" # File name of the template, stored in templates directory
+      file_name: "MaStar_CB19.slog_1_5.fits.gz" # File name of the template, stored in templates directory
       # Define the Fields in the template and their units
       # This is used to convert them to the required units
       fields: # Fields in the template and their units

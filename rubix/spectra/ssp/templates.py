@@ -7,4 +7,3 @@ MaStar_CB19_SLOG_1_5 = get_ssp_template("Mastar_CB19_SLOG_1_5")
 
 
 __all__ = ["BruzualCharlot2003", "Mastar_CB19_SLOG_1_5"]
-

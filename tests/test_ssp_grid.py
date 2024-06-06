@@ -197,27 +197,34 @@ def test_from_pyPipe3D():
         mock_instance[0].header = {
             "CRVAL1": 4000,
             "CDELT1": 1000,
-            "NAXIS1": 3,
+            "NAXIS1": 4,
             "CRPIX1": 1,
             "WAVENORM": 5000,
             "NAME0": "spec_ssp_1.0_z01.spec",
-            "NAME1": "spec_ssp_2.0_z02.spec",
-            "NAME2": "spec_ssp_3.0_z03.spec",
+            "NAME1": "spec_ssp_2.0_z01.spec",
+            "NAME2": "spec_ssp_3.0_z01.spec",
+            "NAME3": "spec_ssp_1.0_z02.spec",
+            "NAME4": "spec_ssp_2.0_z02.spec",
+            "NAME5": "spec_ssp_3.0_z02.spec",
             "NORM0": 1.0,
             "NORM1": 1.0,
             "NORM2": 1.0,
-            "NAXIS2": 3
+            "NORM3": 1.0,
+            "NORM4": 1.0,
+            "NORM5": 1.0,
+            "NAXIS2": 6
         }
-        mock_instance[0].data = [[0.5, 0.5, 0.5],[1.0, 1.0, 1.0],[1.5, 1.5, 1.5]]
+        mock_instance[0].data = [[0.5, 1.0, 1.5, 2.0],[0.5, 1.0, 1.5, 2.0],[0.5, 1.0, 1.5, 2.0],[0.5, 1.0, 1.5, 2.0],[0.5, 1.0, 1.5, 2.0],[0.5, 1.0, 1.5, 2.0]]
 
         result = pyPipe3DSSPGrid.from_file(config, file_location)
 
         assert isinstance(result, pyPipe3DSSPGrid)
         assert np.allclose(result.age, [1, 2, 3])
 
-        assert np.allclose(result.metallicity, [0.01, 0.02, 0.03])
-        assert np.allclose(result.wavelength, [4000, 5000, 6000])
-        assert np.allclose(result.flux, [[0.5, 1.0, 1.5],[0.5, 1.0, 1.5],[0.5, 1.0, 1.5]])
+        assert np.allclose(result.metallicity, [0.01, 0.02])
+        assert np.allclose(result.wavelength, [4000, 5000, 6000, 7000])
+        assert np.allclose(result.flux, [[[0.5, 1.0, 1.5, 2.0],[0.5, 1.0, 1.5, 2.0],[0.5, 1.0, 1.5, 2.0]],[[0.5, 1.0, 1.5, 2.0],[0.5, 1.0, 1.5, 2.0],[0.5, 1.0, 1.5, 2.0]]])
+        assert result.flux.shape == (2, 3, 4)
 
 def test_from_pyPipe3D_wrong_field_name():
     config = {
@@ -308,6 +315,7 @@ def test_checkout_SSP_template_file_exists():
     config = {
         "format": "hdf5",
         "file_name": "test.hdf5",
+        "source": "http://example.com",
         "fields": {
             "age": {"name": "age", "in_log": False, "units": "Gyr"},
             "metallicity": {"name": "metallicity", "in_log": False, "units": ""},
@@ -386,7 +394,7 @@ def test_checkout_SSP_template_file_download_failed():
     config = {
         "format": "hdf5",
         "file_name": "test.hdf5",
-        "source": "http://example.com/template.txt",
+        "source": "http://example.com/",
         "fields": {
             "age": {"name": "age", "in_log": False, "units": "Gyr"},
             "metallicity": {"name": "metallicity", "in_log": False, "units": ""},

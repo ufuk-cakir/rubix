@@ -104,11 +104,14 @@ class SSPGrid:
 
         _logger = get_logger()
         file_path = os.path.join(file_location, config["file_name"])
+        source = config["source"]
+        if not config["source"].endswith("/"):
+            source +=  "/"
 
         if not os.path.exists(file_path):
             _logger.info(f'[SSPModels] File {file_path} not found. Downloading it from {config["source"]}')
             try:
-                response = requests.get(config["source"]+config["file_name"])
+                response = requests.get(source+config["file_name"])
                 response.raise_for_status()
 
                 if response.status_code == 200:
@@ -117,12 +120,12 @@ class SSPGrid:
                     _logger.info(f'[SSPModels] File {config["file_name"]} downloaded successfully!')
                     return file_path
                 else:
-                    raise FileNotFoundError(f"Could not download file {config['file_name']} from url {config['source']}.")
+                    raise FileNotFoundError(f"Could not download file {config['file_name']} from url {source}.")
             except requests.exceptions.RequestException as err:
                 _logger.error(f'[SSPModels] Error: {err}')
             #except requests.exceptions.HTTPError as errh:
             #    print("Http Error:",errh)
-            raise FileNotFoundError(f"Could not download file {config['file_name']} from url {config['source']}.")
+            raise FileNotFoundError(f"Could not download file {config['file_name']} from url {source}.")
         else:
             return file_path
 
@@ -192,8 +195,6 @@ class HDF5SSPGrid(SSPGrid):
 
         if config.get("format", "").lower() != "hdf5":
             raise ValueError("Configured file format is not HDF5.")
-
-        _logger = get_logger()
 
         file_path = cls.checkout_SSP_template(config, file_location)
         
@@ -397,7 +398,7 @@ class pyPipe3DSSPGrid(SSPGrid):
             template_flux = jnp.array(f[0].data, dtype=jnp.float64) / m2l[:, None]
             # reshape and bring into the correct order of metallcity, age, wavelength
             # to conform with the SSPGrid dataclass
-            flux_models = jnp.swapaxes(template_flux, 0, 1)
+            flux_models = template_flux.reshape(len(metallicities), len(ages), len(wavelength))
 
             for field_name, field_info in config["fields"].items():
                 if field_name == 'flux':
