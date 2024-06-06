@@ -51,3 +51,8 @@ calc_ifu:
           depends_on: calculate_datacube
           args: []
           kwargs: {}
+    convolve_lsf:
+      name: convolve_lsf
+      depends_on: convolve_psf
+      args: []
+      kwargs: {}
