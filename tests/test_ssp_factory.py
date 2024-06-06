@@ -37,7 +37,7 @@ def test_get_ssp_template_existing_template():
 def test_get_ssp_template_fsps_template():
     config = get_config()
 
-    template_name = "FSPS":
+    template_name = "FSPS"
     print("template_name", template_name)
     template = get_ssp_template(template_name)
     template_class_name = config["ssp"]["templates"][template_name]["name"]
