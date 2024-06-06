@@ -8,7 +8,6 @@ import h5py
 import requests
 from rubix import config as rubix_config
 from rubix.logger import get_logger
-import logging
 from interpax import interp2d
 from jax.tree_util import Partial
 from dataclasses import dataclass
