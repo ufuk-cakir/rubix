@@ -3,6 +3,27 @@ import os
 from astropy.cosmology import Planck15 as cosmo
 import yaml
 import h5py
+from typing import Dict, Union
+from pathlib import Path
+
+
+def get_config(config: Union[str, Dict]) -> Dict:
+    if isinstance(config, str):
+        return read_yaml(config)
+    else:
+        return config
+
+
+def get_pipeline_config(name: str):
+    from rubix import config
+
+    pipelines_config = config["pipelines"]
+
+    # Get the pipeline configuration
+    if name not in pipelines_config:
+        raise ValueError(f"Pipeline {name} not found in the configuration")
+    config = pipelines_config[name]
+    return config
 
 
 def read_yaml(path_to_file: str) -> dict:
@@ -145,4 +166,3 @@ def load_galaxy_data(path_to_file: str):
                 units[key][field] = f[f"particles/{key}/{field}"].attrs["unit"]
 
     return galaxy_data, units
-

@@ -5,6 +5,7 @@ from rubix.telescope.apertures import (
     HEXAGONAL_APERTURE,
 )
 from rubix.telescope.base import BaseTelescope
+from rubix.telescope.utils import calculate_wave_edges, calculate_wave_seq
 from rubix.utils import read_yaml
 import os
 import warnings
@@ -36,6 +37,8 @@ class TelescopeFactory:
         # Get some parameters from the config
         sbin = np.floor(config["fov"] / config["spatial_res"]).astype(int)
         aperture_region = self._get_aperture(config["aperture_type"], sbin)
+        wave_seq = calculate_wave_seq(config["wave_range"], config["wave_res"])
+        wave_edges = calculate_wave_edges(wave_seq, config["wave_res"])
 
         telescope = BaseTelescope(
             fov=config["fov"],
@@ -48,6 +51,8 @@ class TelescopeFactory:
             sbin=sbin,
             aperture_region=aperture_region,
             pixel_type=config["pixel_type"],
+            wave_seq=wave_seq,
+            wave_edges=wave_edges,
         )
         telescope.__class__.__name__ = name
 

@@ -417,7 +417,7 @@ def test_checkout_SSP_template_file_download_failed():
             assert str(e) == f"Could not download file {config['file_name']} from url {config['source']}."
 
 
-def test_get_lookup():
+def test_get_lookup_interpolation():
     # Create a mock SSPGrid instance
     age = jnp.array([1e9, 2e9, 3e9])
     metallicity = jnp.array([0.01, 0.02, 0.03])
@@ -432,7 +432,7 @@ def test_get_lookup():
     ssp_grid = SSPGrid(age, metallicity, wavelength, flux)
 
     # Get the lookup function
-    lookup = ssp_grid.get_lookup()
+    lookup = ssp_grid.get_lookup_interpolation()
 
     # Test interpolation at specific metallicity and age values
     metallicity_value = 0.02
