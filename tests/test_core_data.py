@@ -97,6 +97,7 @@ def test_prepare_input(mock_center_particles, mock_path_join):
             },
         },
         "subhalo_center": [0, 0, 0],
+        "subhalo_halfmassrad_stars": 1,
     }
     units = {
         "galaxy": {"center": "kpc", "halfmassrad_stars": "kpc", "redshift": ""},
@@ -106,13 +107,16 @@ def test_prepare_input(mock_center_particles, mock_path_join):
     with patch("rubix.core.data.load_galaxy_data", return_value=mock_load_galaxy_data):
         mock_center_particles.return_value = ([[1, 2, 3]], [[4, 5, 6]])
 
-        coords, velocities, metallicity, mass, age = prepare_input(config_dict)
+        coords, velocities, metallicity, mass, age, halfmassrad_stars = prepare_input(
+            config_dict
+        )
 
         assert coords == [[1, 2, 3]]
         assert velocities == [[4, 5, 6]]
         assert metallicity == [0.1]
         assert mass == [1000]
         assert age == [4.5]
+        assert halfmassrad_stars == 1
 
         print(mock_path_join.call_args_list)  # Print all calls to os.path.join
         # Check if the specific call is in the list of calls
@@ -141,6 +145,7 @@ def test_prepare_input_subset_case(
             },
         },
         "subhalo_center": jnp.array([0, 0, 0]),
+        "subhalo_halfmassrad_stars": 1,
     }
     units = {
         "galaxy": {"center": "kpc", "halfmassrad_stars": "kpc", "redshift": ""},
@@ -158,13 +163,16 @@ def test_prepare_input_subset_case(
         "data": {"subset": {"use_subset": True, "subset_size": 2}},
     }
 
-    coords, velocities, metallicity, mass, age = prepare_input(config_dict)
+    coords, velocities, metallicity, mass, age, halfmassrad_stars = prepare_input(
+        config_dict
+    )
 
     assert coords.shape[0] == 2
     assert velocities.shape[0] == 2
     assert metallicity.shape[0] == 2
     assert mass.shape[0] == 2
     assert age.shape[0] == 2
+    assert halfmassrad_stars == 1
 
     assert (
         call(config_dict["output_path"], "rubix_galaxy.h5")
