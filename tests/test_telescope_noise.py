@@ -1,7 +1,7 @@
 import pytest
 import jax.numpy as jnp
 import jax.random as jrandom
-from rubix.telescope.noise.noise import calculate_noise_cube
+from rubix.telescope.noise.noise import calculate_noise_cube, sample_noise
 
 
 def check_noise_variation(noise_cube):
@@ -11,51 +11,73 @@ def check_noise_variation(noise_cube):
     return jnp.all(variances > 0)
 
 
-def test_calculate_noise_cube_standard_case():
+@pytest.mark.parametrize("noise_distribution", ["normal", "uniform"])
+def test_calculate_noise_cube_standard_case(noise_distribution):
     key = jrandom.PRNGKey(0)
     cube = jrandom.uniform(key, shape=(5, 5, 10))
     S2N = jrandom.uniform(key, shape=(5, 5))
 
-    noise_cube = calculate_noise_cube(cube, S2N)
+    noise_cube = calculate_noise_cube(cube, S2N, noise_distribution=noise_distribution)
 
     assert noise_cube.shape == cube.shape
     assert not jnp.isnan(noise_cube).any()
     assert check_noise_variation(noise_cube)
 
 
-def test_calculate_noise_cube_with_zeros():
+@pytest.mark.parametrize("noise_distribution", ["normal", "uniform"])
+def test_calculate_noise_cube_with_zeros(noise_distribution):
     key = jrandom.PRNGKey(0)
     cube = jnp.zeros((5, 5, 10))
     S2N = jrandom.uniform(key, shape=(5, 5))
 
-    noise_cube = calculate_noise_cube(cube, S2N)
+    noise_cube = calculate_noise_cube(cube, S2N, noise_distribution=noise_distribution)
 
     assert noise_cube.shape == cube.shape
     assert jnp.all(noise_cube == 0)
-    # assert check_noise_variation(
-    #     noise_cube
-    # )
+    # assert check_noise_variation(noise_cube)
 
 
-def test_calculate_noise_cube_infinite_S2N():
+@pytest.mark.parametrize("noise_distribution", ["normal", "uniform"])
+def test_calculate_noise_cube_infinite_S2N(noise_distribution):
     key = jrandom.PRNGKey(0)
     cube = jrandom.uniform(key, shape=(5, 5, 10))
     S2N = jnp.array([[float("inf")] * 5] * 5)
 
-    noise_cube = calculate_noise_cube(cube, S2N)
+    noise_cube = calculate_noise_cube(cube, S2N, noise_distribution=noise_distribution)
 
     assert noise_cube.shape == cube.shape
     assert not jnp.isinf(noise_cube).any()
-    # assert check_noise_variation(noise_cube) # This test will fail, since all values are zero
+    # assert check_noise_variation(noise_cube)
 
 
-def test_calculate_noise_cube_negative_S2N():
+@pytest.mark.parametrize("noise_distribution", ["normal", "uniform"])
+def test_calculate_noise_cube_negative_S2N(noise_distribution):
     key = jrandom.PRNGKey(0)
     cube = jrandom.uniform(key, shape=(5, 5, 10))
     S2N = -jrandom.uniform(key, shape=(5, 5))
 
-    noise_cube = calculate_noise_cube(cube, S2N)
+    noise_cube = calculate_noise_cube(cube, S2N, noise_distribution=noise_distribution)
 
     assert noise_cube.shape == cube.shape
     assert not jnp.isnan(noise_cube).any()
     assert check_noise_variation(noise_cube)
+
+
+def test_sample_noise_key_none():
+    shape = (5, 5, 10)
+
+    noise_normal = sample_noise(shape, type="normal", key=None)
+    assert noise_normal.shape == shape
+    assert not jnp.isnan(noise_normal).any()
+
+    noise_uniform = sample_noise(shape, type="uniform", key=None)
+    assert noise_uniform.shape == shape
+    assert not jnp.isnan(noise_uniform).any()
+
+
+def test_sample_noise_invalid_type():
+    shape = (5, 5, 10)
+    key = jrandom.PRNGKey(0)
+
+    with pytest.raises(ValueError, match="Invalid noise type: invalid"):
+        sample_noise(shape, type="invalid", key=key)

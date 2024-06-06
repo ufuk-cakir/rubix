@@ -4,8 +4,35 @@ from jax import random as jrandom
 from jaxtyping import Array, Float
 
 
+def sample_noise(shape, type="normal", key=None):
+    """Sample noise from a normal or uniform distribution.
+    Parameters
+    ----------
+    shape : tuple
+        The shape of the noise array.
+    type : str, optional
+        The type of distribution to sample from. Can be either "normal" or "uniform", by default "normal".
+    key : jnp.array, optional
+        The random key to use for sampling, by default None.
+    Returns
+    -------
+    jnp.array
+        The sampled noise.
+    """
+    if key is None:
+        key = jrandom.PRNGKey(0)
+    if type == "normal":
+        return jrandom.normal(key, shape)
+    elif type == "uniform":
+        return jrandom.uniform(key, shape)
+    else:
+        raise ValueError(f"Invalid noise type: {type}")
+
+
 def calculate_noise_cube(
-    cube: Float[Array, "n_x n_y n_wave_bins"], S2N: Float[Array, "n_y n_y"]
+    cube: Float[Array, "n_x n_y n_wave_bins"],
+    S2N: Float[Array, "n_y n_y"],
+    noise_distribution="normal",
 ):
     """Calculate the noise cube given the cube and the signal-to-noise ratio.
 
@@ -18,6 +45,8 @@ def calculate_noise_cube(
         The data cube.
     S2N : jnp.array (n_y, n_y)
         The signal-to-noise ratio for each spaxel.
+    noise_distribution: str, optional
+        The type of distribution to sample from. Can be either "normal" or "uniform", by default "normal".
 
     Returns
     -------
@@ -30,7 +59,7 @@ def calculate_noise_cube(
     )  # removing infinite noise where particles per pixel = 0
 
     # Generate noise for each element in the cube based on the S/N
-    noise = jrandom.normal(key, shape=cube.shape) * S2N[:, :, None]
+    noise = sample_noise(cube.shape, type=noise_distribution, key=key) * S2N[:, :, None]
 
     # Scale the noise by the cube to get S/N
     noise = cube * noise
