@@ -15,7 +15,7 @@ def check_noise_variation(noise_cube):
 def test_calculate_noise_cube_standard_case(noise_distribution):
     key = jrandom.PRNGKey(0)
     cube = jrandom.uniform(key, shape=(5, 5, 10))
-    S2N = jrandom.uniform(key, shape=(5, 5))
+    S2N = 0.8
 
     noise_cube = calculate_noise_cube(cube, S2N, noise_distribution=noise_distribution)
 
@@ -28,7 +28,7 @@ def test_calculate_noise_cube_standard_case(noise_distribution):
 def test_calculate_noise_cube_with_zeros(noise_distribution):
     key = jrandom.PRNGKey(0)
     cube = jnp.zeros((5, 5, 10))
-    S2N = jrandom.uniform(key, shape=(5, 5))
+    S2N = 0.8
 
     noise_cube = calculate_noise_cube(cube, S2N, noise_distribution=noise_distribution)
 
@@ -41,7 +41,7 @@ def test_calculate_noise_cube_with_zeros(noise_distribution):
 def test_calculate_noise_cube_infinite_S2N(noise_distribution):
     key = jrandom.PRNGKey(0)
     cube = jrandom.uniform(key, shape=(5, 5, 10))
-    S2N = jnp.array([[float("inf")] * 5] * 5)
+    S2N = 0.8
 
     noise_cube = calculate_noise_cube(cube, S2N, noise_distribution=noise_distribution)
 
@@ -54,8 +54,8 @@ def test_calculate_noise_cube_infinite_S2N(noise_distribution):
 def test_calculate_noise_cube_negative_S2N(noise_distribution):
     key = jrandom.PRNGKey(0)
     cube = jrandom.uniform(key, shape=(5, 5, 10))
-    S2N = -jrandom.uniform(key, shape=(5, 5))
 
+    S2N = 0.8
     noise_cube = calculate_noise_cube(cube, S2N, noise_distribution=noise_distribution)
 
     assert noise_cube.shape == cube.shape
