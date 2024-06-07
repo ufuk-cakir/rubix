@@ -215,3 +215,47 @@ def test_set_logger(mock_file, mock_exists):
     mock_file.return_value.__enter__.return_value = data
     handler = IllustrisHandler("path", logger=logger)  #
     assert handler._logger == logger
+
+
+@patch("os.path.exists")
+@patch("h5py.File")
+def test_load_data_without_GFM_stellarformation_time(mock_file, mock_exists):
+    # Mock the os.path.exists method to always return True
+    mock_exists.return_value = True
+
+    mock_data = np.array([0.5, 0.5])
+    data = create_mock_hdf5(mock_data)
+    mock_file.return_value.__enter__.return_value = data
+
+    # Update the config
+    config = {
+        "MAPPED_FIELDS": {
+            "PartType4": {
+                "Coordinates": "coordinates",
+                "GFM_InitialMass": "initial_mass",
+                "GFM_Metallicity": "metallicity",
+                "Velocities": "velocities",
+            },
+            "test_part": {
+                "Coordinates": "coordinates",
+                "GFM_InitialMass": "initial_mass",
+                "GFM_Metallicity": "metallicity",
+                "Velocities": "velocities",
+            },
+        },
+        "MAPPED_PARTICLE_KEYS": {"PartType4": "stars", "test_part": "test_particles"},
+        "SIMULATION_META_KEYS": {},
+        "GALAXY_SUBHALO_KEYS": {},
+        "UNITS": {},
+        "ILLUSTRIS_DATA": ["PartType4", "SubhaloData"],
+    }
+
+    # Test _load_data method
+    handler = IllustrisHandler("path")
+    handler.MAPPED_FIELDS = config["MAPPED_FIELDS"]
+    handler.MAPPED_PARTICLE_KEYS = config["MAPPED_PARTICLE_KEYS"]
+
+    data["PartType4"].pop("GFM_StellarFormationTime")
+    data["test_part"] = data["PartType4"]
+    data = handler._get_particle_data(data, "test_part")
+    assert "coordinates" in data
