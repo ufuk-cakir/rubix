@@ -5,6 +5,7 @@ import numpy as np
 from rubix.utils import convert_values_to_physical, SFTtoAge
 from rubix import config
 
+
 class IllustrisHandler(BaseHandler):
     MAPPED_FIELDS = config["IllustrisHandler"]["MAPPED_FIELDS"]
     # This Dictionary maps the particle name in the simulation to the name used in Rubix
@@ -77,6 +78,8 @@ class IllustrisHandler(BaseHandler):
             simulation_metadata = self._get_metadata(f)
 
             # Get the data of the different particle types
+            # Before loading the data, filter out all wind phase gas cells
+            # Those are cells with negative StellarFormationTime
             particle_data = self._get_data(f)
 
             # Get the Subhalo Galaxy Data
@@ -178,6 +181,19 @@ class IllustrisHandler(BaseHandler):
         #    f"Calculating {part_type} particles parameters in physical units.."
         # )
         part_data = {}
+
+        # Check if PartyType has GFM_StellarFormationTime field
+        if "GFM_StellarFormationTime" in f[part_type].keys():
+            # Use only particles that have positive StellarFormationTime
+            # This filters out wind phase gas cells
+            valid_indices = f[part_type]["GFM_StellarFormationTime"][()] >= 0
+
+        else:
+            valid_indices = np.ones(len(f[part_type]["Coordinates"][()]), dtype=bool)
+
+        self._logger.debug(
+            f"Found {np.sum(valid_indices)} valid particles out of {len(valid_indices)}"
+        )
         for key in f[part_type].keys():
             # Check if key is supported, if not, raise a warning and skip
             if key not in self.MAPPED_FIELDS[part_type]:
@@ -185,7 +201,7 @@ class IllustrisHandler(BaseHandler):
                     f"{key} is not supported. Currently only {self.MAPPED_FIELDS[part_type].keys()} are supported"
                 )
 
-            values = f[part_type][key][()]
+            values = f[part_type][key][valid_indices]
             attributes = f[part_type][key].attrs
             physical_values = convert_values_to_physical(
                 values,
@@ -212,4 +228,7 @@ class IllustrisHandler(BaseHandler):
         return part_data
 
     def _convert_stellar_formation_time(self, sft):
+        assert np.all(
+            sft >= 0
+        ), "Stellar Formation Time cannot be negative! If negative, it means the particle is not a star."
         return SFTtoAge(sft)  # in Gyr
