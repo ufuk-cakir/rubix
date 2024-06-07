@@ -53,6 +53,7 @@ def retrieve_ssp_data_from_fsps(add_neb_emission=True, imf_type=2, **kwargs):
 
     """
     assert HAS_FSPS, "Must have python-fsps installed to use this function"
+    import fsps
 
     sp = fsps.StellarPopulation(zcontinuous=0, imf_type=imf_type)
     ssp_lgmet = np.log10(sp.zlegend)
