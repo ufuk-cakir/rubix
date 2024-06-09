@@ -29,7 +29,9 @@ class IllustrisAPI:
         simulation="TNG50-1",
         snapshot=99,
         save_data_path="./api_data",
-        logger =None,
+        galaxy_id=None,
+        reuse=False,
+        logger=None,
     ):
         """Illustris API class.
 
@@ -46,7 +48,6 @@ class IllustrisAPI:
         snapshot : int
             Snapshot to load from. Default is 99.
         """
-        
 
         if api_key is None:
             raise ValueError("Please set the API key.")
@@ -57,12 +58,16 @@ class IllustrisAPI:
         self.simulation = simulation
         self.baseURL = f"{self.URL}{self.simulation}/snapshots/{self.snapshot}"
         self.DATAPATH = save_data_path
+
+        self.galaxy_id = galaxy_id
+        self.reuse = reuse
         if logger is None:
             import logging
+
             self.logger = logging.getLogger(__name__)
         else:
             self.logger = logger
-            
+
     def _get(self, path, params=None, name=None):
         """Get data from the Illustris API.
 
@@ -192,7 +197,12 @@ class IllustrisAPI:
         data = self._load_hdf5("cutout")
         return data
 
-    def load_galaxy(self, id: int, overwrite: bool = False, reuse:bool = False):
+    def load_galaxy(
+        self,
+        id: Union[int, None] = None,
+        overwrite: bool = False,
+        reuse: Union[bool, None] = None,
+    ):
         """Download Galaxy Data from the Illustris API.
 
         This function downloads both the subhalo data and the particle data for stars and gas particles, for the fields specified in DEFAULT_FIELDS.
@@ -215,22 +225,34 @@ class IllustrisAPI:
         >>> illustris_api = IllustrisAPI(api_key, simulation="TNG50-1", snapshot=99, particle_type=["stars", "gas"])
         >>> data = illustris_api.load_galaxy(id=0, verbose=True)
         """
+        # Check if ID is set
+        if id is None:
+            if self.galaxy_id is None:
+                raise ValueError("Please set the galaxy ID.")
+            id = self.galaxy_id
 
+        # Check if reuse is set
+        if reuse is None:
+            reuse = self.reuse
         # Check if there is already a file with the same name
         if os.path.exists(os.path.join(self.DATAPATH, f"galaxy-id-{id}.hdf5")):
             # If file exists, check if we should overwrite it
             if not overwrite:
                 # If we should not overwrite it, check if we should reuse it
                 if reuse:
-                    self.logger.info(f"Reusing existing file galaxy-id-{id}.hdf5. If you want to download the data again, set reuse=False.")
+                    self.logger.info(
+                        f"Reusing existing file galaxy-id-{id}.hdf5. If you want to download the data again, set reuse=False."
+                    )
                     return self._load_hdf5(filename=f"galaxy-id-{id}")
-                else: 
+                else:
                     # If we should not reuse it, raise an error
                     raise ValueError(
-                        f"File with name galaxy-id-{id}.hdf5 already exists. Please remove it before downloading the data, or set overwrite=True, or reuse=True to load the data."
+                        f"File with name galaxy-id-{id}.hdf5 already exists in {self.DATAPATH}. Please remove it before downloading the data, or set overwrite=True, or reuse=True to load the data."
                     )
             else:
-                self.logger.info(f"Found existing file galaxy-id-{id}.hdf5, but overwrite is set to True. Overwriting the file.")
+                self.logger.info(
+                    f"Found existing file galaxy-id-{id}.hdf5, but overwrite is set to True. Overwriting the file."
+                )
 
         # Check which particles we want to load
 
@@ -273,3 +295,4 @@ class IllustrisAPI:
 
     def __str__(self) -> str:
         return f"IllustrisAPI: Simulation {self.simulation}, Snapshot {self.snapshot}, Particle Type {self.particle_type}"
+

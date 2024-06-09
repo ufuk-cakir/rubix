@@ -9,7 +9,7 @@ def get_galaxy_rotation(config: dict):
     if "rotation" not in config["galaxy"]:
         raise ValueError("Rotation information not provided in galaxy config")
 
-    logger = get_logger()
+    logger = get_logger(config.get("logger", None))
     # Check if type is provided
     if "type" in config["galaxy"]["rotation"]:
         # Check if type is valid: face-on or edge-on

@@ -76,7 +76,16 @@ class BaseHandler(ABC):
     def get_units(self) -> dict:
         """Returns the units in the required format"""
 
-    def to_rubix(self, output_path: str):
+    def to_rubix(self, output_path: str, save_name: str):
+        """Converts the input data to Rubix format and saves it at the specified path
+
+        Parameters
+        ----------
+        output_path : str
+            The path where the Rubix file should be saved
+        save_name : str
+            The name of the Rubix file. The file will be saved as rubix_galaxy_{save_name}.h5
+        """
         self._logger.debug("Converting to Rubix format..")
 
         os.makedirs(output_path, exist_ok=True)
@@ -93,7 +102,7 @@ class BaseHandler(ABC):
         self._check_data(particle_data, galaxy_data, simulation_metadata, units)
 
         # Create the Rubix h5 file
-        file_path = os.path.join(output_path, "rubix_galaxy.h5")
+        file_path = os.path.join(output_path, f"rubix_galaxy_{save_name}.h5")
         self._logger.info(f"Rubix file saved at {file_path}")
 
         # Create the Rubix file

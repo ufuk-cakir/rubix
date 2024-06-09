@@ -9,7 +9,7 @@ from jaxtyping import Array, Float
 from rubix.galaxy import IllustrisAPI, get_input_handler
 from rubix.galaxy.alignment import center_particles
 from rubix.logger import get_logger
-from rubix.utils import load_galaxy_data, read_yaml
+from rubix.utils import load_galaxy_data, get_config
 
 
 def convert_to_rubix(config: Union[dict, str]):
@@ -29,33 +29,42 @@ def convert_to_rubix(config: Union[dict, str]):
     """
     # Check if the file already exists
     # Create the input handler based on the config and create rubix galaxy data
-    if isinstance(config, str):
-        config = read_yaml(config)
+    config = get_config(config)
+    # Check if save_name is present in the config
 
     # Setup a logger based on the config
     logger_config = config["logger"] if "logger" in config else None
 
     logger = get_logger(logger_config)
 
-    if os.path.exists(os.path.join(config["output_path"], "rubix_galaxy.h5")):
-        logger.info("Rubix galaxy file already exists, skipping conversion")
-        return config["output_path"]
+    # Get the variables from the config
+    output_path = config["data/output_path"]
+    save_name = config["data/save_name"]
+    if os.path.exists(os.path.join(output_path, f"rubix_galaxy_{save_name}.h5")):
+        logger.warning("Rubix galaxy file already exists, skipping conversion")
+        return os.path.join(output_path, f"rubix_galaxy_{save_name}.h5")
 
     # If the simulationtype is IllustrisAPI, get data from IllustrisAPI
+    simulation_name = config["data/simulation/name"]
 
     # TODO: we can do this more elgantly
-    if "data" in config:
-        if config["data"]["name"] == "IllustrisAPI":
-            logger.info("Loading data from IllustrisAPI")
-            api = IllustrisAPI(**config["data"]["args"], logger=logger)
-            api.load_galaxy(**config["data"]["load_galaxy_args"])
+    if simulation_name == "IllustrisAPI":
+        logger.info("Loading data from IllustrisAPI")
+        save_data_path = os.path.join(output_path, "illustris_api_data")
+        api = IllustrisAPI(
+            **config["data/simulation/args"],
+            save_data_path=save_data_path,
+            logger=logger,
+        )
 
-            # Load the saved data into the input handler
+        api.load_galaxy()
+
+        # Load the saved data into the input handler
     logger.info("Loading data into input handler")
     input_handler = get_input_handler(config, logger=logger)
-    input_handler.to_rubix(output_path=config["output_path"])
+    input_handler.to_rubix(output_path=output_path, save_name=save_name)
 
-    return config["output_path"]
+    return os.path.join(output_path, f"rubix_galaxy_{save_name}.h5")
 
 
 def reshape_array(
@@ -117,8 +126,9 @@ def prepare_input(config: Union[dict, str]) -> Tuple[
 
     logger_config = config["logger"] if "logger" in config else None  # type:ignore
     logger = get_logger(logger_config)
-    file_path = config["output_path"]  # type:ignore
-    file_path = os.path.join(file_path, "rubix_galaxy.h5")
+    file_path = config["data/output_path"]  # type:ignore
+    save_name = config["data/save_name"]  # type:ignore
+    file_path = os.path.join(file_path, f"rubix_galaxy_{save_name}.h5")
 
     # Load the data from the file
     # TODO: maybe also pass the units here, currently this is not used

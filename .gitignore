@@ -155,3 +155,5 @@ notebooks/*.h5
 notebooks/output
 
 rubix/**/*.ipynb
+notebooks/data/datacube.npy
+notebooks/data/wave.npy

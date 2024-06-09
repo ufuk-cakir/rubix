@@ -21,6 +21,7 @@ from .telescope import get_spaxel_assignment, get_telescope
 from .psf import get_convolve_psf
 from .lsf import get_convolve_lsf
 
+
 class RubixPipeline:
     """
     RubixPipeline is responsible for setting up and running the data processing pipeline.

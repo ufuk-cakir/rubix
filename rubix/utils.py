@@ -5,13 +5,15 @@ import yaml
 import h5py
 from typing import Dict, Union
 from pathlib import Path
+from rubix.config.user import UserConfig
 
 
 def get_config(config: Union[str, Dict]) -> Dict:
     if isinstance(config, str):
-        return read_yaml(config)
+        config = read_yaml(config)
+        return UserConfig(config)  # type: ignore
     else:
-        return config
+        return UserConfig(config)  # type: ignore
 
 
 def get_pipeline_config(name: str):
