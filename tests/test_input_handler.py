@@ -3,6 +3,7 @@ from rubix.galaxy import BaseHandler
 import h5py
 from rubix import config
 
+
 class ConcreteInputHandler(BaseHandler):
     def get_particle_data(self):
         # Mock particle data that satisfies the requirements
@@ -39,15 +40,15 @@ def input_handler(tmp_path):
 
 
 def test_convert_to_rubix_creates_file(input_handler, tmp_path):
-    input_handler.to_rubix(output_path=tmp_path)
-    assert (tmp_path / "rubix_galaxy.h5").exists()
+    input_handler.to_rubix(output_path=tmp_path, save_name="test")
+    assert (tmp_path / "rubix_galaxy_test.h5").exists()
     # load the file and check if the groups and datasets are created as expected
 
 
 def test_convert_to_rubix_structure(input_handler, tmp_path):
-    input_handler.to_rubix(tmp_path)
+    input_handler.to_rubix(tmp_path, save_name="test")
 
-    with h5py.File(tmp_path / "rubix_galaxy.h5", "r") as f:
+    with h5py.File(tmp_path / "rubix_galaxy_test.h5", "r") as f:
         print(f.keys())
         assert "meta" in f
         assert "galaxy" in f
@@ -64,9 +65,9 @@ def test_convert_to_rubix_structure(input_handler, tmp_path):
 
 
 def test_convert_to_rubix_correct_values(input_handler, tmp_path):
-    input_handler.to_rubix(tmp_path)
+    input_handler.to_rubix(tmp_path, save_name="test")
 
-    with h5py.File(tmp_path / "rubix_galaxy.h5", "r") as f:
+    with h5py.File(tmp_path / "rubix_galaxy_test.h5", "r") as f:
         assert f["galaxy/redshift"][()] == 0.5  # type: ignore
         assert (f["galaxy/center"][()] == [1, 2, 3]).all()  # type: ignore
         assert f["galaxy/halfmassrad_stars"][()] == 1.5  # type: ignore
@@ -85,25 +86,43 @@ def test_units_are_correct(input_handler):
     assert units == {
         "galaxy": config["BaseHandler"]["galaxy"],
         "stars": config["BaseHandler"]["particles"]["stars"],
-        
     }
 
 
 def test_rubix_file_has_correct_units(input_handler, tmp_path):
-    input_handler.to_rubix(tmp_path)
+    input_handler.to_rubix(tmp_path, save_name="test")
 
     # get the units from the rubix config
-    from rubix import config 
+    from rubix import config
+
     config = config["BaseHandler"]
-    with h5py.File(tmp_path / "rubix_galaxy.h5", "r") as f:
+    with h5py.File(tmp_path / "rubix_galaxy_test.h5", "r") as f:
         assert f["galaxy/redshift"].attrs["unit"] == config["galaxy"]["redshift"]
         assert f["galaxy/center"].attrs["unit"] == config["galaxy"]["center"]
-        assert f["galaxy/halfmassrad_stars"].attrs["unit"] == config["galaxy"]["halfmassrad_stars"]
-        assert f["particles/stars/coords"].attrs["unit"] == config["particles"]["stars"]["coords"]
-        assert f["particles/stars/mass"].attrs["unit"] == config["particles"]["stars"]["mass"]
-        assert f["particles/stars/metallicity"].attrs["unit"] == config["particles"]["stars"]["metallicity"]
-        assert f["particles/stars/velocity"].attrs["unit"] == config["particles"]["stars"]["velocity"]
-        assert f["particles/stars/age"].attrs["unit"] == config["particles"]["stars"]["age"]
+        assert (
+            f["galaxy/halfmassrad_stars"].attrs["unit"]
+            == config["galaxy"]["halfmassrad_stars"]
+        )
+        assert (
+            f["particles/stars/coords"].attrs["unit"]
+            == config["particles"]["stars"]["coords"]
+        )
+        assert (
+            f["particles/stars/mass"].attrs["unit"]
+            == config["particles"]["stars"]["mass"]
+        )
+        assert (
+            f["particles/stars/metallicity"].attrs["unit"]
+            == config["particles"]["stars"]["metallicity"]
+        )
+        assert (
+            f["particles/stars/velocity"].attrs["unit"]
+            == config["particles"]["stars"]["velocity"]
+        )
+        assert (
+            f["particles/stars/age"].attrs["unit"]
+            == config["particles"]["stars"]["age"]
+        )
 
 
 def test_missing_galaxy_field_error(input_handler):
@@ -113,7 +132,6 @@ def test_missing_galaxy_field_error(input_handler):
         del galaxy_data["redshift"]
         input_handler._check_galaxy_data(galaxy_data, input_handler.get_units())
     assert "Missing field redshift in galaxy data" in str(excinfo.value)
-
 
 
 def test_galaxy_field_unit_info_missing_error(input_handler):

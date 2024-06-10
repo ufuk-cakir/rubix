@@ -1,4 +1,5 @@
 import pytest  # type: ignore # noqa
+from rubix.config.user import UserConfig
 from rubix.utils import (
     convert_values_to_physical,
     SFTtoAge,
@@ -209,7 +210,10 @@ def test_read_yaml_error_handling(tmp_path):
 def test_get_config_with_dict():
     config = {"test_key": "test_value"}
     result = get_config(config)
-    assert result == config
+    print("result", result)
+    print("UserConfig(config)", UserConfig(config))
+    assert isinstance(result, UserConfig)
+    assert result["test_key"] == "test_value"
 
 
 def test_get_config_with_str(mocker):
@@ -217,4 +221,5 @@ def test_get_config_with_str(mocker):
     expected_result = {"key": "value"}
     mocker.patch("rubix.utils.read_yaml", return_value=expected_result)
     result = get_config(config_file)
-    assert result == expected_result
+    assert isinstance(result, UserConfig)
+    assert result["key"] == "value"

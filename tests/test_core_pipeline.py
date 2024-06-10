@@ -64,6 +64,42 @@ user_config = {
     },
 }
 
+user_config = {
+    "pipeline": {"name": "calc_ifu"},
+    "logger": {
+        "log_level": "INFO",
+        "log_file_path": None,
+        "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    },
+    "data": {
+        "output_path": output_path,
+        "save_name": "tng_14",
+        "subset": {
+            "use_subset": True,
+            "subset_size": 10,
+        },
+        "simulation": {
+            "name": "IllustrisTNG",
+            "args": {
+                "path": file_path,
+            },
+        },
+    },
+    "telescope": {
+        "name": "MUSE",
+        "psf": {"name": "gaussian", "size": 5, "sigma": 0.6},
+        "lsf": {"sigma": 0.5},
+    },
+    "cosmology": {"name": "PLANCK15"},
+    "galaxy": {
+        "dist_z": 0.1,
+        "rotation": {"type": "edge-on"},
+    },
+    "ssp": {
+        "template": {"name": "BruzualCharlot2003"},
+    },
+}
+
 
 def test_rubix_pipeline_not_implemented(setup_environment):
     config = {"pipeline": {"name": "dummy"}}

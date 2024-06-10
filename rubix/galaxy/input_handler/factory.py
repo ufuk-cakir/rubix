@@ -8,7 +8,7 @@ __all__ = ["IllustrisHandler", "BaseHandler"]
 def get_input_handler(config: dict, logger=None) -> BaseHandler:
     """Creates a handler based on the config"""
     if config["data/simulation/name"] == "IllustrisTNG":
-        return IllustrisHandler(**config["simulation"]["args"], logger=logger)
+        return IllustrisHandler(**config["data/simulation/args"], logger=logger)
 
     if config["data/simulation/name"] == "IllustrisAPI":
         path = os.path.join(
@@ -18,4 +18,6 @@ def get_input_handler(config: dict, logger=None) -> BaseHandler:
         )
         return IllustrisHandler(path, logger=logger)
     else:
-        raise ValueError(f"Simulation {config['simulation']} is not supported")
+        raise ValueError(
+            f"Simulation {config['data/simulation/name']} is not supported"
+        )

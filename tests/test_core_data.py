@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, Mock, patch, call
 import pytest
-
+import os
 import jax
 import jax.numpy as jnp
 from rubix.core.data import (
@@ -18,7 +18,10 @@ config_dict = {
         "args": {"api_key": "your_api_key"},
         "load_galaxy_args": {"snapshot": "latest"},
     },
-    "output_path": "/path/to/output",
+    "data/simulation/name": "IllustrisAPI",
+    "data/simulation/args": {"api_key": "your_api_key"},
+    "data/save_name": "test",
+    "data/output_path": "/path/to/output",
     "logger": {"log_level": "DEBUG", "log_file_path": None},
 }
 
@@ -26,7 +29,7 @@ config_path = "path/to/config.yaml"
 
 
 # Test convert_to_rubix function
-@patch("rubix.core.data.read_yaml")
+@patch("rubix.core.data.get_config")
 @patch("rubix.core.data.get_logger")
 @patch("rubix.core.data.get_input_handler")
 @patch("rubix.core.data.IllustrisAPI")
@@ -41,7 +44,10 @@ def test_convert_to_rubix(
     mock_illustris_api.return_value.load_galaxy.return_value = None
 
     output_path = convert_to_rubix(config_path)
-    assert output_path == config_dict["output_path"]
+    assert output_path == os.path.join(
+        config_dict["data/output_path"],
+        f"rubix_galaxy_{config_dict['data/save_name']}.h5",
+    )
     mock_read_yaml.assert_called_once_with(config_path)
     mock_logger.assert_called_once()
     mock_input_handler.assert_called_once()
@@ -50,9 +56,31 @@ def test_convert_to_rubix(
 
 def test_rubix_file_already_exists():
     # Mock configuration for the test
+    # config = {
+    #     "output_path": "/fake/path",
+    #     "data": {"name": "IllustrisAPI", "args": {}, "load_galaxy_args": {}},
+    # }
+
     config = {
-        "output_path": "/fake/path",
-        "data": {"name": "IllustrisAPI", "args": {}, "load_galaxy_args": {}},
+        "data": {
+            "output_path": "fake/path",
+            "save_name": "test",
+            "subset": {
+                "use_subset": True,
+                "subset_size": 10,
+            },
+            "simulation": {
+                "name": "IllustrisAPI",
+                "args": {
+                    "api_key": "",
+                    "particle_type": ["stars"],
+                    "simulation": "TNG50-1",
+                    "snapshot": 99,
+                    "galaxy_id": 14,
+                    "reuse": True,
+                },
+            },
+        }
     }
 
     # Create a mock logger that does nothing
@@ -66,19 +94,21 @@ def test_rubix_file_already_exists():
             result = convert_to_rubix(config)
 
             # Check that the file existence check was performed correctly
-            mock_exists.assert_called_once_with("/fake/path/rubix_galaxy.h5")
+            mock_exists.assert_called_once_with(
+                f"fake/path/rubix_galaxy_{config['data']['save_name']}.h5"
+            )
 
             # Check that the logger was created
             mock_get_logger.assert_called_once_with(None)
 
             # Ensure the function logs the right message and skips conversion
-            mock_logger.info.assert_called_with(
+            mock_logger.warning.assert_called_with(
                 "Rubix galaxy file already exists, skipping conversion"
             )
 
             # Verify that the function returns the expected path without performing further actions
             assert (
-                result == "/fake/path"
+                result == f"fake/path/rubix_galaxy_{config['data']['save_name']}.h5"
             ), "Function should return the output path when file exists"
 
 
@@ -121,7 +151,10 @@ def test_prepare_input(mock_center_particles, mock_path_join):
         print(mock_path_join.call_args_list)  # Print all calls to os.path.join
         # Check if the specific call is in the list of calls
         assert (
-            call(config_dict["output_path"], "rubix_galaxy.h5")
+            call(
+                config_dict["data/output_path"],
+                f"rubix_galaxy_{config_dict['data/save_name']}.h5",
+            )
             in mock_path_join.call_args_list
         )
 
@@ -157,10 +190,24 @@ def test_prepare_input_subset_case(
         jnp.array([[4, 5, 6], [7, 8, 9], [10, 11, 12]]),
     )
 
+    # config_dict = {
+    #     "output_path": "/path/to/output",
+    #     "logger": None,
+    #     "data": {"subset": {"use_subset": True, "subset_size": 2}},
+    # }
+
     config_dict = {
-        "output_path": "/path/to/output",
-        "logger": None,
-        "data": {"subset": {"use_subset": True, "subset_size": 2}},
+        "data": {
+            "name": "IllustrisAPI",
+            "args": {"api_key": "your_api_key"},
+            "load_galaxy_args": {"snapshot": "latest"},
+            "subset": {"use_subset": True, "subset_size": 2},
+        },
+        "data/simulation/name": "IllustrisAPI",
+        "data/simulation/args": {"api_key": "your_api_key"},
+        "data/save_name": "test",
+        "data/output_path": "/path/to/output",
+        "logger": {"log_level": "DEBUG", "log_file_path": None},
     }
 
     coords, velocities, metallicity, mass, age, halfmassrad_stars = prepare_input(
@@ -175,7 +222,7 @@ def test_prepare_input_subset_case(
     assert halfmassrad_stars == 1
 
     assert (
-        call(config_dict["output_path"], "rubix_galaxy.h5")
+        call(config_dict["data/output_path"], "rubix_galaxy_test.h5")
         in mock_path_join.call_args_list
     )
 
