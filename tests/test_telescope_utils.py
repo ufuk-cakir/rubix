@@ -21,9 +21,9 @@ def test_square_spaxel_assignment():
     spatial_bin_edges = jnp.array([0, 1, 2, 3, 4])
 
     # Expected output for these inputs
-    # expected_output = jnp.array([4, 14])  # Expected indices in the flattened array
+    expected_output = jnp.array([4, 14])  # Expected indices in the flattened array
 
-    expected_output = jnp.array([5, 17])  # Expected indices in the flattened array
+    # expected_output = jnp.array([5, 17])  # Expected indices in the flattened array
     # Call the function with the test inputs
     output = square_spaxel_assignment(coords, spatial_bin_edges)
 
@@ -93,5 +93,5 @@ def test_calculate_spatial_bin_edges():
     # Assertions
     cosmology.angular_scale.assert_called_once_with(dist_z)
     assert spatial_bin_size == 0.2
-    expected_edges = jnp.arange(-1.0, 1.0, 0.2)
+    expected_edges = jnp.arange(-1.0, 1.0 + 0.2, 0.2)
     assert jnp.allclose(spatial_bin_edges, expected_edges)

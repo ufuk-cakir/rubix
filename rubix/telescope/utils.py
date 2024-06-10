@@ -15,7 +15,7 @@ def calculate_spatial_bin_edges(
     aperture_size = ang_size * fov
     spatial_bin_size = aperture_size / spatial_bins
     spatial_bin_edges = jnp.arange(
-        -aperture_size / 2, aperture_size / 2, spatial_bin_size
+        -aperture_size / 2, aperture_size / 2 + spatial_bin_size, spatial_bin_size
     )
     return spatial_bin_edges, spatial_bin_size
 
@@ -71,7 +71,7 @@ def square_spaxel_assignment(
     )  # -1 to start indexing at 0
     y_indices = jnp.digitize(coords[:, 1], spatial_bin_edges) - 1
 
-    number_of_bins = len(spatial_bin_edges)  # - 1
+    number_of_bins = len(spatial_bin_edges) - 1
 
     # Clip the indices to the valid range
     x_indices = jnp.clip(x_indices, 0, number_of_bins - 1)
@@ -114,6 +114,7 @@ def mask_particles_outside_aperture(
     return mask
 
 
+# this is implemente in the pipeline
 # def filter_particles_outside_aperture(
 #     coords: Float[Array, " n_stars 3"],
 #     masses: Float[Array, " n_stars"],
@@ -130,7 +131,7 @@ def mask_particles_outside_aperture(
 #
 #     return masses, metallicities, ages
 #
-#
+
 #
 # # TODO: there is a better way to to this without loops
 # currently not used
