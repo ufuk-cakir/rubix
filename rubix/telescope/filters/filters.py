@@ -3,7 +3,7 @@ import equinox as eqx
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 from jaxtyping import Array, Float
-from typing import List
+from typing import List, Union
 
 
 class Filter(eqx.Module):
@@ -130,7 +130,7 @@ class FilterCurves(eqx.Module):
             filter.plot(ax)
         plt.show()
 
-    def get_images(self, cube, wavelengths):
+    def apply_filter_curves(self, cube, wavelengths):
         """
         Get the images of a cube of spectra through all filters.
         Parameters
@@ -147,7 +147,9 @@ class FilterCurves(eqx.Module):
         images = {"filter": [], "image": []}
         for filter in self.filters:
             images["filter"].append(filter.name)
-            images["image"].append(convolve_filter_with_cube(filter, cube, wavelengths))
+            images["image"].append(
+                convolve_filter_with_spectra(filter, cube, wavelengths)
+            )
 
         return images
 
@@ -204,62 +206,40 @@ def load_filters(filter_name: str):
     return FilterCurves(filter_list)
 
 
-def convolve_filter_with_spectrum(
+def convolve_filter_with_spectra(
     filter: Filter,
-    spectrum_wavelengths: Float[Array, " n_wavelengths"],
-    spectrum_flux: Float[Array, " n_wavelengths"],
-) -> Float[Array, "1"]:
-    """
-    Convolves a single filter with a single spectrum.
-
-    Parameters
-    ----------
-    filter : Filter
-        The filter to convolve with the spectrum.
-    spectrum_wavelengths : jax.numpy.ndarray
-        The wavelengths of the spectrum.
-    spectrum_flux : jax.numpy.ndarray
-        The flux values of the spectrum.
-
-    Returns
-    -------
-    jax.numpy.ndarray
-    The convolved flux value. Corresponds to the total flux of the spectrum through the filter.
-
-    """
-    # Interpolate the filter response to the spectrum wavelengths
-    filter_response = filter(spectrum_wavelengths)
-
-    # Perform the convolution (element-wise multiplication and integration)
-    convolved_flux = jnp.trapezoid(
-        spectrum_flux * filter_response, spectrum_wavelengths
-    )
-
-    return convolved_flux
-
-
-def convolve_filter_with_cube(
-    filter: Filter,
-    cube: Float[Array, " n_x n_y n_wavelengths"],
+    spectra: Union[
+        Float[Array, " n_wavelengths"], Float[Array, " n_x n_y n_wavelengths"]
+    ],
     wavelengths: Float[Array, " n_wavelengths"],
-) -> Float[Array, " n_x n_y"]:
+) -> Union[Float[Array, "1"], Float[Array, " n_x n_y"]]:
     """
-    Convolves a single filter with a cube of spectra.
+    Convolves a single filter with a single spectrum or a cube of spectra.
+
     Parameters
     ----------
     filter : Filter
-        The filter to convolve with the cube.
-    cube : jax.numpy.ndarray
-        The cube of spectra.
+        The filter to convolve with the spectrum or cube.
+    spectrum_or_cube : jax.numpy.ndarray
+        The spectrum or cube of spectra.
     wavelengths : jax.numpy.ndarray
-        The wavelengths of the cube.
+        The wavelengths of the spectrum or cube.
+
     Returns
     -------
     jax.numpy.ndarray
-        The convolved image. Corresponds to the total flux in each pixel through the filter.
+        The convolved flux value for a single spectrum or the convolved image for a cube of spectra.
     """
-    # Interpolate the filter response to the cube wavelengths
+    # Interpolate the filter response to the wavelengths
     filter_response = filter(wavelengths)
-    # Perform the convolution (element-wise multiplication and integration)
-    convolved_image = jnp.trapezoid(cube * filter_response, wavelengths, axis=-1)
-    return convolved_image
+
+    if spectra.ndim == 1:
+        # Single spectrum case
+        convolved_flux = jnp.trapezoid(spectra * filter_response, wavelengths)
+        return convolved_flux
+    elif spectra.ndim == 3:
+        # Cube of spectra case
+        convolved_image = jnp.trapezoid(spectra * filter_response, wavelengths, axis=-1)
+        return convolved_image
+    else:
+        raise ValueError("Input array must be 1D (spectrum) or 3D (cube of spectra).")
