@@ -30,40 +30,41 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 file_path = os.path.join(dir_path, "data/galaxy-id-14.hdf5")
 output_path = os.path.join(dir_path, "output")
 # Dummy user configuration
-user_config = {
-    "pipeline": {"name": "calc_ifu"},
-    "logger": {
-        "log_level": "DEBUG",
-        "log_file_path": None,
-        "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    },
-    "simulation": {
-        "name": "IllustrisTNG",
-        "args": {
-            "path": file_path,
-        },
-    },
-    "data": {"subset": {"use_subset": True, "subset_size": 5}},
-    "output_path": output_path,
-    "telescope": {
-        "name": "MUSE",
-        "psf": {"name": "gaussian", "size": 5, "sigma": 0.6},
-        "lsf": {"sigma": 0.6},
-        "noise": {"signal_to_noise": 1, "noise_distribution": "normal"},
-    },
-    "cosmology": {"name": "PLANCK15"},
-    "galaxy": {
-        "dist_z": 0.1,
-        "rotation": {
-            "alpha": 0,
-            "beta": 0,
-            "gamma": 0,
-        },
-    },
-    "ssp": {
-        "template": {"name": "BruzualCharlot2003"},
-    },
-}
+# this is the old config structure
+# user_config = {
+#     "pipeline": {"name": "calc_ifu"},
+#     "logger": {
+#         "log_level": "DEBUG",
+#         "log_file_path": None,
+#         "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+#     },
+#     "simulation": {
+#         "name": "IllustrisTNG",
+#         "args": {
+#             "path": file_path,
+#         },
+#     },
+#     "data": {"subset": {"use_subset": True, "subset_size": 5}},
+#     "output_path": output_path,
+#     "telescope": {
+#         "name": "MUSE",
+#         "psf": {"name": "gaussian", "size": 5, "sigma": 0.6},
+#         "lsf": {"sigma": 0.6},
+#         "noise": {"signal_to_noise": 1, "noise_distribution": "normal"},
+#     },
+#     "cosmology": {"name": "PLANCK15"},
+#     "galaxy": {
+#         "dist_z": 0.1,
+#         "rotation": {
+#             "alpha": 0,
+#             "beta": 0,
+#             "gamma": 0,
+#         },
+#     },
+#     "ssp": {
+#         "template": {"name": "BruzualCharlot2003"},
+#     },
+# }
 
 user_config = {
     "pipeline": {"name": "calc_ifu"},
@@ -90,6 +91,7 @@ user_config = {
         "name": "MUSE",
         "psf": {"name": "gaussian", "size": 5, "sigma": 0.6},
         "lsf": {"sigma": 0.5},
+        "noise": {"signal_to_noise": 1, "noise_distribution": "normal"},
     },
     "cosmology": {"name": "PLANCK15"},
     "galaxy": {
