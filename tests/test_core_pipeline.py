@@ -49,6 +49,7 @@ user_config = {
         "name": "MUSE",
         "psf": {"name": "gaussian", "size": 5, "sigma": 0.6},
         "lsf": {"sigma": 0.6},
+        "noise": {"signal_to_noise": 1, "noise_distribution": "normal"},
     },
     "cosmology": {"name": "PLANCK15"},
     "galaxy": {
