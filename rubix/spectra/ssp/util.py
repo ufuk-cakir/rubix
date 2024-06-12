@@ -1,17 +1,25 @@
 """Save the SSP data to an HDF5 file
 adapted from https://github.com/ArgonneCPAC/dsps/blob/main/scripts/write_fsps_data_to_disk.py"""
 
-import argparse
 from .fsps_grid import retrieve_ssp_data_from_fsps
-import h5py
+from rubix.paths import TEMPLATE_PATH
+import h5py, os
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("outname", help="Name of the output file")
-    args = parser.parse_args()
+def write_fsps_data_to_disk(outname: str, file_location = TEMPLATE_PATH):
+    """
+    Write FSPS ssp templagte data to disk.
+
+    Args:
+        outname (str): The name of the output file.
+        file_location (str, optional): The location where the file will be saved. Defaults to TEMPLATE_PATH.
+
+    Returns:
+        None
+    """
 
     ssp_data = retrieve_ssp_data_from_fsps()
+    file_path = os.path.join(file_location, outname)
 
-    with h5py.File(args.outname, "w") as hdf:
-        for key, arr in zip(ssp_data._fields, ssp_data):
+    with h5py.File(file_path, "w") as hdf:
+        for key, arr in zip(ssp_data.keys(), ssp_data):
             hdf[key] = arr

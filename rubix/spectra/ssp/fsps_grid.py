@@ -1,6 +1,7 @@
 """Use python-fsps to retrieve a block of Simple Stellar Population (SSP) data
 adapted from https://github.com/ArgonneCPAC/dsps/blob/main/dsps/data_loaders/retrieve_fsps_data.py"""
 import numpy as np
+from rubix import config as rubix_config
 
 try:
     import fsps
@@ -11,7 +12,7 @@ except (ImportError, RuntimeError):
 from .grid import SSPGrid
 
 
-def retrieve_ssp_data_from_fsps(add_neb_emission=True, imf_type=2, **kwargs):
+def retrieve_ssp_data_from_fsps(add_neb_emission=True, imf_type=2, **kwargs) -> "SSPGrid":
     """Use python-fsps to populate arrays and matrices of data
     for the default simple stellar populations (SSPs) in the shapes expected by DSPS
     adapted from https://github.com/ArgonneCPAC/dsps/blob/main/dsps/data_loaders/retrieve_fsps_data.py
@@ -55,6 +56,8 @@ def retrieve_ssp_data_from_fsps(add_neb_emission=True, imf_type=2, **kwargs):
     assert HAS_FSPS, "Must have python-fsps installed to use this function"
     import fsps
 
+    config = rubix_config["ssp"]["templates"]['FSPS']
+
     sp = fsps.StellarPopulation(zcontinuous=0, imf_type=imf_type)
     ssp_lgmet = np.log10(sp.zlegend)
     nzmet = ssp_lgmet.size
@@ -70,4 +73,6 @@ def retrieve_ssp_data_from_fsps(add_neb_emission=True, imf_type=2, **kwargs):
     ssp_wave = np.array(_wave)
     ssp_flux = np.array(spectrum_collector)
 
-    return SSPGrid(ssp_lg_age_gyr, ssp_lgmet, ssp_wave, ssp_flux)
+    grid = SSPGrid(ssp_lg_age_gyr, ssp_lgmet, ssp_wave, ssp_flux)
+    grid.__class__.__name__ = config["name"]
+    return grid

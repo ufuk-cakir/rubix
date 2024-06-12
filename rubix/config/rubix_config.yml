@@ -163,6 +163,11 @@ ssp:
           in_log: false # If the field is stored in log scale
     
     FSPS:
+    # The FSPS template makes use of pyFSPS 
+    # Since switching between different supported stellar isochrone and spectral libraries in python-FSPS 
+    # requires (re-)installing python-FSPS with specific compiler flags we do not add a dependence onto pyFSPS
+    # and leave the installation of it to the user. See here https://dfm.io/python-fsps/current/installation/
+    # for information on the install process.
       name: "FSPS (Conroy et al. 2009)"
       # more information on how those models are synthesized: https://github.com/cconroy20/fsps 
       # and https://dfm.io/python-fsps/current/

@@ -29,7 +29,7 @@ class SSPGrid:
     # This does not work with jax.jit, gives error that str is not valid Jax type
     # units: Dict[str, str] = eqx.field(default_factory=dict)
     
-    def __init__(self, age, metallicity, wavelength, flux, _logger=None):
+    def __init__(self, age, metallicity, wavelength, flux):
         self.age = jnp.asarray(age)
         self.metallicity = jnp.asarray(metallicity)
         self.wavelength = jnp.asarray(wavelength)
@@ -39,6 +39,9 @@ class SSPGrid:
     def keys(self) -> List[str]:
         return [f.name for f in fields(self)]
     
+    def __iter__(self):
+        yield from (getattr(self, field.name) for field in fields(self))
+
     def get_lookup_interpolation(self, method="cubic", extrap=0):
         """Returns a 2D interpolation function for the SSP grid.
 
