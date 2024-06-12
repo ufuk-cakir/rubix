@@ -33,7 +33,7 @@ dependencies = [
     "astropy",
     "scipy",
     "numpy",
-    "matplotlib" 
+    "matplotlib", 
     "pyaml", 
     "jaxtyping",
     "equinox",
