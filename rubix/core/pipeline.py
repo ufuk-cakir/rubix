@@ -20,7 +20,7 @@ from .ssp import get_ssp
 from .telescope import get_spaxel_assignment, get_telescope, get_filter_particles
 from .psf import get_convolve_psf
 from .lsf import get_convolve_lsf
-
+from .noise import get_apply_noise
 
 class RubixPipeline:
     """
@@ -129,6 +129,8 @@ class RubixPipeline:
         calculate_datacube = get_calculate_datacube(self.user_config)
         convolve_psf = get_convolve_psf(self.user_config)
         convolve_lsf = get_convolve_lsf(self.user_config)
+        apply_noise = get_apply_noise(self.user_config)
+
         functions = [
             rotate_galaxy,
             filter_particles,
@@ -140,6 +142,7 @@ class RubixPipeline:
             calculate_datacube,
             convolve_psf,
             convolve_lsf,
+            apply_noise,
         ]
 
         return functions
