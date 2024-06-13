@@ -1,18 +1,31 @@
 """Use python-fsps to retrieve a block of Simple Stellar Population (SSP) data
 adapted from https://github.com/ArgonneCPAC/dsps/blob/main/dsps/data_loaders/retrieve_fsps_data.py"""
+
 import numpy as np
+from rubix.logger import get_logger
 from rubix import config as rubix_config
+
+# Setup a logger based on the config
+logger_config = rubix_config["logger"] if "logger" in rubix_config else None
+logger = get_logger()
 
 try:
     import fsps
+
     HAS_FSPS = True
 except (ImportError, RuntimeError):
+    logger.warning(
+        "python-fsps is not installed. Please install it to use this function."
+    )
     HAS_FSPS = False
+
 
 from .grid import SSPGrid
 
 
-def retrieve_ssp_data_from_fsps(add_neb_emission=True, imf_type=2, **kwargs) -> "SSPGrid":
+def retrieve_ssp_data_from_fsps(
+    add_neb_emission=True, imf_type=2, **kwargs
+) -> "SSPGrid":
     """Use python-fsps to populate arrays and matrices of data
     for the default simple stellar populations (SSPs) in the shapes expected by DSPS
     adapted from https://github.com/ArgonneCPAC/dsps/blob/main/dsps/data_loaders/retrieve_fsps_data.py
@@ -56,7 +69,7 @@ def retrieve_ssp_data_from_fsps(add_neb_emission=True, imf_type=2, **kwargs) -> 
     assert HAS_FSPS, "Must have python-fsps installed to use this function"
     import fsps
 
-    config = rubix_config["ssp"]["templates"]['FSPS']
+    config = rubix_config["ssp"]["templates"]["FSPS"]
 
     sp = fsps.StellarPopulation(zcontinuous=0, imf_type=imf_type)
     ssp_lgmet = np.log10(sp.zlegend)
@@ -66,7 +79,11 @@ def retrieve_ssp_data_from_fsps(add_neb_emission=True, imf_type=2, **kwargs) -> 
     for zmet_indx in range(1, ssp_lgmet.size + 1):
         print("...retrieving zmet = {0} of {1}".format(zmet_indx, nzmet))
         sp = fsps.StellarPopulation(
-            zcontinuous=0, zmet=zmet_indx, add_neb_emission=add_neb_emission, imf_type=imf_type, **kwargs
+            zcontinuous=0,
+            zmet=zmet_indx,
+            add_neb_emission=add_neb_emission,
+            imf_type=imf_type,
+            **kwargs,
         )
         _wave, _fluxes = sp.get_spectrum()
         spectrum_collector.append(_fluxes)
