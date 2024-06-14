@@ -4,9 +4,10 @@ adapted from https://github.com/ArgonneCPAC/dsps/blob/main/dsps/data_loaders/ret
 import numpy as np
 from rubix.logger import get_logger
 from rubix import config as rubix_config
+from rubix.paths import TEMPLATE_PATH
+import h5py, os
 
 # Setup a logger based on the config
-logger_config = rubix_config["logger"] if "logger" in rubix_config else None
 logger = get_logger()
 
 try:
@@ -24,7 +25,7 @@ from .grid import SSPGrid
 
 
 def retrieve_ssp_data_from_fsps(
-    add_neb_emission=True, imf_type=2, **kwargs
+    add_neb_emission=True, imf_type=2, zmet=None, tage=0.0, peraa=True, **kwargs
 ) -> "SSPGrid":
     """Use python-fsps to populate arrays and matrices of data
     for the default simple stellar populations (SSPs) in the shapes expected by DSPS
@@ -34,6 +35,19 @@ def retrieve_ssp_data_from_fsps(
     ----------
     add_neb_emission : bool, optional
         Argument passed to fsps.StellarPopulation. Default is True.
+
+    imf_type : int, optional
+        Argument passed to fsps.StellarPopulation to specify the IMF type. Default is 2 and specifies Chabrier (2003).
+        See https://dfm.io/python-fsps/current/stellarpop_api/#example for more details.
+
+    zmet : int, optional
+        Argument passed to fsps.StellarPopulation to specify the metallicity index. Default is None.
+
+    tage : float, optional
+        Argument passed to fsps.StellarPopulation to specify the age of the SSP. Default is 0.0.
+
+    peraa : bool, optional
+        Argument passed to fsps.StellarPopulation to specify whether the spectrum should be returned in Lsun/Angstrom (True) or Lsun/Hz (False). Default is True.
 
     kwargs : optional
         Any keyword arguments passed to the retrieve_ssp_data_from_fsps function will be
@@ -85,7 +99,7 @@ def retrieve_ssp_data_from_fsps(
             imf_type=imf_type,
             **kwargs,
         )
-        _wave, _fluxes = sp.get_spectrum()
+        _wave, _fluxes = sp.get_spectrum(zmet=zmet, tage=tage, peraa=peraa)
         spectrum_collector.append(_fluxes)
     ssp_wave = np.array(_wave)
     ssp_flux = np.array(spectrum_collector)
@@ -93,3 +107,36 @@ def retrieve_ssp_data_from_fsps(
     grid = SSPGrid(ssp_lg_age_gyr, ssp_lgmet, ssp_wave, ssp_flux)
     grid.__class__.__name__ = config["name"]
     return grid
+
+
+def write_fsps_data_to_disk(
+    outname: str,
+    file_location=TEMPLATE_PATH,
+    add_neb_emission=True,
+    imf_type=2,
+    peraa=True,
+    **kwargs,
+):
+    """
+    Write FSPS ssp template data to disk in HDF5 format.
+    adapted from https://github.com/ArgonneCPAC/dsps/blob/main/scripts/write_fsps_data_to_disk.py
+
+    Args:
+        outname (str): The name of the output file.
+        file_location (str, optional): The location where the file will be saved. Defaults to TEMPLATE_PATH.
+
+    Returns:
+        None
+    """
+
+    ssp_data = retrieve_ssp_data_from_fsps(
+        add_neb_emission=True, imf_type=2, peraa=True, **kwargs
+    )
+    file_path = os.path.join(file_location, outname)
+
+    logger.info(
+        f"Writing created FSPS data to disk under the following path: {file_path}."
+    )
+    with h5py.File(file_path, "w") as hdf:
+        for key, arr in zip(ssp_data.keys(), ssp_data):
+            hdf[key] = arr

@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from unittest.mock import patch
 from rubix.spectra.ssp.grid import SSPGrid
-from rubix.spectra.ssp.util import write_fsps_data_to_disk
+from rubix.spectra.ssp.fsps_grid import write_fsps_data_to_disk
 import sys
 import os
 import h5py
@@ -16,7 +16,7 @@ class MockFSPS:
             self.zlegend = np.array([0.001, 0.01, 0.1])
             self.log_age = np.array([9.0, 9.1, 9.2])
 
-        def get_spectrum(self):
+        def get_spectrum(self, peraa=True, **kwargs):
             return (
                 np.array([4000, 4100, 4200]),
                 np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
