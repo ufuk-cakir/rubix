@@ -90,16 +90,12 @@ def test_retrieve_ssp_data_from_fsps_with_kwargs():
 
 
 # test write to disk of fsps template
-
-
 def test_write_fsps_data_to_disk(tmpdir):
     # Create a temporary directory for testing
     temp_dir = tmpdir.mkdir("test_dir")
 
     # Define the output file name
     outname = "output.h5"
-
-    mock_sp_instance = MockFSPS.StellarPopulation()
 
     with (
         patch.dict("sys.modules", {"fsps": MockFSPS()}),
@@ -119,9 +115,6 @@ def test_write_fsps_data_to_disk(tmpdir):
 
 
 def test_write_fsps_data_to_disk_invalid_file_location(tmpdir):
-    # Create a temporary directory for testing
-    temp_dir = tmpdir.mkdir("test_dir")
-
     # Define an invalid file location
     invalid_location = "invalid_path"
 
