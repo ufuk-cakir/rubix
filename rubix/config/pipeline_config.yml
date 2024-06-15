@@ -6,15 +6,14 @@ calc_ifu:
       args: []
       kwargs:
         type: "face-on"
-    # This does not work inside the pipeline since we need dynamic JAX arrays here, and its not suppoerted for jit
-    # filter_particles:
-    #   name: filter_particles
-    #   depends_on: rotate_galaxy
-    #   args: []
-    #   kwargs: {}
+    filter_particles:
+      name: filter_particles
+      depends_on: rotate_galaxy
+      args: []
+      kwargs: {}
     spaxel_assignment:
       name: spaxel_assignment
-      depends_on: rotate_galaxy
+      depends_on: filter_particles
       args: []
       kwargs: {}
 
@@ -40,19 +39,23 @@ calc_ifu:
       depends_on: scale_spectrum_by_mass
       args: []
       kwargs: {}
-
     calculate_datacube:
       name: calculate_datacube
       depends_on: doppler_shift_and_resampling
       args: []
       kwargs: {}
     convolve_psf:
-          name: convolve_psf
-          depends_on: calculate_datacube
-          args: []
-          kwargs: {}
+      name: convolve_psf
+      depends_on: calculate_datacube
+      args: []
+      kwargs: {}
     convolve_lsf:
       name: convolve_lsf
       depends_on: convolve_psf
+      args: []
+      kwargs: {}
+    apply_noise:
+      name: apply_noise
+      depends_on: convolve_lsf
       args: []
       kwargs: {}

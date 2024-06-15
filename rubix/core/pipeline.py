@@ -17,9 +17,10 @@ from .ifu import (
 )
 from .rotation import get_galaxy_rotation
 from .ssp import get_ssp
-from .telescope import get_spaxel_assignment, get_telescope
+from .telescope import get_spaxel_assignment, get_telescope, get_filter_particles
 from .psf import get_convolve_psf
 from .lsf import get_convolve_lsf
+from .noise import get_apply_noise
 
 class RubixPipeline:
     """
@@ -78,7 +79,9 @@ class RubixPipeline:
         """
         # Get the data
         self.logger.info("Getting rubix data...")
-        coords, velocities, metallicity, mass, age = get_rubix_data(self.user_config)
+        coords, velocities, metallicity, mass, age, halfmassrad_stars = get_rubix_data(
+            self.user_config
+        )
         self.logger.info(f"Data loaded with {len(coords)} particles.")
         # Setup the data dictionary
         # TODO: This is a temporary solution, we need to figure out a better way to handle the data
@@ -91,6 +94,7 @@ class RubixPipeline:
             "metallicity": metallicity,
             "mass": mass,
             "age": age,
+            "halfmassrad_stars": halfmassrad_stars,
         }
 
         self.logger.debug(
@@ -114,6 +118,7 @@ class RubixPipeline:
 
         # TODO: maybe there is a nicer way to load the functions from the yaml config?
         rotate_galaxy = get_galaxy_rotation(self.user_config)
+        filter_particles = get_filter_particles(self.user_config)
         spaxel_assignment = get_spaxel_assignment(self.user_config)
         calculate_spectra = get_calculate_spectra(self.user_config)
         reshape_data = get_reshape_data(self.user_config)
@@ -123,10 +128,12 @@ class RubixPipeline:
         )
         calculate_datacube = get_calculate_datacube(self.user_config)
         convolve_psf = get_convolve_psf(self.user_config)
-     
         convolve_lsf = get_convolve_lsf(self.user_config)
+        apply_noise = get_apply_noise(self.user_config)
+
         functions = [
             rotate_galaxy,
+            filter_particles,
             spaxel_assignment,
             calculate_spectra,
             reshape_data,
@@ -135,6 +142,7 @@ class RubixPipeline:
             calculate_datacube,
             convolve_psf,
             convolve_lsf,
+            apply_noise,
         ]
 
         return functions

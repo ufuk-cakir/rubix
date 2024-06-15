@@ -37,7 +37,7 @@ dependencies = [
     "pyaml", 
     "jaxtyping",
     "equinox",
-    "jax[cpu]",
+    "jax[cpu]!=0.4.27,!=0.4.29",
     "interpax"
 ]
 
@@ -47,7 +47,7 @@ tests = [
     "pytest-cov",
     "pytest-mock",
     "nbval",
-    "jax[cpu]", 
+    "jax[cpu]!=0.4.27,!=0.4.29",
     "pre-commit"
 ]
 

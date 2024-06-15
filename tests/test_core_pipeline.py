@@ -16,6 +16,7 @@ def dummy_get_rubix_data(config):
         jnp.array([0.1]),  # metallicity
         jnp.array([1.0]),  # mass
         jnp.array([1.0]),  # age
+        1.0,  # subhalo half mass
     )
 
 
@@ -48,9 +49,17 @@ user_config = {
         "name": "MUSE",
         "psf": {"name": "gaussian", "size": 5, "sigma": 0.6},
         "lsf": {"sigma": 0.6},
+        "noise": {"signal_to_noise": 1, "noise_distribution": "normal"},
     },
     "cosmology": {"name": "PLANCK15"},
-    "galaxy": {"dist_z": 0.1},
+    "galaxy": {
+        "dist_z": 0.1,
+        "rotation": {
+            "alpha": 0,
+            "beta": 0,
+            "gamma": 0,
+        },
+    },
     "ssp": {
         "template": {"name": "BruzualCharlot2003"},
     },
