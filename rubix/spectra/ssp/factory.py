@@ -5,9 +5,14 @@ from rubix.paths import TEMPLATE_PATH
 from rubix.logger import get_logger
 
 
-def get_ssp_template(name: str) -> SSPGrid:
+def get_ssp_template(template: str) -> SSPGrid:
     """
     Get the SSP template from the configuration file.
+
+    Parameters
+    ----------
+    template : str
+        The template name of the SSP template.
 
     Returns
     -------
@@ -21,29 +26,29 @@ def get_ssp_template(name: str) -> SSPGrid:
     logger = get_logger()
 
     # Check if the template exists in config
-    if name not in config:
+    if template not in config:
         raise ValueError(
-            f"SSP template {name} not found in the supported configuration file."
+            f"SSP template {template} not found in the supported configuration file."
         )
 
-    if config[name]["format"].lower() == "hdf5":
-        return HDF5SSPGrid.from_file(config[name], file_location=TEMPLATE_PATH)
-    elif config[name]["format"].lower() == "pypipe3d":
-        return pyPipe3DSSPGrid.from_file(config[name], file_location=TEMPLATE_PATH)
-    elif config[name]["format"].lower() == "fsps":
-        if config[name]["source"] == "load_from_file":
-            return HDF5SSPGrid.from_file(config[name], file_location=TEMPLATE_PATH)
-        elif config[name]["source"] == "rerun_from_scratch":
+    if config[template]["format"].lower() == "hdf5":
+        return HDF5SSPGrid.from_file(config[template], file_location=TEMPLATE_PATH)
+    elif config[template]["format"].lower() == "pypipe3d":
+        return pyPipe3DSSPGrid.from_file(config[template], file_location=TEMPLATE_PATH)
+    elif config[template]["format"].lower() == "fsps":
+        if config[template]["source"] == "load_from_file":
+            return HDF5SSPGrid.from_file(config[template], file_location=TEMPLATE_PATH)
+        elif config[template]["source"] == "rerun_from_scratch":
             logger.info(
                 "Running fsps to generate SSP templates. This may take a while."
             )
             write_fsps_data_to_disk(
-                config[name]["file_name"], file_location=TEMPLATE_PATH
+                config[template]["file_name"], file_location=TEMPLATE_PATH
             )
-            return HDF5SSPGrid.from_file(config[name], file_location=TEMPLATE_PATH)
+            return HDF5SSPGrid.from_file(config[template], file_location=TEMPLATE_PATH)
         else:
             raise ValueError(
-                f"The source {config[name]['source']} of the FSPS SSP template is not supported."
+                f"The source {config[template]['source']} of the FSPS SSP template is not supported."
             )
     else:
         raise ValueError(
