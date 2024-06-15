@@ -155,3 +155,6 @@ notebooks/*.h5
 notebooks/output
 
 rubix/**/*.ipynb
+
+rubix/spectra/ssp/templates/*.gz
+rubix/spectra/ssp/templates/*fits.gz

@@ -54,6 +54,7 @@ def test_get_ssp_template_existing_template():
             assert template.__class__.__name__ == template_class_name
 
 
+
 def test_get_ssp_template_non_existing_template():
     template_name = "unknown_template"
 
@@ -101,8 +102,10 @@ def test_get_ssp_template_error_loading_file():
         with pytest.raises(FileNotFoundError) as excinfo:
             print("template_name", template_name)
             get_ssp_template(template_name)
-
+        
     assert "Could not download file" in str(excinfo.value)
+
+
 
 
 def test_get_ssp_template_existing_fsps_template():
@@ -144,3 +147,4 @@ def test_get_fsps_template_wrong_source_keyword():
         f"The source {supported_templates['FSPS']['source']} of the FSPS SSP template is not supported."
         == str(excinfo.value)
     )
+

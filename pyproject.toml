@@ -28,10 +28,12 @@ classifiers = [
 ]
 dependencies = [
     "requests",
+    "requests-mock",
     "h5py",
     "astropy",
     "scipy",
-    "requests-mock", 
+    "numpy",
+    "matplotlib", 
     "pyaml", 
     "jaxtyping",
     "equinox",

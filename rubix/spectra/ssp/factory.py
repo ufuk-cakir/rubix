@@ -1,3 +1,4 @@
+from rubix.utils import read_yaml
 from rubix.spectra.ssp.grid import SSPGrid, HDF5SSPGrid, pyPipe3DSSPGrid
 from rubix.spectra.ssp.fsps_grid import write_fsps_data_to_disk
 from rubix import config as rubix_config

@@ -28,8 +28,8 @@ class SSPGrid:
     flux: Float[Array, "metallicity_bins age_bins wavelength_bins"]
     # This does not work with jax.jit, gives error that str is not valid Jax type
     # units: Dict[str, str] = eqx.field(default_factory=dict)
-
-    def __init__(self, age, metallicity, wavelength, flux):
+    
+    def __init__(self, age, metallicity, wavelength, flux, _logger=None):
         self.age = jnp.asarray(age)
         self.metallicity = jnp.asarray(metallicity)
         self.wavelength = jnp.asarray(wavelength)
@@ -41,6 +41,7 @@ class SSPGrid:
 
     def __iter__(self):
         yield from (getattr(self, field.name) for field in fields(self))
+
 
     def get_lookup_interpolation(self, method="cubic", extrap=0):
         """Returns a 2D interpolation function for the SSP grid.
@@ -87,6 +88,101 @@ class SSPGrid:
     def convert_units(data, from_units, to_units):
         quantity = u.Quantity(data, from_units)
         return quantity.to(to_units).value
+    
+    @staticmethod
+    def checkout_SSP_template(config: dict, file_location: str):
+        """
+        Check if the SSP template exists on disk, if not download it 
+        from the given URL in the configuration dictionary.
+
+        Parameters
+        ----------
+        config : dict
+            Configuration dictionary.
+
+        file_location : str
+            Location to save the template file.
+        
+        Returns
+        -------
+        file_path : str
+            The path to the file.
+        """ 
+
+        _logger = get_logger()
+        file_path = os.path.join(file_location, config["file_name"])
+        source = config["source"]
+        if not config["source"].endswith("/"):
+            source +=  "/"
+
+        if not os.path.exists(file_path):
+            _logger.info(f'[SSPModels] File {file_path} not found. Downloading it from {config["source"]}')
+            try:
+                response = requests.get(source+config["file_name"])
+                response.raise_for_status()
+
+                if response.status_code == 200:
+                    with open(file_path, "wb") as f:
+                        f.write(response.content)
+                    _logger.info(f'[SSPModels] File {config["file_name"]} downloaded successfully!')
+                    return file_path
+                else:
+                    raise FileNotFoundError(f"Could not download file {config['file_name']} from url {source}.")
+            except requests.exceptions.RequestException as err:
+                _logger.error(f'[SSPModels] Error: {err}')
+            #except requests.exceptions.HTTPError as errh:
+            #    print("Http Error:",errh)
+            raise FileNotFoundError(f"Could not download file {config['file_name']} from url {source}.")
+        else:
+            return file_path
+
+    @classmethod
+    def from_file(cls, config: dict, file_location: str) -> "SSPGrid":
+        """
+        Template function to load a SSP grid from a file.
+
+        Parameters
+        ----------
+        config : dict
+            Configuration dictionary.
+        
+        file_location : str
+            Location of the file.
+
+        Returns
+        -------
+        SSPGrid
+            The SSP grid in the correct units.
+        """
+
+        # Initialize an empty zero length array for each field
+        # in the SSP configuration.
+        # Actual loading of templates needs to be implemented in the subclasses.
+        
+        ssp_data = {}
+        for field_name, field_info in config["fields"].items():
+            ssp_data[field_info["name"]] = jnp.empty(0)
+
+        grid = cls(**ssp_data)
+        grid.__class__.__name__ = config["name"]
+        return grid
+
+class HDF5SSPGrid(SSPGrid):
+    """
+    Class for SSP models stored in HDF5 format.
+    Mainly used for custom collection of Bruzual & Charlot 2003 models and MILES models .
+    """
+
+    # Do we need this again or is this taken care of by inheriting from SSPGrid?
+    age: Float[Array, " age_bins"]
+    metallicity: Float[Array, " metallicity_bins"]
+    wavelength: Float[Array, " wavelength_bins"]
+    flux: Float[Array, "metallicity_bins age_bins wavelength_bins"]
+    # This does not work with jax.jit, gives error that str is not valid Jax type
+    # units: Dict[str, str] = eqx.field(default_factory=dict)
+
+    def __init__(self, age, metallicity, wavelength, flux):
+        super().__init__(age, metallicity, wavelength, flux)
 
     @staticmethod
     def checkout_SSP_template(config: dict, file_location: str):
@@ -213,6 +309,7 @@ class HDF5SSPGrid(SSPGrid):
 
         file_path = cls.checkout_SSP_template(config, file_location)
 
+
         ssp_data = {}
         with h5py.File(file_path, "r") as f:
             for field_name, field_info in config["fields"].items():
@@ -226,7 +323,6 @@ class HDF5SSPGrid(SSPGrid):
         grid = cls(**ssp_data)
         grid.__class__.__name__ = config["name"]
         return grid
-
 
 class pyPipe3DSSPGrid(SSPGrid):
     """
@@ -274,17 +370,18 @@ class pyPipe3DSSPGrid(SSPGrid):
         if wave_axis is None:
             wave_axis = 1
         h = header
-        crval = h[f"CRVAL{wave_axis}"]
-        cdelt = h[f"CDELT{wave_axis}"]
-        naxis = h[f"NAXIS{wave_axis}"]
-        crpix = h[f"CRPIX{wave_axis}"]
+
+        crval = h[f'CRVAL{wave_axis}']
+        cdelt = h[f'CDELT{wave_axis}']
+        naxis = h[f'NAXIS{wave_axis}']
+        crpix = h[f'CRPIX{wave_axis}']
         if not cdelt:
             cdelt = 1
-        return crval + cdelt * (jnp.arange(naxis) + 1 - crpix)
-
-    # @staticmethod
-    # def get_normalization_wavelength(header, wavelength, flux_models, n_models):
-    #    """
+        return crval + cdelt*(jnp.arange(naxis) + 1 - crpix)
+    
+    #@staticmethod
+    #def get_normalization_wavelength(header, wavelength, flux_models, n_models):
+    #    """ 
     #    Search for the normalization wavelength at the FITS header.
     #    If the key WAVENORM does not exists in the header, sweeps all the
     #    models looking for the wavelengths where the flux is closer to 1,
@@ -318,14 +415,14 @@ class pyPipe3DSSPGrid(SSPGrid):
     #        probable_wavenorms = jnp.hstack([wavelength[(jnp.abs(flux_models[i] - 1) < _closer)]
     #                                    for i in range(n_models)])
     #        wave_norm = jnp.median(probable_wavenorms)
-    #
     #        print(f'[SSPModels] {ex}')
     #        print(f'[SSPModels] setting normalization wavelength to {wave_norm} A')
     #    return wave_norm
 
-    @staticmethod
+
+    @staticmethod    
     def get_tZ_models(header, n_models):
-        """
+        """ 
         Reads the values of age, metallicity and mass-to-light at the
         normalization flux from the SSP models FITS file.
 
@@ -335,7 +432,6 @@ class pyPipe3DSSPGrid(SSPGrid):
         ----------
         header : :class:`astropy.io.fits.header.Header`
             FITS header with spectral data.
-
         n_models : int, number of models in the SSP grid.
 
         Returns
@@ -349,31 +445,29 @@ class pyPipe3DSSPGrid(SSPGrid):
         array like
             Mass-to-light value at the normalization wavelength.
         """
-
         ages = jnp.zeros(n_models, dtype=jnp.float32)
         Zs = jnp.zeros(n_models, dtype=jnp.float32)
         mtol = jnp.zeros(n_models, dtype=jnp.float32)
         for i in range(n_models):
-            mult = {"Gyr": 1, "Myr": 1 / 1000}
-            name_read_split = header[f"NAME{i}"].split("_")
+            mult = {'Gyr': 1, 'Myr': 1/1000}
+            name_read_split = header[f'NAME{i}'].split('_')
             # removes 'spec_ssp_' from the name
             name_read_split = name_read_split[2:]
             _age = name_read_split[0]
-            if "yr" in _age:
+            if 'yr' in _age:
                 mult = mult[_age[-3:]]  # Gyr or Myr
                 _age = _age[:-3]
             else:
                 mult = 1  # Gyr
             age = mult * jnp.float32(_age)
-            _Z = name_read_split[1].split(".")[0]
-            Z = jnp.float32(_Z.replace("z", "0."))
+            _Z = name_read_split[1].split('.')[0]
+            Z = jnp.float32(_Z.replace('z', '0.'))
             ages = ages.at[i].set(age)
             Zs = Zs.at[i].set(Z)
-            if jnp.float32(header[f"NORM{i}"]) != 0:
-                mtol = mtol.at[i].set(1 / jnp.float32(header[f"NORM{i}"]))
+            if jnp.float32(header[f'NORM{i}']) != 0:
+                mtol = mtol.at[i].set(1 / jnp.float32(header[f'NORM{i}']))
             else:
                 mtol = mtol.at[i].set(1)
-
         return jnp.unique(ages), jnp.unique(Zs), mtol
 
     @classmethod
@@ -399,9 +493,8 @@ class pyPipe3DSSPGrid(SSPGrid):
         ssp_data = {}
         with fits.open(file_path) as f:
             _header = f[0].header
-            # n_wave = _header['NAXIS1']
-            n_models = _header["NAXIS2"]
-
+            #n_wave = _header['NAXIS1']
+            n_models = _header['NAXIS2']
             # pyPIPE3D uses the key WAVENORM to store the normalization wavelength
             # not sure what this is actually used for in the end.
             # Here we enable reading it, but we should make sure we understand what it is used for.
@@ -414,6 +507,8 @@ class pyPipe3DSSPGrid(SSPGrid):
             template_flux = jnp.array(f[0].data, dtype=jnp.float32) / m2l[:, None]
             # reshape and bring into the correct order of metallcity, age, wavelength
             # to conform with the SSPGrid dataclass
+            flux_models = template_flux.reshape(len(metallicities), len(ages), len(wavelength))
+                
             flux_models = template_flux.reshape(
                 len(metallicities), len(ages), len(wavelength)
             )
@@ -430,6 +525,7 @@ class pyPipe3DSSPGrid(SSPGrid):
                 else:
                     raise ValueError(f"Field {field_name} not recognized")
 
+
                 data = jnp.power(10, data) if field_info["in_log"] else data  # type: ignore
                 data = cls.convert_units(
                     data, field_info["units"], SSP_UNITS[field_name]
@@ -441,6 +537,7 @@ class pyPipe3DSSPGrid(SSPGrid):
         return grid
 
 
-# TODO: build another class that handles eMILES, sMILES templates that are also used by the GECKOS survey.
-# those will also have alpha enhancement and not only metallicity dependence. might need some changes to the
-# interpolation function further down the pipeline...
+
+#TODO: build another class that handles eMILES, sMILES templates that are also used by the GECKOS survey.
+# those will also have alpha enhancement and not only metallicity dependence. might need some changes to the 
+# interpolation function further down the pipeline... 

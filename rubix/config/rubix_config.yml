@@ -162,6 +162,7 @@ ssp:
           units: 'Lsun/Angstrom' # Luminosity of the template
           in_log: false # If the field is stored in log scale
 
+
     FSPS:
     # The FSPS template makes use of pyFSPS
     # Since switching between different supported stellar isochrone and spectral libraries in python-FSPS
@@ -201,3 +202,4 @@ ifu:
   # Configuration Related to IFU calculation
   doppler:
     velocity_direction: "y" # The velocity component used to calculate doppler shift
+
