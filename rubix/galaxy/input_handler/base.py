@@ -110,18 +110,13 @@ class BaseHandler(ABC):
                 raise ValueError(f"Units for {field} not found in units")
 
     def _check_particle_data(self, particle_data, units):
-        # Check if all required fields are present
-        for key in self.config["particles"]:
-            if key not in particle_data:
-                raise ValueError(f"Missing particle type {key} in particle data")
-            for field in self.config["particles"][key]:
-                if field not in particle_data[key]:
-                    raise ValueError(
-                        f"Missing field {field} in particle data for particle type {key}"
-                    )
-
+        # Check if any required fields are present
+        if not any(key in particle_data for key in self.config["particles"]):
+                raise ValueError("None of the expected particle types found in particle data")
         # Check if the units are correct
-        for key in particle_data:
-            for field in particle_data[key]:
-                if field not in units[key]:
-                    raise ValueError(f"Units for {field} not found in units")
+        for key, fields in particle_data.items():
+            # Use .get() to avoid KeyError if key is not in units
+            unit_fields = units.get(key, {})
+            for field in fields:
+                if field not in unit_fields:
+                    raise ValueError(f"Units for {field} not found in units for particle type {key}")
