@@ -92,53 +92,140 @@ def reshape_array(
 
 def prepare_input(config: Union[dict, str]):
 
+    logger_config = config["logger"] if "logger" in config else None  # type:ignore
+    logger = get_logger(logger_config)
     file_path = config["output_path"]
     file_path = os.path.join(file_path, "rubix_galaxy.h5")
 
     # Load the data from the file
     data, units = load_galaxy_data(file_path)
-    galaxy_center = data["subhalo_center"]
 
-    # Initialize return variables
-    results = []
+    file_path = config["output_path"]  # type:ignore
+    file_path = os.path.join(file_path, "rubix_galaxy.h5")
 
-    # Check for particle types to process
-    particle_types = config.get("particle_type", "both")  # Default to both if not specified
+    # Load the data from the file
+    # TODO: maybe also pass the units here, currently this is not used
+    data, units = load_galaxy_data(file_path)
 
-    if particle_types in ["both", "stars"]:
-        # Process star data
+    if "stars" in config["data"]["args"]["particle_type"]:
         stellar_coordinates = data["particle_data"]["stars"]["coords"]
         stellar_velocities = data["particle_data"]["stars"]["velocity"]
+        galaxy_center = data["subhalo_center"]
+        halfmassrad_stars = data["subhalo_halfmassrad_stars"]
+
+        # Center the particles
         new_stellar_coordinates, new_stellar_velocities = center_particles(
             stellar_coordinates, stellar_velocities, galaxy_center
         )
+
+        # Load the metallicity and age data
+
         stars_metallicity = data["particle_data"]["stars"]["metallicity"]
         stars_mass = data["particle_data"]["stars"]["mass"]
         stars_age = data["particle_data"]["stars"]["age"]
-        results.extend([
-            new_stellar_coordinates, new_stellar_velocities,
-            stars_metallicity, stars_mass, stars_age
-        ])
 
-    if particle_types in ["both", "gas"]:
-        # Process gas data
+    if "gas" in config["data"]["args"]["particle_type"]:
         gas_coordinates = data["particle_data"]["gas"]["coords"]
         gas_velocities = data["particle_data"]["gas"]["velocity"]
+        galaxy_center = data["subhalo_center"]
+        halfmassrad_stars = data["subhalo_halfmassrad_stars"]
+
+        # Center the particles
         new_gas_coordinates, new_gas_velocities = center_particles(
             gas_coordinates, gas_velocities, galaxy_center
         )
+
+        # Load the metallicity and age data
+
         gas_metallicity = data["particle_data"]["gas"]["metallicity"]
-        gas_mass = data["particle_data"]["gas"]["mass"]
         gas_density = data["particle_data"]["gas"]["density"]
+        gas_mass = data["particle_data"]["gas"]["mass"]
         gas_hsml = data["particle_data"]["gas"]["hsml"]
         gas_sfr = data["particle_data"]["gas"]["sfr"]
         gas_internal_energy = data["particle_data"]["gas"]["internal_energy"]
         gas_electron_abundance = data["particle_data"]["gas"]["electron_abundance"]
         gas_metals = data["particle_data"]["gas"]["metals"]
-        results.extend([
-            new_gas_coordinates, new_gas_velocities,
-            gas_metallicity, gas_mass, gas_density, gas_hsml,
-            gas_sfr, gas_internal_energy, gas_electron_abundance, gas_metals
-        ])
 
-    return tuple(results)
+    # Check if we should only use a subset of the data for testing and memory reasons
+    if "data" in config:
+        if "subset" in config["data"]:  # type:ignore
+            if config["data"]["subset"]["use_subset"]:  # type:ignore
+                size = config["data"]["subset"]["subset_size"]  # type:ignore
+                # Randomly sample indices
+                # Set random seed for reproducibility
+                np.random.seed(42)
+                if "stars" in config["data"]["args"]["particle_type"]:
+                    indices = np.random.choice(
+                        np.arange(new_stellar_coordinates.shape[0]),
+                        size=size,  # type:ignore
+                        replace=False,
+                    )  # type:ignore
+
+                    new_stellar_coordinates = new_stellar_coordinates[indices]
+                    new_stellar_velocities = new_stellar_velocities[indices]
+                    stars_metallicity = stars_metallicity[indices]
+                    stars_mass = stars_mass[indices]
+                    stars_age = stars_age[indices]
+                    logger.warning(
+                        f"The Subset value is set in config. Using only subset of size {size}"
+                    )
+                if "gas" in config["data"]["args"]["particle_type"]:
+                    indices = np.random.choice(
+                        np.arange(new_gas_coordinates.shape[0]),
+                        size=size,  # type:ignore
+                        replace=False,
+                    )
+                    new_gas_coordinates = new_gas_coordinates[indices]
+                    new_gas_velocities = new_gas_velocities[indices]
+                    gas_metallicity = gas_metallicity[indices]
+                    gas_mass = gas_mass[indices]
+                    gas_density = gas_density[indices]
+                    gas_hsml = gas_hsml[indices]
+                    gas_sfr = gas_sfr[indices]
+                    gas_internal_energy = gas_internal_energy[indices]
+                    gas_electron_abundance = gas_electron_abundance[indices]
+                    gas_metals = gas_metals[indices]
+
+    if "stars" in config["data"]["args"]["particle_type"] and "gas" in config["data"]["args"]["particle_type"]:
+        return (
+            new_stellar_coordinates,
+            new_stellar_velocities,
+            stars_metallicity,
+            stars_mass,
+            stars_age,
+            halfmassrad_stars,
+            new_gas_coordinates,
+            new_gas_velocities,
+            gas_metallicity,
+            gas_mass,
+            gas_density,
+            gas_hsml,
+            gas_sfr,
+            gas_internal_energy,
+            gas_electron_abundance,
+            gas_metals,
+        )
+    elif "stars" in config["data"]["args"]["particle_type"]:
+        return (
+            new_stellar_coordinates,
+            new_stellar_velocities,
+            stars_metallicity,
+            stars_mass,
+            stars_age,
+            halfmassrad_stars,
+        )
+    elif "gas" in config["data"]["args"]["particle_type"]:
+        return (
+            new_gas_coordinates,
+            new_gas_velocities,
+            gas_metallicity,
+            gas_mass,
+            gas_density,
+            gas_hsml,
+            gas_sfr,
+            gas_internal_energy,
+            gas_electron_abundance,
+            gas_metals,
+            halfmassrad_stars,
+        )
+
