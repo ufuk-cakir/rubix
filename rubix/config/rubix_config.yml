@@ -33,12 +33,10 @@ IllustrisHandler:
       Density: density
       Masses: mass
       GFM_Metallicity: metallicity
-      SubfindHsml: hsml
       StarFormationRate: sfr
       InternalEnergy: internal_energy
       Velocities: velocity
       ElectronAbundance: electron_abundance
-      GFM_Metals: metals
     PartType4: #stars
       Coordinates: coords
       GFM_InitialMass: mass
@@ -67,12 +65,10 @@ IllustrisHandler:
       mass: g
       #particle_ids: ""
       metallicity: ""
-      hsml: cm
       sfr: Msun/yr
       internal_energy: erg/g
       velocity: cm/s
       electron_abundance: ""
-      metals: ""
     stars:
       coords: cm
       mass: g
@@ -108,12 +104,10 @@ BaseHandler:
       density: "Msun/pc^3"
       mass: "Msun"
       metallicity: ""
-      hsml: "kpc"
       sfr: "Msun/yr"
       internal_energy: "erg/g"
       velocity: "kpc/s"
       electron_abundance: ""
-      metals: ""
 
 ssp:
   # units of the SSP grid that is used internally in the code

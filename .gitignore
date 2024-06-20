@@ -155,4 +155,3 @@ notebooks/*.h5
 notebooks/output
 
 rubix/**/*.ipynb
-miniconda.exe

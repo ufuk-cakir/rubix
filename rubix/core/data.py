@@ -10,6 +10,7 @@ from rubix.galaxy import IllustrisAPI, get_input_handler
 from rubix.galaxy.alignment import center_particles
 from rubix.logger import get_logger
 from rubix.utils import load_galaxy_data, read_yaml
+from rubix import config
 
 
 def convert_to_rubix(config: Union[dict, str]):
@@ -140,11 +141,9 @@ def prepare_input(config: Union[dict, str]):
         gas_metallicity = data["particle_data"]["gas"]["metallicity"]
         gas_density = data["particle_data"]["gas"]["density"]
         gas_mass = data["particle_data"]["gas"]["mass"]
-        gas_hsml = data["particle_data"]["gas"]["hsml"]
         gas_sfr = data["particle_data"]["gas"]["sfr"]
         gas_internal_energy = data["particle_data"]["gas"]["internal_energy"]
         gas_electron_abundance = data["particle_data"]["gas"]["electron_abundance"]
-        gas_metals = data["particle_data"]["gas"]["metals"]
 
     # Check if we should only use a subset of the data for testing and memory reasons
     if "data" in config:
@@ -180,11 +179,9 @@ def prepare_input(config: Union[dict, str]):
                     gas_metallicity = gas_metallicity[indices]
                     gas_mass = gas_mass[indices]
                     gas_density = gas_density[indices]
-                    gas_hsml = gas_hsml[indices]
                     gas_sfr = gas_sfr[indices]
                     gas_internal_energy = gas_internal_energy[indices]
                     gas_electron_abundance = gas_electron_abundance[indices]
-                    gas_metals = gas_metals[indices]
 
     if "stars" in config["data"]["args"]["particle_type"] and "gas" in config["data"]["args"]["particle_type"]:
         return (
@@ -199,11 +196,9 @@ def prepare_input(config: Union[dict, str]):
             gas_metallicity,
             gas_mass,
             gas_density,
-            gas_hsml,
             gas_sfr,
             gas_internal_energy,
             gas_electron_abundance,
-            gas_metals,
         )
     elif "stars" in config["data"]["args"]["particle_type"]:
         return (
@@ -221,11 +216,9 @@ def prepare_input(config: Union[dict, str]):
             gas_metallicity,
             gas_mass,
             gas_density,
-            gas_hsml,
             gas_sfr,
             gas_internal_energy,
             gas_electron_abundance,
-            gas_metals,
             halfmassrad_stars,
         )
 
