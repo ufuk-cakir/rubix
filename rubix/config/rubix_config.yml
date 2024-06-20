@@ -11,12 +11,10 @@ IllustrisAPI:
       - Density
       - Masses
       - GFM_Metallicity
-      - SubfindHsml
       - StarFormationRate
       - InternalEnergy
       - Velocities
       - ElectronAbundance
-      - GFM_Metals
     stars:
       - Coordinates
       - GFM_InitialMass

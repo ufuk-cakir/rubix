@@ -14,15 +14,21 @@ from rubix.utils import load_galaxy_data, read_yaml
 from rubix import config
 
 
+class SubsetMixin:
+    def apply_subset(self, indices):
+        for field_name, value in self.__dataclass_fields__.items():
+            current_value = getattr(self, field_name)
+            if current_value is not None:
+                setattr(self, field_name, current_value[indices])
+
 def create_dynamic_dataclass(name, fields):
     annotations = {field_name: Optional[jnp.ndarray] for field_name in fields}
-    return make_dataclass(name, [(field_name, annotation, field(default=None)) for field_name, annotation in annotations.items()])
+    # Include SubsetMixin in the bases
+    return make_dataclass(name, [(field_name, annotation, field(default=None)) for field_name, annotation in annotations.items()], bases=(SubsetMixin,))
 
 Galaxy = create_dynamic_dataclass("Galaxy", config["BaseHandler"]["galaxy"])
 StarsData = create_dynamic_dataclass("StarsData", config["BaseHandler"]["particles"]["stars"]) 
 GasData = create_dynamic_dataclass("GasData", config["BaseHandler"]["particles"]["gas"])
-#gas_data_instance = GasData()
-#print(gas_data_instance.__dict__) 
 
 @dataclass
 class RubixData:
@@ -135,122 +141,37 @@ def prepare_input(config: Union[dict, str]):
     data, units = load_galaxy_data(file_path)
 
     rubixdata = RubixData(Galaxy(), StarsData(), GasData())
-    print(rubixdata)
-    print(rubixdata.__dict__)
-    print(rubixdata.galaxy)
     
+    rubixdata.galaxy.redshift = data["redshift"]
+    rubixdata.galaxy.center = data["subhalo_center"]
+    rubixdata.galaxy.halfmassrad = data["subhalo_halfmassrad_stars"]
 
     if "stars" in config["data"]["args"]["particle_type"]:
-        stellar_coordinates = data["particle_data"]["stars"]["coords"]
-        stellar_velocities = data["particle_data"]["stars"]["velocity"]
-        galaxy_center = data["subhalo_center"]
-        halfmassrad_stars = data["subhalo_halfmassrad_stars"]
-
-        # Center the particles
-        new_stellar_coordinates, new_stellar_velocities = center_particles(
-            stellar_coordinates, stellar_velocities, galaxy_center
-        )
-
-        # Load the metallicity and age data
-
-        stars_metallicity = data["particle_data"]["stars"]["metallicity"]
-        stars_mass = data["particle_data"]["stars"]["mass"]
-        stars_age = data["particle_data"]["stars"]["age"]
+        for attribute, value in data["particle_data"]["stars"].items():
+            setattr(rubixdata.stars, attribute, value)
+        rubixdata.stars.coords, rubixdata.stars.velocity = center_particles(rubixdata.stars.coords, rubixdata.stars.velocity, rubixdata.galaxy.center)
+        
 
     if "gas" in config["data"]["args"]["particle_type"]:
-        gas_coordinates = data["particle_data"]["gas"]["coords"]
-        gas_velocities = data["particle_data"]["gas"]["velocity"]
-        galaxy_center = data["subhalo_center"]
-        halfmassrad_stars = data["subhalo_halfmassrad_stars"]
+        for attribute, value in data["particle_data"]["gas"].items():
+            setattr(rubixdata.stars, attribute, value)
+        rubixdata.gas.coords, rubixdata.gas.velocity = center_particles(rubixdata.gas.coords, rubixdata.gas.velocity, rubixdata.galaxy.center)
 
-        # Center the particles
-        new_gas_coordinates, new_gas_velocities = center_particles(
-            gas_coordinates, gas_velocities, galaxy_center
-        )
+    
+    # Subset handling for both stars and gas if applicable
+    if "subset" in config.get("data", {}):
+        subset_config = config["data"]["subset"]
+        if subset_config.get("use_subset", False):
+            size = subset_config["subset_size"]
+            np.random.seed(42)  # For reproducibility
+            if "stars" in config["data"]["args"]["particle_type"]:
+                indices = np.random.choice(len(rubixdata.stars.coords), size=size, replace=False)
+                rubixdata.stars.apply_subset(indices)
+                logger.warning(f"Using only subset of stars data of size {size}")
+            if "gas" in config["data"]["args"]["particle_type"]:
+                indices = np.random.choice(len(rubixdata.gas.coords), size=size, replace=False)
+                rubixdata.gas.apply_subset(indices)
+                logger.warning(f"Using only subset of gas data of size {size}")
+    
 
-        # Load the metallicity and age data
-
-        gas_metallicity = data["particle_data"]["gas"]["metallicity"]
-        gas_density = data["particle_data"]["gas"]["density"]
-        gas_mass = data["particle_data"]["gas"]["mass"]
-        gas_sfr = data["particle_data"]["gas"]["sfr"]
-        gas_internal_energy = data["particle_data"]["gas"]["internal_energy"]
-        gas_electron_abundance = data["particle_data"]["gas"]["electron_abundance"]
-
-    # Check if we should only use a subset of the data for testing and memory reasons
-    if "data" in config:
-        if "subset" in config["data"]:  # type:ignore
-            if config["data"]["subset"]["use_subset"]:  # type:ignore
-                size = config["data"]["subset"]["subset_size"]  # type:ignore
-                # Randomly sample indices
-                # Set random seed for reproducibility
-                np.random.seed(42)
-                if "stars" in config["data"]["args"]["particle_type"]:
-                    indices = np.random.choice(
-                        np.arange(new_stellar_coordinates.shape[0]),
-                        size=size,  # type:ignore
-                        replace=False,
-                    )  # type:ignore
-
-                    new_stellar_coordinates = new_stellar_coordinates[indices]
-                    new_stellar_velocities = new_stellar_velocities[indices]
-                    stars_metallicity = stars_metallicity[indices]
-                    stars_mass = stars_mass[indices]
-                    stars_age = stars_age[indices]
-                    logger.warning(
-                        f"The Subset value is set in config. Using only subset of size {size}"
-                    )
-                if "gas" in config["data"]["args"]["particle_type"]:
-                    indices = np.random.choice(
-                        np.arange(new_gas_coordinates.shape[0]),
-                        size=size,  # type:ignore
-                        replace=False,
-                    )
-                    new_gas_coordinates = new_gas_coordinates[indices]
-                    new_gas_velocities = new_gas_velocities[indices]
-                    gas_metallicity = gas_metallicity[indices]
-                    gas_mass = gas_mass[indices]
-                    gas_density = gas_density[indices]
-                    gas_sfr = gas_sfr[indices]
-                    gas_internal_energy = gas_internal_energy[indices]
-                    gas_electron_abundance = gas_electron_abundance[indices]
-
-    if "stars" in config["data"]["args"]["particle_type"] and "gas" in config["data"]["args"]["particle_type"]:
-        return (
-            new_stellar_coordinates,
-            new_stellar_velocities,
-            stars_metallicity,
-            stars_mass,
-            stars_age,
-            halfmassrad_stars,
-            new_gas_coordinates,
-            new_gas_velocities,
-            gas_metallicity,
-            gas_mass,
-            gas_density,
-            gas_sfr,
-            gas_internal_energy,
-            gas_electron_abundance,
-        )
-    elif "stars" in config["data"]["args"]["particle_type"]:
-        return (
-            new_stellar_coordinates,
-            new_stellar_velocities,
-            stars_metallicity,
-            stars_mass,
-            stars_age,
-            halfmassrad_stars,
-        )
-    elif "gas" in config["data"]["args"]["particle_type"]:
-        return (
-            new_gas_coordinates,
-            new_gas_velocities,
-            gas_metallicity,
-            gas_mass,
-            gas_density,
-            gas_sfr,
-            gas_internal_energy,
-            gas_electron_abundance,
-            halfmassrad_stars,
-        )
-
+    return rubixdata
