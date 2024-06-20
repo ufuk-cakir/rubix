@@ -1,5 +1,6 @@
 import os
-from typing import Callable, Tuple, Union
+from typing import Callable, Tuple, Union, Optional
+from dataclasses import dataclass, field, make_dataclass
 
 import jax
 import jax.numpy as jnp
@@ -11,6 +12,31 @@ from rubix.galaxy.alignment import center_particles
 from rubix.logger import get_logger
 from rubix.utils import load_galaxy_data, read_yaml
 from rubix import config
+
+
+def create_dynamic_dataclass(name, fields):
+    annotations = {field_name: Optional[jnp.ndarray] for field_name in fields}
+    return make_dataclass(name, [(field_name, annotation, field(default=None)) for field_name, annotation in annotations.items()])
+
+Galaxy = create_dynamic_dataclass("Galaxy", config["BaseHandler"]["galaxy"])
+StarsData = create_dynamic_dataclass("StarsData", config["BaseHandler"]["particles"]["stars"]) 
+GasData = create_dynamic_dataclass("GasData", config["BaseHandler"]["particles"]["gas"])
+#gas_data_instance = GasData()
+#print(gas_data_instance.__dict__) 
+
+@dataclass
+class RubixData:
+    """
+    This class is used to store the Rubix data in a structured format.
+    It is constructed in a dynamic way based on the configuration file.
+    """
+    galaxy: Optional[Galaxy] = None
+    stars: Optional[StarsData] = None
+    gas: Optional[GasData] = None
+
+#rubixdata = RubixData(Galaxy(), StarsData(), GasData())
+#print(rubixdata)
+#print(rubixdata.__dict__)
 
 
 def convert_to_rubix(config: Union[dict, str]):
@@ -107,6 +133,12 @@ def prepare_input(config: Union[dict, str]):
     # Load the data from the file
     # TODO: maybe also pass the units here, currently this is not used
     data, units = load_galaxy_data(file_path)
+
+    rubixdata = RubixData(Galaxy(), StarsData(), GasData())
+    print(rubixdata)
+    print(rubixdata.__dict__)
+    print(rubixdata.galaxy)
+    
 
     if "stars" in config["data"]["args"]["particle_type"]:
         stellar_coordinates = data["particle_data"]["stars"]["coords"]
