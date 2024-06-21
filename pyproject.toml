@@ -39,7 +39,7 @@ dependencies = [
     "equinox",
     "jax[cpu]!=0.4.27,!=0.4.29",
     "interpax",
-    "speclite"
+    "astroquery"
 ]
 
 [project.optional-dependencies]
