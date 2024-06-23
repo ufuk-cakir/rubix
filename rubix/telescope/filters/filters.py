@@ -188,10 +188,10 @@ class FilterCurves(eqx.Module):
 
 
 def load_filter(
-    filters_path: str,
     facility: str,
     instrument: Optional[Union[str, List[str]]] = None,
     filter_name: Optional[Union[str, List[str]]] = None,
+    filters_path: Optional[str] = FILTERS_PATH,
 ):
     """
     Load a single filter or all filters of a given facility and instrument as Filter objects.
@@ -200,9 +200,6 @@ def load_filter(
 
     Parameters
     ----------
-    filters_path : str
-        Path to load the filters from if present on disk, or to save the filters to if downloaded.
-
     facility : str
         Name of the facility. e.g 'SLOAN' for SDSS.
 
@@ -215,6 +212,10 @@ def load_filter(
         optional: default=None
         Name of the specific filter/s to load. e.g 'r' for 'SDSS.r' which loads only the SDSS r-band filter.
         If None, all filters of the facility and instrument are loaded.
+
+    filters_path : str
+        optional: default=FILTERS_PATH
+        Path to load the filters from if present on disk, or to save the filters to if downloaded.
 
     Returns
     -------
@@ -235,7 +236,9 @@ def load_filter(
     if os.path.exists(filter_dir):
         filter_table = Table.read(f"{filter_dir}/{facility}.csv")
     else:
-        filter_table = save_filters(filters_path, facility)
+        _logger.info(f"Filters directory not found: {filter_dir}")
+        _logger.info(f"Start downloading telescope filter files for {facility}.")
+        filter_table = save_filters(facility, filters_path)
 
     # make table searchable by filterID
     filter_table.add_index("filterID")
@@ -247,44 +250,46 @@ def load_filter(
     filter_curves = []
     if isinstance(instrument, str):
         # we have a single instrument
-        filter_ID = f"{facility}.{instrument}"
+        filter_ID = f"{facility}/{instrument}"
         filter_curves.extend(
-            _load_filter_list_for_instrument(filter_dir, filter_ID, filter_name)
+            _load_filter_list_for_instrument(
+                filter_table, filter_ID, filter_name, filter_dir
+            )
         )
 
     elif isinstance(instrument, list):
         for inst in instrument:
-            filter_ID = f"{facility}.{inst}"
+            filter_ID = f"{facility}/{inst}"
             filter_curves.extend(
-                _load_filter_list_for_instrument(filter_dir, filter_ID, filter_name)
+                _load_filter_list_for_instrument(
+                    filter_table, filter_ID, filter_name, filter_dir
+                )
             )
 
     elif instrument is None:
         # all instruments of this facility are requested
         # since we checked above that in this case also filter_name is None, we can directly load all filters for the facility.
-        for ID in filter_table["filterID"]:
-            if ID.startswith(facility):
-                filter_curves.extend(
-                    _load_filter_list_for_instrument(filter_dir, filter_ID, filter_name)
-                )
-
-    # Create a list of Filter objects
-    # Filter object has wavelength and response attributes
+        filter_ID = facility
+        filter_curves.extend(
+            _load_filter_list_for_instrument(
+                filter_table, filter_ID, filter_name, filter_dir
+            )
+        )
 
     return FilterCurves(filter_curves)
 
 
 def _load_filter_list_for_instrument(
-    filter_dir: str, filter_prefix: str, filter_name: Optional[List[str]] = None
+    filter_table,
+    filter_prefix: str,
+    filter_name: Optional[List[str]] = None,
+    filter_dir: Optional[str] = FILTERS_PATH,
 ):
     """
     Load the filter list from the specified path.
 
     Parameters
     ----------
-    filter_dir : str
-        Path to load the filter list from.
-
     filter_prefix : str
         The filter prefix ID in the format of SVO: 'facilty/instrument'.
 
@@ -293,6 +298,9 @@ def _load_filter_list_for_instrument(
         Name of the specific filters to load. e.g 'r' for 'SDSS.r' which loads only the SDSS r-band filter.
         If None, all filters are loaded.
 
+    filter_dir : str
+        optional: default=FILTERS_PATH
+        Path to load the filter list from.
     Returns
     -------
     List[Filter]
@@ -303,20 +311,20 @@ def _load_filter_list_for_instrument(
     if filter_name is None:
         # all filters for the instrument are requested
         for ID in filter_table["filterID"]:
-            if ID.startswith(filter_ID):
+            if ID.startswith(filter_prefix):
                 # filter_data = filter_table.loc[ID]
                 transmissivity = Table.read(f"{filter_dir}/{ID}.csv")
                 filter_list.append(
                     Filter(
                         jnp.asarray(transmissivity["Wavelength"].filled()),
                         jnp.asarray(transmissivity["Transmission"].filled()),
-                        filter_ID,
+                        ID,
                     )
                 )
     elif isinstance(filter_name, list):
         # multiple specific filters are requested
         for f_name in filter_name:
-            filter_ID = f"{filter_ID}.{f_name}"
+            filter_ID = f"{filter_prefix}.{f_name}"
             # filter_data = filter_table.loc[f_name]
             transmissivity = Table.read(f"{filter_dir}/{filter_ID}.csv")
             filter_list.append(
@@ -329,20 +337,21 @@ def _load_filter_list_for_instrument(
     else:
         _logger.error("Invalid filter_name type. Please provide a valid filter_name.")
 
-    return FilterCurves(filter_list)
+    return filter_list
 
 
-def save_filters(filters_path: str, facility: str):
+def save_filters(facility: str, filters_path: Optional[str] = FILTERS_PATH):
     """
     Download all filters of a given facility from the Filter Profile Service of the Spanisch Virtual Observatory (http://svo2.cab.inta-csic.es/theory/fps/index.php) and save them as csv file to the specified path.
 
     Parameters
     ----------
-    filters_path : str
-        Path to save the filters as csv files.
-
     facility : str
         Name of the facility. e.g 'SLOAN' for SDSS.
+
+    filters_path : str
+        optional: default=FILTERS_PATH
+        Path to save the filters as csv files.
 
     Returns
     -------
@@ -371,7 +380,7 @@ def save_filters(filters_path: str, facility: str):
     return filter_list
 
 
-def print_filter_list(facility: str, instrument=None):
+def print_filter_list(facility: str, instrument: Optional[str] = None):
     """
     Print the list of filters available for a given facility and instrument.
     If you want to see the list of all facilities and instruments, follow the link below:
@@ -382,9 +391,9 @@ def print_filter_list(facility: str, instrument=None):
     facility : str
         Name of the facility. e.g 'SLOAN' for SDSS.
 
-        instrument : str
+    instrument : str
         optional: default=None
-        Name of the instrument. e.g 'NIRC2' for 'Keck'.
+        Name of the instrument. e.g 'MIRI' for 'JWST'.
 
     Returns
     -------
@@ -396,7 +405,7 @@ def print_filter_list(facility: str, instrument=None):
     print(filter_list["filterID"])
 
 
-def print_filter_list_info(facility: str, instrument=None):
+def print_filter_list_info(facility: str, instrument: Optional[str] = None):
     """
     Print the information of a filter list available for a given facility and instrument.
     If you want to see the list of all facilities and instruments, follow the link below:
@@ -409,7 +418,7 @@ def print_filter_list_info(facility: str, instrument=None):
 
     instrument : str
     optinal: default=None
-        Name of the instrument. e.g 'NIRC2' for 'Keck'.
+        Name of the instrument. e.g 'MIRI' for 'JWST'.
 
     Returns
     -------
@@ -418,6 +427,42 @@ def print_filter_list_info(facility: str, instrument=None):
     # TODO: for some facilities we might want to add a mapping from the fps names to more common names, e.g. 'SDSS' instead of 'SLOAN'.
     filter_list = SvoFps.get_filter_list(facility=facility, instrument=instrument)
     print(filter_list.info)
+
+
+def print_filter_property(facility: str, instrument: str, filter_name: str):
+    """
+    Print the properties of a filter available for a given facility, instrument and filter name.
+    If you want to see the list of all facilities and instruments, follow the link below:
+    http://svo2.cab.inta-csic.es/theory/fps/index.php
+
+    Parameters
+    ----------
+    facility : str
+        Name of the facility. e.g 'SLOAN' for SDSS.
+
+    instrument : str
+        Name of the instrument. e.g 'MIRI' for 'JWST'.
+
+    filter_name : str
+        Name of the filter. e.g 'r' for 'SDSS.r'.
+
+    Returns
+    -------
+    filter_info : Table
+        Table containing the filter properties such as wavelength range, effective wavelength, zero point etc.
+    """
+
+    filter_list = SvoFps.get_filter_list(facility=facility, instrument=instrument)
+    filter_list.add_index("filterID")
+
+    filter_ID = f"{facility}/{instrument}.{filter_name}"
+    # filter_data = SvoFps.get_transmission_data(filter_ID)
+
+    filter_info = filter_list.loc[filter_ID]
+
+    print(filter_info)
+    # print(filter_data)
+    return filter_info
 
 
 def convolve_filter_with_spectra(
