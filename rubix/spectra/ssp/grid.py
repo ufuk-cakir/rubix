@@ -135,11 +135,11 @@ class SSPGrid:
                     )
             except requests.exceptions.RequestException as err:
                 _logger.error(f"[SSPModels] Error: {err}")
-            # except requests.exceptions.HTTPError as errh:
-            #    print("Http Error:",errh)
-            raise FileNotFoundError(
-                f"Could not download file {config['file_name']} from url {source}."
-            )
+                # except requests.exceptions.HTTPError as errh:
+                #    print("Http Error:",errh)
+                raise FileNotFoundError(
+                    f"Could not download file {config['file_name']} from url {source}."
+                )
         else:
             return file_path
 
@@ -239,11 +239,11 @@ class HDF5SSPGrid(SSPGrid):
                     )
             except requests.exceptions.RequestException as err:
                 _logger.error(f"[SSPModels] Error: {err}")
-            # except requests.exceptions.HTTPError as errh:
-            #    print("Http Error:",errh)
-            raise FileNotFoundError(
-                f"Could not download file {config['file_name']} from url {source}."
-            )
+                # except requests.exceptions.HTTPError as errh:
+                #    print("Http Error:",errh)
+                raise FileNotFoundError(
+                    f"Could not download file {config['file_name']} from url {source}."
+                )
         else:
             return file_path
 
