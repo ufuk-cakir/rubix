@@ -1,6 +1,9 @@
 import pytest
-from unittest.mock import patch
+import numpy as np
+from unittest.mock import patch, MagicMock, mock_open
 from rubix.spectra.ssp.factory import get_ssp_template
+from rubix.spectra.ssp.factory import HDF5SSPGrid, pyPipe3DSSPGrid
+from rubix.paths import TEMPLATE_PATH
 from copy import deepcopy
 import sys
 
@@ -46,13 +49,48 @@ def test_get_ssp_template_existing_template():
     config = get_config()
     supported_templates = config["ssp"]["templates"].copy()
 
-    with patch("rubix.spectra.ssp.fsps_grid.HAS_FSPS", True):
-        for template_name in supported_templates:
-            print("template_name", template_name)
-            template = get_ssp_template(template_name)
-            template_class_name = config["ssp"]["templates"][template_name]["name"]
-            assert template.__class__.__name__ == template_class_name
+    with (
+        patch("rubix.spectra.ssp.fsps_grid.HAS_FSPS", True),
+        patch("os.path.exists", return_value=True),
+    ):
 
+        mock_hdf5 = MagicMock()
+        mock_hdf5.__class__ = HDF5SSPGrid
+        mock_pipe3d = MagicMock()
+        mock_pipe3d.__class__ = pyPipe3DSSPGrid
+
+        with (
+            patch("rubix.spectra.ssp.factory.HDF5SSPGrid", mock_hdf5),
+            patch("rubix.spectra.ssp.factory.pyPipe3DSSPGrid", mock_pipe3d),
+            patch(
+                "rubix.spectra.ssp.factory.write_fsps_data_to_disk"
+            ) as mock_write_fsps_data_to_disk,
+        ):
+
+            for template_name in supported_templates:
+                # print("template_name", template_name)
+                mock_hdf5.from_file.return_value = mock_hdf5
+                mock_hdf5.__class__.__name__ = config["ssp"]["templates"][
+                    template_name
+                ]["name"]
+                mock_pipe3d.from_file.return_value = mock_pipe3d
+                mock_pipe3d.__class__.__name__ = config["ssp"]["templates"][
+                    template_name
+                ]["name"]
+                template = get_ssp_template(template_name)
+                template_class_name = config["ssp"]["templates"][template_name]["name"]
+                assert template.__class__.__name__ == template_class_name
+            mock_write_fsps_data_to_disk.assert_called_once_with(
+                config["ssp"]["templates"][template_name]["file_name"],
+                file_location=TEMPLATE_PATH,
+            )
+
+
+def test_get_ssp_template_existing_template_BC03():
+    config = get_config()
+    template = get_ssp_template("BruzualCharlot2003")
+    template_class_name = config["ssp"]["templates"]["BruzualCharlot2003"]["name"]
+    template.__class__.__name__ == template_class_name
 
 
 def test_get_ssp_template_non_existing_template():
@@ -102,10 +140,8 @@ def test_get_ssp_template_error_loading_file():
         with pytest.raises(FileNotFoundError) as excinfo:
             print("template_name", template_name)
             get_ssp_template(template_name)
-        
+
     assert "Could not download file" in str(excinfo.value)
-
-
 
 
 def test_get_ssp_template_existing_fsps_template():
@@ -118,10 +154,16 @@ def test_get_ssp_template_existing_fsps_template():
     supported_templates["FSPS"]["source"] = "load_from_file"
     config_copy["ssp"]["templates"] = supported_templates
 
+    mock_hdf5 = MagicMock()
+    mock_hdf5.__class__ = HDF5SSPGrid
+
     with (
         patch("rubix.spectra.ssp.fsps_grid.HAS_FSPS", True),
         patch("rubix.spectra.ssp.factory.rubix_config", config_copy),
+        patch("rubix.spectra.ssp.factory.HDF5SSPGrid", mock_hdf5),
     ):
+        mock_hdf5.from_file.return_value = mock_hdf5
+        mock_hdf5.__class__.__name__ = supported_templates["FSPS"]["name"]
         template = get_ssp_template("FSPS")
         template_class_name = supported_templates["FSPS"]["name"]
         assert template.__class__.__name__ == template_class_name
@@ -147,4 +189,3 @@ def test_get_fsps_template_wrong_source_keyword():
         f"The source {supported_templates['FSPS']['source']} of the FSPS SSP template is not supported."
         == str(excinfo.value)
     )
-
