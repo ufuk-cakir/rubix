@@ -274,10 +274,6 @@ def test_get_jaxpr_for_element(pipeline_fixture_full):
 
     manual_expr = pipeline.get_jaxpr_for_element("X", x)
 
-    print(expr)
-    print("___")
-    print(manual_expr)
-
     assert len(expr.eqns) == len(manual_expr.eqns)
 
     for op1, op2 in zip(expr.eqns, manual_expr.eqns):
