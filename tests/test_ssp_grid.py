@@ -22,6 +22,7 @@ def test_convert_units():
     assert np.allclose(result, expected_result)
 
 
+
 def test_SSPGrid_from_file():
     config = {
         "format": "hdf5",
@@ -39,6 +40,7 @@ def test_SSPGrid_from_file():
     result = SSPGrid.from_file(config, file_location)
 
     assert isinstance(result, SSPGrid)
+
 
 
 def test_from_hdf5():
@@ -60,6 +62,7 @@ def test_from_hdf5():
         patch("os.path.exists") as mock_exists,
         patch("rubix.spectra.ssp.grid.h5py.File") as mock_file,
     ):
+
         mock_exists.return_value = True
         mock_instance = MagicMock()
         mock_file.return_value = mock_instance
@@ -100,6 +103,7 @@ def test_from_hdf5_wrong_format():
     assert str(e.value) == "Configured file format is not HDF5."
 
 
+
 def test_keys():
     age = jnp.array([1e9, 2e9, 3e9])
     metallicity = jnp.array([0.02, 0.04, 0.06])
@@ -111,9 +115,18 @@ def test_keys():
             [[13.0, 14.0, 15.0], [16.0, 17.0, 18.0]],
         ]
     )
+    flux = jnp.array(
+        [
+            [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],
+            [[7.0, 8.0, 9.0], [10.0, 11.0, 12.0]],
+            [[13.0, 14.0, 15.0], [16.0, 17.0, 18.0]],
+        ]
+    )
     grid = SSPGrid(age, metallicity, wavelength, flux)
     expected_keys = ["age", "metallicity", "wavelength", "flux"]
     assert grid.keys() == expected_keys
+
+
 
 
 @pytest.fixture
@@ -130,6 +143,7 @@ def ssp_grid():
     return pyPipe3DSSPGrid(age, metallicity, wavelength, flux)
 
 
+
 def test_get_wavelength_from_header(ssp_grid):
     header = fits.Header()
     header["CRVAL1"] = 4000
@@ -138,6 +152,7 @@ def test_get_wavelength_from_header(ssp_grid):
     header["CRPIX1"] = 1
     wavelength = ssp_grid.get_wavelength_from_header(header)
     assert np.allclose(wavelength, [4000, 5000, 6000])
+
 
 
 def test_get_wavelength_from_header_no_cdelt(ssp_grid):
@@ -151,6 +166,8 @@ def test_get_wavelength_from_header_no_cdelt(ssp_grid):
 
 
 # def test_get_normalization_wavelength(ssp_grid):
+
+# def test_get_normalization_wavelength(ssp_grid):
 #    header = fits.Header()
 #    header["WAVENORM"] = 5000
 #    wavelength = [4000, 5000, 6000]
@@ -162,6 +179,7 @@ def test_get_wavelength_from_header_no_cdelt(ssp_grid):
 #    n_models = 3
 #    normalization_wavelength = ssp_grid.get_normalization_wavelength(header, wavelength, flux_models, n_models)
 #    assert normalization_wavelength == 5000
+
 
 
 def test_get_tZ_models(ssp_grid):
@@ -179,6 +197,7 @@ def test_get_tZ_models(ssp_grid):
     assert np.allclose(m2l, [1.0, 1.0, 1.0])
 
 
+
 def test_get_tZ_models_zero_norm(ssp_grid):
     header = fits.Header()
     header["NAME0"] = "spec_ssp_1.0_z01.spec"
@@ -192,6 +211,7 @@ def test_get_tZ_models_zero_norm(ssp_grid):
     assert np.allclose(m2l, [1.0, 1.0])
 
 
+
 def test_get_tZ_models_yr_in_name(ssp_grid):
     header = fits.Header()
     header["NAME0"] = "spec_ssp_1.0Gyr_z01.spec"
@@ -201,6 +221,7 @@ def test_get_tZ_models_yr_in_name(ssp_grid):
     assert np.allclose(ages, [1.0])
     assert np.allclose(metallicities, [0.01])
     assert np.allclose(m2l, [1.0])
+
 
 
 def test_from_pyPipe3D():
@@ -218,6 +239,10 @@ def test_from_pyPipe3D():
     }
     file_location = "/path/to/files"
 
+    with (
+        patch("os.path.exists") as mock_exists,
+        patch("rubix.spectra.ssp.grid.fits.open") as mock_file,
+    ):
     with (
         patch("os.path.exists") as mock_exists,
         patch("rubix.spectra.ssp.grid.fits.open") as mock_file,
@@ -246,7 +271,16 @@ def test_from_pyPipe3D():
             "NORM4": 1.0,
             "NORM5": 1.0,
             "NAXIS2": 6,
+            "NAXIS2": 6,
         }
+        mock_instance[0].data = [
+            [0.5, 1.0, 1.5, 2.0],
+            [0.5, 1.0, 1.5, 2.0],
+            [0.5, 1.0, 1.5, 2.0],
+            [0.5, 1.0, 1.5, 2.0],
+            [0.5, 1.0, 1.5, 2.0],
+            [0.5, 1.0, 1.5, 2.0],
+        ]
         mock_instance[0].data = [
             [0.5, 1.0, 1.5, 2.0],
             [0.5, 1.0, 1.5, 2.0],
@@ -270,7 +304,15 @@ def test_from_pyPipe3D():
                 [[0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0]],
             ],
         )
+        assert np.allclose(
+            result.flux,
+            [
+                [[0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0]],
+                [[0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0]],
+            ],
+        )
         assert result.flux.shape == (2, 3, 4)
+
 
 
 def test_from_pyPipe3D_wrong_field_name():
@@ -289,11 +331,21 @@ def test_from_pyPipe3D_wrong_field_name():
                 "in_log": False,
                 "units": "wrong_units",
             },
+            "wrong_field": {
+                "wrong_field_name": "wrong_field_name",
+                "in_log": False,
+                "units": "wrong_units",
+            },
         },
         "name": "TestSSPGrid",
     }
     file_location = "/path/to/files"
 
+    with (
+        pytest.raises(ValueError) as e,
+        patch("os.path.exists") as mock_exists,
+        patch("rubix.spectra.ssp.grid.fits.open") as mock_file,
+    ):
     with (
         pytest.raises(ValueError) as e,
         patch("os.path.exists") as mock_exists,
@@ -312,6 +364,8 @@ def test_from_pyPipe3D_wrong_field_name():
             "WAVENORM": 5000,
             "NAME0": "spec_ssp_1.0_z01.spec",
             "NORM0": 1.0,
+            "NAXIS2": 1,
+        }
             "NAXIS2": 1,
         }
         mock_instance[0].data = [[0.5, 1.0, 1.5]]
@@ -344,6 +398,7 @@ def test_checkout_SSP_template():
     config = {
         "file_name": "ssp_template.fits",
         "source": "http://example.com",
+        "source": "http://example.com",
     }
     file_location = "/path/to/save"
 
@@ -352,6 +407,7 @@ def test_checkout_SSP_template():
         patch("requests.get") as mock_get,
         patch("builtins.open", create=True) as mock_open,
     ):
+
         mock_exists.return_value = False
         mock_get.return_value.status_code = 200
         mock_get.return_value.content = b"mock file content"
@@ -382,6 +438,7 @@ def test_checkout_SSP_template_HDF5SSPGrid():
         patch("requests.get") as mock_get,
         patch("builtins.open", create=True) as mock_open,
     ):
+
         mock_exists.return_value = False
         mock_get.return_value.status_code = 200
         mock_get.return_value.content = b"mock file content"
@@ -396,8 +453,12 @@ def test_checkout_SSP_template_HDF5SSPGrid():
         mock_open.return_value.__enter__.return_value.write.assert_called_once_with(
             b"mock file content"
         )
+        mock_open.return_value.__enter__.return_value.write.assert_called_once_with(
+            b"mock file content"
+        )
 
         assert file_path == os.path.join(file_location, config["file_name"])
+
 
 
 def test_checkout_SSP_template_file_exists():
@@ -429,6 +490,7 @@ def test_checkout_SSP_template_file_exists():
 
 
 def test_checkout_SSP_template_file_download_error():
+def test_checkout_SSP_template_file_download_error():
     config = {
         "format": "hdf5",
         "file_name": "test.hdf5",
@@ -448,17 +510,22 @@ def test_checkout_SSP_template_file_download_error():
         mock_get.side_effect = requests.exceptions.HTTPError("Download error")
 
         # Call the function and verify that it raises a ValueError
-        with pytest.raises(
-            FileNotFoundError,
-            match="Could not download file test.hdf5 from url http://example.com/.",
-        ):
+        try:
             SSPGrid.checkout_SSP_template(config, file_location)
+            assert False, "Expected ValueError to be raised"
+        except FileNotFoundError as e:
+            assert (
+                str(e)
+                == "Could not download file test.hdf5 from url http://example.com/."
+            )
 
 
+def test_checkout_SSP_template_file_download_error_HDF5SSPGrid():
 def test_checkout_SSP_template_file_download_error_HDF5SSPGrid():
     config = {
         "format": "hdf5",
         "file_name": "test.hdf5",
+        "source": "http://example.com/",  # This URL will raise an exception when accessed
         "source": "http://example.com/",  # This URL will raise an exception when accessed
         "fields": {
             "age": {"name": "age", "in_log": False, "units": "Gyr"},
@@ -509,14 +576,12 @@ def test_checkout_SSP_template_SSL_error_HDF5SSPGrid():
             match="Could not download file test.hdf5 from url http://example.com/.",
         ):
             HDF5SSPGrid.checkout_SSP_template(config, file_location)
-
-        # there is a nested try-catch block in checkout_SSP_template that
-        # is traversed when request.get is mocked, so it must have been
-        # called twice
-        assert rubix.spectra.ssp.grid.requests.get.call_count == 2
-        rubix.spectra.ssp.grid.requests.get.assert_called_with(
-            config["source"] + config["file_name"], verify=False
-        )
+            assert False, "Expected ValueError to be raised"
+        except FileNotFoundError as e:
+            assert (
+                str(e)
+                == "Could not download file test.hdf5 from url http://example.com/."
+            )
 
 
 def test_checkout_SSP_template_file_download_failed():
@@ -539,11 +604,14 @@ def test_checkout_SSP_template_file_download_failed():
         mock_get.return_value.status_code = 404
 
         # Call the function and verify that it raises a FileNotFoundError
-        with pytest.raises(
-            FileNotFoundError,
-            match=f"Could not download file {config['file_name']} from url {config['source']}.",
-        ):
+        try:
             SSPGrid.checkout_SSP_template(config, file_location)
+            assert False, "Expected FileNotFoundError to be raised"
+        except FileNotFoundError as e:
+            assert (
+                str(e)
+                == f"Could not download file {config['file_name']} from url {config['source']}."
+            )
 
 
 def test_checkout_SSP_template_file_download_failed_HDF5SSPGrid():
@@ -566,11 +634,14 @@ def test_checkout_SSP_template_file_download_failed_HDF5SSPGrid():
         mock_get.return_value.status_code = 404
 
         # Call the function and verify that it raises a FileNotFoundError
-        with pytest.raises(
-            FileNotFoundError,
-            match=f"Could not download file {config['file_name']} from url {config['source']}.",
-        ):
+        try:
             HDF5SSPGrid.checkout_SSP_template(config, file_location)
+            assert False, "Expected FileNotFoundError to be raised"
+        except FileNotFoundError as e:
+            assert (
+                str(e)
+                == f"Could not download file {config['file_name']} from url {config['source']}."
+            )
 
 
 def test_get_lookup_interpolation():
