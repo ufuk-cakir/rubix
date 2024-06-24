@@ -207,6 +207,61 @@ class HDF5SSPGrid(SSPGrid):
     def __init__(self, age, metallicity, wavelength, flux):
         super().__init__(age, metallicity, wavelength, flux)
 
+    @staticmethod
+    def checkout_SSP_template(config: dict, file_location: str):
+        """
+        Check if the SSP template exists on disk, if not download it
+        from the given URL in the configuration dictionary.
+
+        Parameters
+        ----------
+        config : dict
+            Configuration dictionary.
+
+        file_location : str
+            Location to save the template file.
+
+        Returns
+        -------
+        file_path : str
+            The path to the file.
+        """
+
+        _logger = get_logger()
+        file_path = os.path.join(file_location, config["file_name"])
+        source = config["source"]
+        if not config["source"].endswith("/"):
+            source += "/"
+
+        if not os.path.exists(file_path):
+            _logger.info(
+                f'[SSPModels] File {file_path} not found. Downloading it from {config["source"]}'
+            )
+            try:
+                response = requests.get(source + config["file_name"])
+                response.raise_for_status()
+
+                if response.status_code == 200:
+                    with open(file_path, "wb") as f:
+                        f.write(response.content)
+                    _logger.info(
+                        f'[SSPModels] File {config["file_name"]} downloaded successfully!'
+                    )
+                    return file_path
+                else:
+                    raise FileNotFoundError(
+                        f"Could not download file {config['file_name']} from url {source}."
+                    )
+            except requests.exceptions.RequestException as err:
+                _logger.error(f"[SSPModels] Error: {err}")
+            # except requests.exceptions.HTTPError as errh:
+            #    print("Http Error:",errh)
+            raise FileNotFoundError(
+                f"Could not download file {config['file_name']} from url {source}."
+            )
+        else:
+            return file_path
+
     @classmethod
     def from_file(cls, config: dict, file_location: str) -> "SSPGrid":
         """
