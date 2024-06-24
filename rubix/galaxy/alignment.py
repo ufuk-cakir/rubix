@@ -11,11 +11,7 @@ from typing import Tuple
 from jax.scipy.spatial.transform import Rotation
 
 
-def center_particles(
-    stellar_coordinates: Float[Array, " n_stars 3"],
-    stellar_velocities: Float[Array, " n_stars 3"],
-    galaxy_center: Float[Array, "3"],
-) -> Tuple[Float[Array, " n_stars 3"], Float[Array, " n_stars 3"]]:
+def center_particles(rubixdata, key):
     """Center the stellar particles around the galaxy center.
 
     Parameters
@@ -34,6 +30,14 @@ def center_particles(
     jnp.ndarray
         The new velocities of the stellar particles.
     """
+    if key == "stars":
+        stellar_coordinates = rubixdata.stars.coords
+        stellar_velocities = rubixdata.stars.velocity
+    elif key == "gas":
+        stellar_coordinates = rubixdata.gas.coords
+        stellar_velocities = rubixdata.gas.velocity
+    galaxy_center = rubixdata.galaxy.center
+
     # Check if Center is within bounds
     check_bounds = (
         (galaxy_center[0] >= jnp.min(stellar_coordinates[:, 0]))
@@ -52,9 +56,17 @@ def center_particles(
     # TODO this should be a median
     central_velocity = jnp.median(stellar_velocities[mask], axis=0)
 
-    new_stellar_coordinates = stellar_coordinates - galaxy_center
-    new_stellar_velocities = stellar_velocities - central_velocity
-    return new_stellar_coordinates, new_stellar_velocities
+    #new_stellar_coordinates = stellar_coordinates - galaxy_center
+    #new_stellar_velocities = stellar_velocities - central_velocity
+
+    if key == "stars":
+        rubixdata.stars.coords = stellar_coordinates - galaxy_center
+        rubixdata.stars.velocity = stellar_velocities - central_velocity
+    elif key == "gas":
+        rubixdata.gas.coords = stellar_coordinates - galaxy_center
+        rubixdata.gas.velocity = stellar_velocities - central_velocity
+
+    return rubixdata
 
 def moment_of_inertia_tensor(positions, masses, halfmass_radius):
     """Calculate the moment of inertia tensor for a given set of positions and masses within the half-light radius.
