@@ -184,6 +184,7 @@ def prepare_input(config: Union[dict, str]):
 
     # Load the data from the file
     data, units = load_galaxy_data(file_path)
+    #print(data)
 
     file_path = config["output_path"]  # type:ignore
     file_path = os.path.join(file_path, "rubix_galaxy.h5")
@@ -196,23 +197,18 @@ def prepare_input(config: Union[dict, str]):
     
     rubixdata.galaxy.redshift = data["redshift"]
     rubixdata.galaxy.center = data["subhalo_center"]
-    rubixdata.galaxy.halfmassrad = data["subhalo_halfmassrad_stars"]
+    rubixdata.galaxy.halfmassrad_stars = data["subhalo_halfmassrad_stars"]
 
     if "stars" in config["data"]["args"]["particle_type"]:
         for attribute, value in data["particle_data"]["stars"].items():
             setattr(rubixdata.stars, attribute, value)
         rubixdata = center_particles(rubixdata, "stars")
-        
-    print(rubixdata.stars.coords)
-    print("Gas data")
-    print(rubixdata.gas.coords)
 
     if "gas" in config["data"]["args"]["particle_type"]:
         for attribute, value in data["particle_data"]["gas"].items():
-            setattr(rubixdata.stars, attribute, value)
-        #rubixdata = center_particles(rubixdata, "gas")
+            setattr(rubixdata.gas, attribute, value)
+        rubixdata = center_particles(rubixdata, "gas")
 
-    
     # Subset handling for both stars and gas if applicable
     if "subset" in config.get("data", {}):
         subset_config = config["data"]["subset"]
