@@ -54,10 +54,8 @@ def test_get_ssp_template_existing_template():
         patch("os.path.exists", return_value=True),
     ):
 
-        mock_hdf5 = MagicMock()
-        mock_hdf5.__class__ = HDF5SSPGrid
-        mock_pipe3d = MagicMock()
-        mock_pipe3d.__class__ = pyPipe3DSSPGrid
+        mock_hdf5 = MagicMock(spec=HDF5SSPGrid)
+        mock_pipe3d = MagicMock(spec=pyPipe3DSSPGrid)
 
         with (
             patch("rubix.spectra.ssp.factory.HDF5SSPGrid", mock_hdf5),
