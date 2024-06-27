@@ -54,15 +54,8 @@ def test_get_ssp_template_existing_template():
         patch("os.path.exists", return_value=True),
     ):
 
-<<<<<<< HEAD
         mock_hdf5 = MagicMock(spec=HDF5SSPGrid)
         mock_pipe3d = MagicMock(spec=pyPipe3DSSPGrid)
-=======
-        mock_hdf5 = MagicMock()
-        mock_hdf5.__class__ = HDF5SSPGrid
-        mock_pipe3d = MagicMock()
-        mock_pipe3d.__class__ = pyPipe3DSSPGrid
->>>>>>> 22bb6a7 (tests for ssp models fixed)
 
         with (
             patch("rubix.spectra.ssp.factory.HDF5SSPGrid", mock_hdf5),
@@ -130,8 +123,6 @@ def test_get_ssp_template_invalid_format():
         )
 
 
-<<<<<<< HEAD
-=======
 def test_get_ssp_template_error_loading_file():
 
     config = get_config()
@@ -151,7 +142,6 @@ def test_get_ssp_template_error_loading_file():
     assert "Could not download file" in str(excinfo.value)
 
 
->>>>>>> 22bb6a7 (tests for ssp models fixed)
 def test_get_ssp_template_existing_fsps_template():
     config = get_config()
     config_copy = config.copy()
