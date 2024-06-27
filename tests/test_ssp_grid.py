@@ -5,6 +5,12 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 import requests
+from unittest.mock import patch, MagicMock
+from rubix.spectra.ssp.grid import SSPGrid, HDF5SSPGrid, pyPipe3DSSPGrid
+import rubix
+import numpy as np
+import jax.numpy as jnp
+import os
 from astropy.io import fits
 
 import rubix
@@ -489,7 +495,6 @@ def test_checkout_SSP_template_file_exists():
         assert result == file_path
 
 
-def test_checkout_SSP_template_file_download_error():
 def test_checkout_SSP_template_file_download_error():
     config = {
         "format": "hdf5",
