@@ -56,9 +56,6 @@ def center_particles(rubixdata, key):
     # TODO this should be a median
     central_velocity = jnp.median(stellar_velocities[mask], axis=0)
 
-    #new_stellar_coordinates = stellar_coordinates - galaxy_center
-    #new_stellar_velocities = stellar_velocities - central_velocity
-
     if key == "stars":
         rubixdata.stars.coords = stellar_coordinates - galaxy_center
         rubixdata.stars.velocity = stellar_velocities - central_velocity

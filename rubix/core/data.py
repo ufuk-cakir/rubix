@@ -11,7 +11,7 @@ from rubix.galaxy import IllustrisAPI, get_input_handler
 from rubix.galaxy.alignment import center_particles
 from rubix.logger import get_logger
 from rubix.utils import load_galaxy_data, read_yaml
-from rubix import config
+from rubix import config as rubix_config
 
 
 class SubsetMixin:
@@ -21,6 +21,7 @@ class SubsetMixin:
     Methods:
         apply_subset(indices): Applies subsetting to all fields of the dataclass.
             Each field is updated to only contain elements at the specified indices.
+            It gets a random subset of data for speed reason and testing.
 
     Example usage:
         @dataclass
@@ -70,9 +71,20 @@ def create_dynamic_dataclass(name, fields):
     # Include SubsetMixin in the bases
     return make_dataclass(name, [(field_name, annotation, field(default=None)) for field_name, annotation in annotations.items()], bases=(SubsetMixin,))
 
-Galaxy = create_dynamic_dataclass("Galaxy", config["BaseHandler"]["galaxy"])
-StarsData = create_dynamic_dataclass("StarsData", config["BaseHandler"]["particles"]["stars"]) 
-GasData = create_dynamic_dataclass("GasData", config["BaseHandler"]["particles"]["gas"])
+@dataclass
+class Galaxy:
+    # Galaxy class definition here
+    pass
+
+@dataclass
+class StarsData:
+    # StarsData class definition here
+    pass
+
+@dataclass
+class GasData:
+    # GasData class definition here
+    pass
 
 @dataclass
 class RubixData:
@@ -88,13 +100,14 @@ class RubixData:
     gas:
         Contains information about the gas
     """
+    def __init__(self, galaxy: Optional[Galaxy] = None, stars: Optional[StarsData] = None, gas: Optional[GasData] = None):
+        self.galaxy = galaxy
+        self.stars = stars
+        self.gas = gas
+
     galaxy: Optional[Galaxy] = None
     stars: Optional[StarsData] = None
     gas: Optional[GasData] = None
-
-#rubixdata = RubixData(Galaxy(), StarsData(), GasData())
-#print(rubixdata)
-#print(rubixdata.__dict__)
 
 
 def convert_to_rubix(config: Union[dict, str]):
@@ -176,6 +189,7 @@ def reshape_array(
 
 
 def prepare_input(config: Union[dict, str]):
+    print(config)
 
     logger_config = config["logger"] if "logger" in config else None  # type:ignore
     logger = get_logger(logger_config)
@@ -184,10 +198,13 @@ def prepare_input(config: Union[dict, str]):
 
     # Load the data from the file
     data, units = load_galaxy_data(file_path)
-    #print(data)
 
     file_path = config["output_path"]  # type:ignore
     file_path = os.path.join(file_path, "rubix_galaxy.h5")
+
+    Galaxy = create_dynamic_dataclass("Galaxy", rubix_config["BaseHandler"]["galaxy"])
+    StarsData = create_dynamic_dataclass("StarsData", rubix_config["BaseHandler"]["particles"]["stars"]) 
+    GasData = create_dynamic_dataclass("GasData", rubix_config["BaseHandler"]["particles"]["gas"])
 
     # Load the data from the file
     # TODO: maybe also pass the units here, currently this is not used
