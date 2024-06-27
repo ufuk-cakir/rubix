@@ -553,6 +553,42 @@ def test_checkout_SSP_template_SSL_error_HDF5SSPGrid():
         )
 
 
+def test_checkout_SSP_template_SSL_error_HDF5SSPGrid():
+    config = {
+        "format": "hdf5",
+        "file_name": "test.hdf5",
+        "source": "http://example.com/",  # This URL will raise an exception when accessed
+        "fields": {
+            "age": {"name": "age", "in_log": False, "units": "Gyr"},
+            "metallicity": {"name": "metallicity", "in_log": False, "units": ""},
+            "wavelength": {"name": "wavelength", "in_log": False, "units": "Angstrom"},
+            "flux": {"name": "flux", "in_log": False, "units": "Lsun/Angstrom"},
+        },
+        "name": "TestSSPGrid",
+    }
+    file_location = "/path/to/files"
+
+    # Mock the requests.get function to raise an exception
+    with patch("requests.get") as mock_get:
+        mock_get.side_effect = [
+            requests.exceptions.SSLError("Download error"),
+            requests.exceptions.HTTPError("Download error"),
+        ]
+
+        # Call the function and verify that it raises a ValueError
+        try:
+            HDF5SSPGrid.checkout_SSP_template(config, file_location)
+            assert False, "Expected ValueError to be raised"
+        except FileNotFoundError as e:
+            assert (
+                str(e)
+                == "Could not download file test.hdf5 from url http://example.com/."
+            )
+        assert rubix.spectra.ssp.grid.requests.get.called_once_with(
+            config["source"] + "/" + config["file_name"], verify=False
+        )
+
+
 def test_checkout_SSP_template_file_download_failed():
     config = {
         "format": "hdf5",
