@@ -54,9 +54,24 @@ class IllustrisHandler(BaseHandler):
         return self.UNITS
 
     def _check_fields(self, f):
-        for fields in self.ILLUSTRIS_DATA:
-            if fields not in f:
-                raise ValueError(f"Field {fields} not found in the file")
+        self._logger.debug("Checking if the fields are present in the file...")
+        self._logger.debug(f"Keys in the file: {f.keys()}")
+        self._logger.debug(f"Expected fields: {self.ILLUSTRIS_DATA}")
+
+        present_fields = set(f.keys())
+        expected_fields = set(self.ILLUSTRIS_DATA)
+
+        matching_fields = present_fields.intersection(expected_fields)
+        extra_fields = present_fields - expected_fields
+
+        if not matching_fields:
+            raise ValueError(f"No expected fields found in the file. Expected at least one of: {self.ILLUSTRIS_DATA}")
+        
+        if extra_fields:
+            raise ValueError(f"Unexpected fields found in the file: {extra_fields}")
+
+        self._logger.debug(f"Matching fields: {matching_fields}")
+
 
     def _load_data(self):
         # open the file
@@ -126,7 +141,14 @@ class IllustrisHandler(BaseHandler):
     def _get_halfmassrad_stars(self, f):
         halfmass_rad_stars = f["SubhaloData"]["halfmassrad_stars"][()]
         # Get the attributes to convert values from Coordinates field
-        attributes_coords = f["PartType4"]["Coordinates"].attrs
+        #attributes_coords = f["PartType4"]["Coordinates"].attrs
+        present_fields = set(f.keys())
+        attributes_coords = None
+
+        for part_type in present_fields:
+                attributes_coords = f[part_type]["Coordinates"].attrs
+                break  # Stop after finding the first match
+
         # Convert to physical Units
         halfmass_rad_stars = convert_values_to_physical(
             halfmass_rad_stars,
@@ -138,6 +160,7 @@ class IllustrisHandler(BaseHandler):
         )
         return halfmass_rad_stars
 
+
     def _get_center(self, f):
         pos_x = f["SubhaloData"]["pos_x"][()]
         pos_y = f["SubhaloData"]["pos_y"][()]
@@ -145,8 +168,15 @@ class IllustrisHandler(BaseHandler):
 
         center = np.array([pos_x, pos_y, pos_z])
 
+        #attributes_coords = f["PartType4"]["Coordinates"].attrs
         # Get the attributes to convert values from Coordinates field
-        attributes_coords = f["PartType4"]["Coordinates"].attrs
+        present_fields = set(f.keys())
+        attributes_coords = None
+
+        for part_type in present_fields:
+                attributes_coords = f[part_type]["Coordinates"].attrs
+                break  # Stop after finding the first match
+
         # Convert to physical Units
         center = convert_values_to_physical(
             center,

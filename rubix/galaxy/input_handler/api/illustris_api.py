@@ -25,7 +25,7 @@ class IllustrisAPI:
     def __init__(
         self,
         api_key,
-        particle_type: list = ["stars"],
+        particle_type: list = ["stars", "gas"],
         simulation="TNG50-1",
         snapshot=99,
         save_data_path="./api_data",

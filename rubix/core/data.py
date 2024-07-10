@@ -1,5 +1,6 @@
 import os
-from typing import Callable, Tuple, Union
+from typing import Callable, Tuple, Union, Optional
+from dataclasses import dataclass, field, make_dataclass
 
 import jax
 import jax.numpy as jnp
@@ -10,6 +11,104 @@ from rubix.galaxy import IllustrisAPI, get_input_handler
 from rubix.galaxy.alignment import center_particles
 from rubix.logger import get_logger
 from rubix.utils import load_galaxy_data, read_yaml
+from rubix import config as rubix_config
+
+
+class Particles:
+    """
+    Mixin class to handle subsetting of dataclasses
+
+    Methods:
+        apply_subset(indices): Applies subsetting to all fields of the dataclass.
+            Each field is updated to only contain elements at the specified indices.
+            It gets a random subset of data for speed reason and testing.
+
+    Example usage:
+        @dataclass
+        class MyData(SubsetMixin):
+            field1: List[int]
+            field2: List[str]
+
+        data = MyData(field1=[1, 2, 3], field2=['a', 'b', 'c'])
+        data.apply_subset([0, 2])  # data now contains elements at indices 0 and 2
+    """
+    def apply_subset(self, indices):
+        """
+        Applies subsetting to all fields of the dataclass.
+
+        Parameters:
+            indices: List[int]
+                The indices to keep in each field of the dataclass
+        """
+        for field_name, value in self.__dataclass_fields__.items():
+            current_value = getattr(self, field_name)
+            if current_value is not None:
+                setattr(self, field_name, current_value[indices])
+
+
+def create_dynamic_dataclass(name, fields):
+    """
+    Create a dataclass dynamically based on the provided fields, all of which are optional and default to None.
+    Each field is of type Optional[jnp.ndarray], that it can hold a JAX numpy array or None.
+    It inherits from SubsetMixin to allow subsetting of the dataclass using apply_subset method
+
+    Parameters:
+        name: str
+            The name of the dataclass
+        fields: List[str]
+            The names of the fields to include in the dataclass
+
+    Returns:
+        type
+            The dynamically created dataclass
+    
+    Example usage:
+        MyDynamicData = create_dynamic_dataclass('MyDynamicData', ['field1', 'field2'])
+        instance = MyDynamicData()
+        instance.field1 = jnp.array([1, 2, 3])
+        instance.apply_subset([0, 2])  # Applies subsetting to all fields
+    """
+    annotations = {field_name: Optional[jnp.ndarray] for field_name in fields}
+    # Include SubsetMixin in the bases
+    return make_dataclass(name, [(field_name, annotation, field(default=None)) for field_name, annotation in annotations.items()], bases=(SubsetMixin,))
+
+@dataclass
+class Galaxy:
+    # Galaxy class definition here
+    pass
+
+@dataclass
+class StarsData:
+    # StarsData class definition here
+    pass
+
+@dataclass
+class GasData:
+    # GasData class definition here
+    pass
+
+@dataclass
+class RubixData:
+    """
+    This class is used to store the Rubix data in a structured format.
+    It is constructed in a dynamic way based on the configuration file.
+
+    galaxy:
+        Contains general information about the galaxy
+        redshift, galaxy center, halfmassrad
+    stars:
+        Contains information about the stars
+    gas:
+        Contains information about the gas
+    """
+    def __init__(self, galaxy: Optional[Galaxy] = None, stars: Optional[StarsData] = None, gas: Optional[GasData] = None):
+        self.galaxy = galaxy
+        self.stars = stars
+        self.gas = gas
+
+    galaxy: Optional[Galaxy] = None
+    stars: Optional[StarsData] = None
+    gas: Optional[GasData] = None
 
 
 def convert_to_rubix(config: Union[dict, str]):
@@ -106,81 +205,64 @@ def reshape_array(
     return reshaped_arr
 
 
-def prepare_input(config: Union[dict, str]) -> Tuple[
-    Float[Array, "n_particles 3"],
-    Float[Array, "n_particles 3"],
-    Float[Array, " n_particles"],
-    Float[Array, " n_particles"],
-    Float[Array, " n_particles"],
-    float,
-]:
+def prepare_input(config: Union[dict, str]):
+    print(config)
 
     logger_config = config["logger"] if "logger" in config else None  # type:ignore
     logger = get_logger(logger_config)
+    file_path = config["output_path"]
+    file_path = os.path.join(file_path, "rubix_galaxy.h5")
+
+    # Load the data from the file
+    data, units = load_galaxy_data(file_path)
+
     file_path = config["output_path"]  # type:ignore
     file_path = os.path.join(file_path, "rubix_galaxy.h5")
+
+    Galaxy = create_dynamic_dataclass("Galaxy", rubix_config["BaseHandler"]["galaxy"])
+    StarsData = create_dynamic_dataclass("StarsData", rubix_config["BaseHandler"]["particles"]["stars"]) 
+    GasData = create_dynamic_dataclass("GasData", rubix_config["BaseHandler"]["particles"]["gas"])
 
     # Load the data from the file
     # TODO: maybe also pass the units here, currently this is not used
     data, units = load_galaxy_data(file_path)
 
-    stellar_coordinates = data["particle_data"]["stars"]["coords"]
-    stellar_velocities = data["particle_data"]["stars"]["velocity"]
-    galaxy_center = data["subhalo_center"]
-    halfmassrad_stars = data["subhalo_halfmassrad_stars"]
+    rubixdata = RubixData(Galaxy(), StarsData(), GasData())
+    
+    rubixdata.galaxy.redshift = data["redshift"]
+    rubixdata.galaxy.center = data["subhalo_center"]
+    rubixdata.galaxy.halfmassrad_stars = data["subhalo_halfmassrad_stars"]
 
-    # Center the particles
-    new_stellar_coordinates, new_stellar_velocities = center_particles(
-        stellar_coordinates, stellar_velocities, galaxy_center
-    )
+    if "stars" in config["data"]["args"]["particle_type"]:
+        for attribute, value in data["particle_data"]["stars"].items():
+            setattr(rubixdata.stars, attribute, value)
+        rubixdata = center_particles(rubixdata, "stars")
 
-    # Load the metallicity and age data
+    if "gas" in config["data"]["args"]["particle_type"]:
+        for attribute, value in data["particle_data"]["gas"].items():
+            setattr(rubixdata.gas, attribute, value)
+        rubixdata = center_particles(rubixdata, "gas")
 
-    stars_metallicity = data["particle_data"]["stars"]["metallicity"]
-    stars_mass = data["particle_data"]["stars"]["mass"]
-    stars_age = data["particle_data"]["stars"]["age"]
+    # Subset handling for both stars and gas if applicable
+    if "subset" in config.get("data", {}):
+        subset_config = config["data"]["subset"]
+        if subset_config.get("use_subset", False):
+            size = subset_config["subset_size"]
+            np.random.seed(42)  # For reproducibility
+            if "stars" in config["data"]["args"]["particle_type"]:
+                indices = np.random.choice(len(rubixdata.stars.coords), size=size, replace=False)
+                rubixdata.stars.apply_subset(indices)
+                logger.warning(f"Using only subset of stars data of size {size}")
+            if "gas" in config["data"]["args"]["particle_type"]:
+                indices = np.random.choice(len(rubixdata.gas.coords), size=size, replace=False)
+                rubixdata.gas.apply_subset(indices)
+                logger.warning(f"Using only subset of gas data of size {size}")
+    
 
-    # Check if we should only use a subset of the data for testing and memory reasons
-    if "data" in config:
-        if "subset" in config["data"]:  # type:ignore
-            if config["data"]["subset"]["use_subset"]:  # type:ignore
-                size = config["data"]["subset"]["subset_size"]  # type:ignore
-                # Randomly sample indices
-                # Set random seed for reproducibility
-                np.random.seed(42)
-                indices = np.random.choice(
-                    np.arange(new_stellar_coordinates.shape[0]),
-                    size=size,  # type:ignore
-                    replace=False,
-                )  # type:ignore
-
-                new_stellar_coordinates = new_stellar_coordinates[indices]
-                new_stellar_velocities = new_stellar_velocities[indices]
-                stars_metallicity = stars_metallicity[indices]
-                stars_mass = stars_mass[indices]
-                stars_age = stars_age[indices]
-                logger.warning(
-                    f"The Subset value is set in config. Using only subset of size {size}"
-                )
-
-    return (
-        new_stellar_coordinates,
-        new_stellar_velocities,
-        stars_metallicity,
-        stars_mass,
-        stars_age,
-        halfmassrad_stars,
-    )
+    return rubixdata
 
 
-def get_rubix_data(config: Union[dict, str]) -> Tuple[
-    Float[Array, "n_particles 3"],
-    Float[Array, "n_particles 3"],
-    Float[Array, " n_particles"],
-    Float[Array, " n_particles"],
-    Float[Array, " n_particles"],
-    float,
-]:
+def get_rubix_data(config: Union[dict, str]) -> RubixData:
     """Returns the Rubix data
 
     First converts the data to Rubix format and then prepares the input data.
