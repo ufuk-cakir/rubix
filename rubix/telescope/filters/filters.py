@@ -103,6 +103,30 @@ class Filter(eqx.Module):
         """
         return self.name
 
+    def save(self, filter_path: Optional[str] = FILTERS_PATH):
+        """
+        Save the filter response to a csv file.
+
+        Parameters
+        ----------
+        filter_path : str
+            optional: default=FILTERS_PATH
+            The path to save the filter response to.
+            The filter response will be saved in a directory named after the facility, which is assumed to be the first part of the filter name, demarcated by a '/'.
+            The filter response will be saved in a csv file named after the filter name.
+        """
+        filter_dir = os.path.join(filter_path, self.name.split("/")[0])
+        if not os.path.isdir(filter_dir):
+            os.makedirs(filter_dir)
+        filter_data = Table(
+            [self.wavelength, self.response], names=["Wavelength", "Transmission"]
+        )
+        filter_name = self.name.split("/")[1]
+        save_name = f"{filter_dir}/{filter_name}.csv"
+        filter_data.write(save_name, format="csv")
+        _logger.info(f"Filter {self.name} saved to {filter_dir}.")
+        return os.path.abspath(save_name)
+
 
 class FilterCurves(eqx.Module):
     """

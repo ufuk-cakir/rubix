@@ -524,3 +524,46 @@ def test_print_filter_property(mock_print, mock_get_filter_list):
     )
     mock_print.assert_called_once_with(mock_filter_info)
     assert filter_info == mock_filter_info
+
+
+def test_save_custom_filter():
+    # Create a mock filter
+    name = "facility/filter"
+    wavelength = [400, 500, 600]
+    response = [0.1, 0.2, 0.3]
+    mock_filter = Filter(wavelength, response, name)
+
+    # Mock os.path.isdir to return False
+    with (
+        patch("os.path.isdir", return_value=False) as mock_isdir,
+        patch("os.makedirs") as mock_makedirs,
+        patch(
+            "os.path.abspath", return_value="/path/to/filters/facility/filter.csv"
+        ) as mock_abspath,
+        patch("rubix.telescope.filters.filters.Table") as mock_table,
+    ):
+
+        # Mock the write method of the Table instance
+        mock_table_instance = MagicMock()
+        mock_table.return_value = mock_table_instance
+
+        # Call the save method
+        actual_path = mock_filter.save(filter_path="")
+
+        # Assert that the correct directory was checked and created
+        mock_isdir.assert_called_once_with("facility")
+        mock_makedirs.assert_called_once_with("facility")
+
+        # Assert that the Table was created with the correct data and column names
+        mock_table.assert_called_once_with(
+            [mock_filter.wavelength, mock_filter.response],
+            names=["Wavelength", "Transmission"],
+        )
+
+        # Assert that the Table's write method was called with the correct arguments
+        mock_table_instance.write.assert_called_once_with(
+            "facility/filter.csv", format="csv"
+        )
+
+        # Assert that the correct path was returned
+        assert actual_path == "/path/to/filters/facility/filter.csv"
