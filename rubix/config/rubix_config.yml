@@ -35,7 +35,6 @@ IllustrisAPI:
       - InternalEnergy
       - Velocities
       - ElectronAbundance
-      #- GFM_Metals
     stars:
       - Coordinates
       - GFM_InitialMass

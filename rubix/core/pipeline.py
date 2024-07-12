@@ -2,6 +2,9 @@ import time
 from typing import Union
 
 import jax
+import jax.numpy as jnp
+import numpy as np
+import sys
 
 from rubix.logger import get_logger
 from rubix.pipeline import linear_pipeline as pipeline
@@ -67,7 +70,7 @@ class RubixPipeline:
         self.data = self._prepare_data()
         self.func = None
 
-    def _prepare_data(self) -> dict:
+    def _prepare_data(self):
         """
         Prepares and loads the data for the pipeline.
 
@@ -79,30 +82,45 @@ class RubixPipeline:
         """
         # Get the data
         self.logger.info("Getting rubix data...")
-        coords, velocities, metallicity, mass, age, halfmassrad_stars = get_rubix_data(
+        rubixdata = get_rubix_data(
             self.user_config
         )
-        self.logger.info(f"Data loaded with {len(coords)} particles.")
+        star_count = len(rubixdata.stars.coords) if rubixdata.stars.coords is not None else 0
+        gas_count = len(rubixdata.gas.coords) if rubixdata.gas.coords is not None else 0
+        self.logger.info(f"Data loaded with {star_count} star particles and {gas_count} gas particles.")
+        self.logger.info(f"Data loaded with {sys.getsizeof(rubixdata)} properties.")
         # Setup the data dictionary
         # TODO: This is a temporary solution, we need to figure out a better way to handle the data
         # This works, because JAX can trace through the data dictionary
         # Other option may be named tuples or data classes to have fixed keys
-        data = {
-            "n_particles": len(coords),
-            "coords": coords,
-            "velocities": velocities,
-            "metallicity": metallicity,
-            "mass": mass,
-            "age": age,
-            "halfmassrad_stars": halfmassrad_stars,
-        }
 
-        self.logger.debug(
-            "Data Shape: %s",
-            {k: v.shape for k, v in data.items() if hasattr(v, "shape")},
-        )
+        self.logger.debug("Data: %s", rubixdata)
+        #self.logger.debug(
+        #    "Data Shape: %s",
+        #    {k: v.shape for k, v in rubixdata.items() if hasattr(v, "shape")},
+        #)
 
-        return data
+        """
+        attributes_star = [attr for attr in dir(rubixdata.stars) if not attr.startswith('__')]
+        for attr in attributes_star:
+            attribute_value = rubixdata.stars.__getattribute__(attr)  # Get the current value
+            jax_array_value = jnp.array(attribute_value)  # Convert it to a JAX array
+            setattr(rubixdata.stars, attr, jax_array_value)  # Set the converted value back
+
+        attributes_gas = [attr for attr in dir(rubixdata.gas) if not attr.startswith('__')]
+        for attr in attributes_gas:
+            attribute_value = rubixdata.gas.__getattribute__(attr)
+            jax_array_value = jnp.array(attribute_value)
+            setattr(rubixdata.gas, attr, jax_array_value)
+
+        attributes_galaxy = [attr for attr in dir(rubixdata.galaxy) if not attr.startswith('__')]
+        for attr in attributes_galaxy:
+            attribute_value = rubixdata.galaxy.__getattribute__(attr)
+            jax_array_value = jnp.array(attribute_value)
+            setattr(rubixdata.galaxy, attr, jax_array_value)
+        """
+        rubixdata.to_jax()
+        return rubixdata
 
     def _get_pipeline_functions(self) -> list:
         """
@@ -148,7 +166,7 @@ class RubixPipeline:
         return functions
 
     # TODO: currently returns dict, but later should return only the IFU cube
-    def run(self) -> dict:
+    def run(self):
         """
         Runs the data processing pipeline.
 

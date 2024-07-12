@@ -70,7 +70,8 @@ def create_dynamic_dataclass(name, fields):
     """
     annotations = {field_name: Optional[jnp.ndarray] for field_name in fields}
     # Include SubsetMixin in the bases
-    return make_dataclass(name, [(field_name, annotation, field(default=None)) for field_name, annotation in annotations.items()], bases=(SubsetMixin,))
+    return make_dataclass(name, [(field_name, annotation, field(default=None)) for field_name, annotation in annotations.items()], bases=(Particles,))
+
 
 @dataclass
 class Galaxy:
@@ -88,7 +89,7 @@ class GasData:
     pass
 
 @dataclass
-class RubixData:
+class RubixData(Particles):
     """
     This class is used to store the Rubix data in a structured format.
     It is constructed in a dynamic way based on the configuration file.
@@ -109,6 +110,7 @@ class RubixData:
     galaxy: Optional[Galaxy] = None
     stars: Optional[StarsData] = None
     gas: Optional[GasData] = None
+
 
 
 def convert_to_rubix(config: Union[dict, str]):
@@ -205,7 +207,7 @@ def reshape_array(
     return reshaped_arr
 
 
-def prepare_input(config: Union[dict, str]):
+def prepare_input(config: Union[dict, str]) -> object:
     print(config)
 
     logger_config = config["logger"] if "logger" in config else None  # type:ignore
@@ -235,14 +237,52 @@ def prepare_input(config: Union[dict, str]):
 
     if "stars" in config["data"]["args"]["particle_type"]:
         for attribute, value in data["particle_data"]["stars"].items():
-            setattr(rubixdata.stars, attribute, value)
+            jax_value = jnp.array(value)
+            setattr(rubixdata.stars, attribute, jax_value)
         rubixdata = center_particles(rubixdata, "stars")
 
     if "gas" in config["data"]["args"]["particle_type"]:
         for attribute, value in data["particle_data"]["gas"].items():
+            jax_value = jnp.array(value)
             setattr(rubixdata.gas, attribute, value)
         rubixdata = center_particles(rubixdata, "gas")
 
+    if "data" in config:
+        if "subset" in config["data"]:  # type:ignore
+            if config["data"]["subset"]["use_subset"]:  # type:ignore
+                size = config["data"]["subset"]["subset_size"]  # type:ignore
+                # Randomly sample indices
+                # Set random seed for reproducibility
+                np.random.seed(42)
+                if "stars" in config["data"]["args"]["particle_type"]:
+                    indices = np.random.choice(
+                    np.arange(len(rubixdata.stars.coords)),
+                    size=size,  # type:ignore
+                    replace=False,
+                )  # type:ignore
+                    for attribute, value in data["particle_data"]["stars"].items():
+                        jax_value = jnp.array(value)
+                        subset_value = jax_value[indices]
+                        setattr(rubixdata.stars, attribute, subset_value)
+                    logger.warning(
+                    f"The Subset value is set in config. Using only subset of size {size} for stars"
+                )
+                if "gas" in config["data"]["args"]["particle_type"]:
+                    indices = np.random.choice(
+                    np.arange(len(rubixdata.stars.coords)),
+                    size=size,  # type:ignore
+                    replace=False,
+                )  # type:ignore
+                    for attribute, value in data["particle_data"]["gas"].items():
+                        jax_value = jnp.array(value)
+                        subset_value = jax_value[indices]
+                        setattr(rubixdata.gas, attribute, subset_value)
+                    logger.warning(
+                    f"The Subset value is set in config. Using only subset of size {size} for gas"
+                )
+                
+
+    """
     # Subset handling for both stars and gas if applicable
     if "subset" in config.get("data", {}):
         subset_config = config["data"]["subset"]
@@ -253,16 +293,17 @@ def prepare_input(config: Union[dict, str]):
                 indices = np.random.choice(len(rubixdata.stars.coords), size=size, replace=False)
                 rubixdata.stars.apply_subset(indices)
                 logger.warning(f"Using only subset of stars data of size {size}")
+                print
             if "gas" in config["data"]["args"]["particle_type"]:
                 indices = np.random.choice(len(rubixdata.gas.coords), size=size, replace=False)
                 rubixdata.gas.apply_subset(indices)
                 logger.warning(f"Using only subset of gas data of size {size}")
-    
+    """
 
     return rubixdata
 
 
-def get_rubix_data(config: Union[dict, str]) -> RubixData:
+def get_rubix_data(config: Union[dict, str]) -> object:
     """Returns the Rubix data
 
     First converts the data to Rubix format and then prepares the input data.
