@@ -128,6 +128,7 @@ class RubixData:
         return cls(*children)
 
 
+
 def convert_to_rubix(config: Union[dict, str]):
     """Converts the data to Rubix format
 
