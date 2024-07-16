@@ -32,7 +32,6 @@ class Galaxy:
     def tree_unflatten(cls, aux_data, children):
         return cls(*children)
 
-
 @partial(jax.tree_util.register_pytree_node_class)
 @dataclass
 class StarsData:
@@ -67,7 +66,6 @@ class StarsData:
     @classmethod
     def tree_unflatten(cls, aux_data, children):
         return cls(*children)
-
 
 @partial(jax.tree_util.register_pytree_node_class)
 @dataclass
@@ -109,7 +107,6 @@ class GasData:
     @classmethod
     def tree_unflatten(cls, aux_data, children):
         return cls(*children)
-
 
 @partial(jax.tree_util.register_pytree_node_class)
 @dataclass
