@@ -119,7 +119,7 @@ class RubixPipeline:
             jax_array_value = jnp.array(attribute_value)
             setattr(rubixdata.galaxy, attr, jax_array_value)
         """
-        rubixdata.to_jax()
+        
         return rubixdata
 
     def _get_pipeline_functions(self) -> list:

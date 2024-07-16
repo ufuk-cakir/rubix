@@ -49,9 +49,9 @@ def get_galaxy_rotation(config: dict):
         if "stars" in config["data"]["args"]["particle_type"]:
             # Get the inputs
             coords = rubixdata.stars.coords
-            velocities = rubixdata.stars.velocities
+            velocities = rubixdata.stars.velocity
             masses = rubixdata.stars.mass
-            halfmass_radius = rubixdata.stars.halfmass_radius
+            halfmass_radius = rubixdata.galaxy.halfmassrad_stars
 
             # Rotate the galaxy
             coords, velocities = rotate_galaxy_core(
@@ -65,15 +65,17 @@ def get_galaxy_rotation(config: dict):
             )
 
             # Update the inputs
-            rubixdata.stars.coords = coords
-            rubixdata.stars.velocities = velocities
+            #rubixdata.stars.coords = coords
+            #rubixdata.stars.velocity = velocities
+            setattr(rubixdata.stars, "coords", coords)
+            setattr(rubixdata.stars, "velocity", velocities)
         
         if "gas" in config["data"]["args"]["particle_type"]:
             # Get the inputs
             coords = rubixdata.gas.coords
-            velocities = rubixdata.gas.velocities
+            velocities = rubixdata.gas.velocity
             masses = rubixdata.gas.mass
-            halfmass_radius = rubixdata.gas.halfmass_radius
+            halfmass_radius = rubixdata.galaxy.halfmassrad_stars
 
             # Rotate the galaxy
             coords, velocities = rotate_galaxy_core(
@@ -87,8 +89,10 @@ def get_galaxy_rotation(config: dict):
             )
 
             # Update the inputs
-            rubixdata.gas.coords = coords
-            rubixdata.gas.velocities = velocities
+            #rubixdata.gas.coords = coords
+            #rubixdata.gas.velocity = velocities
+            setattr(rubixdata.gas, "coords", coords)
+            setattr(rubixdata.gas, "velocity", velocities)
 
         return rubixdata
 

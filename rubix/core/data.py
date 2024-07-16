@@ -1,6 +1,7 @@
 import os
 from typing import Callable, Tuple, Union, Optional
 from dataclasses import dataclass, field, make_dataclass
+from functools import partial
 
 import jax
 import jax.numpy as jnp
@@ -14,102 +15,85 @@ from rubix.utils import load_galaxy_data, read_yaml
 from rubix import config as rubix_config
 
 
-class Particles:
-    """
-    Mixin class to handle subsetting of dataclasses
-
-    Methods:
-        apply_subset(indices): Applies subsetting to all fields of the dataclass.
-            Each field is updated to only contain elements at the specified indices.
-            It gets a random subset of data for speed reason and testing.
-
-    Example usage:
-        @dataclass
-        class MyData(SubsetMixin):
-            field1: List[int]
-            field2: List[str]
-
-        data = MyData(field1=[1, 2, 3], field2=['a', 'b', 'c'])
-        data.apply_subset([0, 2])  # data now contains elements at indices 0 and 2
-    """
-    def apply_subset(self, indices):
-        """
-        Applies subsetting to all fields of the dataclass.
-
-        Parameters:
-            indices: List[int]
-                The indices to keep in each field of the dataclass
-        """
-        for field_name, value in self.__dataclass_fields__.items():
-            current_value = getattr(self, field_name)
-            if current_value is not None:
-                setattr(self, field_name, current_value[indices])
-
-
-def create_dynamic_dataclass(name, fields):
-    """
-    Create a dataclass dynamically based on the provided fields, all of which are optional and default to None.
-    Each field is of type Optional[jnp.ndarray], that it can hold a JAX numpy array or None.
-    It inherits from SubsetMixin to allow subsetting of the dataclass using apply_subset method
-
-    Parameters:
-        name: str
-            The name of the dataclass
-        fields: List[str]
-            The names of the fields to include in the dataclass
-
-    Returns:
-        type
-            The dynamically created dataclass
-    
-    Example usage:
-        MyDynamicData = create_dynamic_dataclass('MyDynamicData', ['field1', 'field2'])
-        instance = MyDynamicData()
-        instance.field1 = jnp.array([1, 2, 3])
-        instance.apply_subset([0, 2])  # Applies subsetting to all fields
-    """
-    annotations = {field_name: Optional[jnp.ndarray] for field_name in fields}
-    # Include SubsetMixin in the bases
-    return make_dataclass(name, [(field_name, annotation, field(default=None)) for field_name, annotation in annotations.items()], bases=(Particles,))
-
-
+# Registering the dataclass with JAX for automatic tree traversal
+@partial(jax.tree_util.register_pytree_node_class)
 @dataclass
 class Galaxy:
-    # Galaxy class definition here
-    pass
+    redshift: Optional[jnp.ndarray] = None
+    center: Optional[jnp.ndarray] = None
+    halfmassrad_stars: Optional[jnp.ndarray] = None
 
+    def tree_flatten(self):
+        children = (self.redshift, self.center, self.halfmassrad_stars)
+        aux_data = {}
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(cls, aux_data, children):
+        return cls(*children)
+
+@partial(jax.tree_util.register_pytree_node_class)
 @dataclass
 class StarsData:
-    # StarsData class definition here
-    pass
+    # Assuming attributes for StarsData, replace with actual attributes
+    coords: Optional[jnp.ndarray] = None
+    velocity: Optional[jnp.ndarray] = None
+    mass: Optional[jnp.ndarray] = None
+    metallicity: Optional[jnp.ndarray] = None
+    age: Optional[jnp.ndarray] = None
+    pixel_assignment: Optional[jnp.ndarray] = None
+    spatial_bin_edges: Optional[jnp.ndarray] = None
+    mask: Optional[jnp.ndarray] = None
+    spectra: Optional[jnp.ndarray] = None
+    datacube: Optional[jnp.ndarray] = None
 
+    def tree_flatten(self):
+        children = (self.coords, self.velocity, self.mass, self.metallicity, self.age)
+        aux_data = {}
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(cls, aux_data, children):
+        return cls(*children)
+
+@partial(jax.tree_util.register_pytree_node_class)
 @dataclass
 class GasData:
-    # GasData class definition here
-    pass
+    # Assuming attributes for GasData, replace with actual attributes
+    coords: Optional[jnp.ndarray] = None
+    velocity: Optional[jnp.ndarray] = None
+    mass: Optional[jnp.ndarray] = None
+    density: Optional[jnp.ndarray] = None
+    internal_energy: Optional[jnp.ndarray] = None
+    metallicity: Optional[jnp.ndarray] = None
+    sfr: Optional[jnp.ndarray] = None
+    electron_abundance: Optional[jnp.ndarray] = None
 
+    def tree_flatten(self):
+        children = (self.coords, self.velocity, self.mass, self.density, self.internal_energy, self.metallicity, self.sfr, self.electron_abundance)
+        aux_data = {}
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(cls, aux_data, children):
+        return cls(*children)
+
+@partial(jax.tree_util.register_pytree_node_class)
 @dataclass
-class RubixData(Particles):
-    """
-    This class is used to store the Rubix data in a structured format.
-    It is constructed in a dynamic way based on the configuration file.
-
-    galaxy:
-        Contains general information about the galaxy
-        redshift, galaxy center, halfmassrad
-    stars:
-        Contains information about the stars
-    gas:
-        Contains information about the gas
-    """
-    def __init__(self, galaxy: Optional[Galaxy] = None, stars: Optional[StarsData] = None, gas: Optional[GasData] = None):
-        self.galaxy = galaxy
-        self.stars = stars
-        self.gas = gas
-
+class RubixData:
     galaxy: Optional[Galaxy] = None
     stars: Optional[StarsData] = None
     gas: Optional[GasData] = None
+
+    def tree_flatten(self):
+        children = (self.galaxy, self.stars, self.gas)
+        aux_data = {}
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(cls, aux_data, children):
+        return cls(*children)
+
 
 
 
@@ -221,9 +205,9 @@ def prepare_input(config: Union[dict, str]) -> object:
     file_path = config["output_path"]  # type:ignore
     file_path = os.path.join(file_path, "rubix_galaxy.h5")
 
-    Galaxy = create_dynamic_dataclass("Galaxy", rubix_config["BaseHandler"]["galaxy"])
-    StarsData = create_dynamic_dataclass("StarsData", rubix_config["BaseHandler"]["particles"]["stars"]) 
-    GasData = create_dynamic_dataclass("GasData", rubix_config["BaseHandler"]["particles"]["gas"])
+    #Galaxy = create_dynamic_dataclass("Galaxy", rubix_config["BaseHandler"]["galaxy"])
+    #StarsData = create_dynamic_dataclass("StarsData", rubix_config["BaseHandler"]["particles"]["stars"]) 
+    #GasData = create_dynamic_dataclass("GasData", rubix_config["BaseHandler"]["particles"]["gas"])
 
     # Load the data from the file
     # TODO: maybe also pass the units here, currently this is not used
@@ -319,15 +303,53 @@ def get_reshape_data(config: Union[dict, str]) -> Callable:
 
     Maps the `reshape_array` function to the input data dictionary.
     """
-
+    """
     def reshape_data(
         input_data: dict,
-        keys=["coords", "velocities", "metallicity", "mass", "age", "pixel_assignment"],
+        keys=["coords", "velocity", "metallicity", "mass", "age", "pixel_assignment"],
     ) -> dict:
         # TODO:Maybe write this more elegantly
         for key in keys:
             input_data[key] = reshape_array(input_data[key])
 
         return input_data
+    """
+    """
+    def reshape_data(rubixdata: object) -> object:
+        # Check if input_data has 'stars' and 'gas' attributes and process them separately
+        if rubixdata.gas.velocity is not None:
+            attributes = [attr for attr in dir(rubixdata.stars) if not attr.startswith('__')]
+            for key in attributes:
+                # Get the attribute value; continue to next key if it's None
+                attr_value = getattr(rubixdata.stars, key)
+                if attr_value is None or not isinstance(attr_value, (jnp.ndarray, np.ndarray)):
+                    continue
+                # Ensure reshape_array is compatible with JAX arrays
+                reshaped_value = reshape_array(attr_value)
+                setattr(rubixdata.stars, key, reshaped_value)
+        
+        if rubixdata.gas.velocity is not None:
+            attributes = [attr for attr in dir(rubixdata.gas) if not attr.startswith('__')]
+            for key in attributes:
+                # Get the attribute value; continue to next key if it's None
+                attr_value = getattr(rubixdata.gas, key)
+                if attr_value is None or not isinstance(attr_value, (jnp.ndarray, np.ndarray)):
+                    continue
+                # Ensure reshape_array is compatible with JAX arrays
+                reshaped_value = reshape_array(attr_value)
+                setattr(rubixdata.gas, key, reshaped_value)
+
+            return rubixdata
+        """
+    def reshape_data(
+        rubixdata: object,
+        keys=["coords", "velocity", "metallicity", "mass", "age", "pixel_assignment"],
+        ) -> object:
+            # TODO:Maybe write this more elegantly
+            for key in keys:
+                attr_value = getattr(rubixdata.stars, key)
+                reshaped_value = reshape_array(attr_value)
+                setattr(rubixdata.stars, key, reshaped_value)
+            return rubixdata
 
     return reshape_data
