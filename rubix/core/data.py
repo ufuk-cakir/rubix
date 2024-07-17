@@ -348,5 +348,4 @@ def get_reshape_data(config: Union[dict, str]) -> Callable:
                 setattr(rubixdata.gas, key, reshaped_value)
 
         return rubixdata
-
     return reshape_data

@@ -62,7 +62,7 @@ def get_spaxel_assignment(config: dict) -> Callable:
             #setattr(rubixdata.gas, "pixel_assignment", pixel_assignment_jax)
             #spatial_bin_edges_jax = jnp.array(spatial_bin_edges)
             #setattr(rubixdata.gas, "spatial_bin_edges", spatial_bin_edges_jax)
-        """
+
         return rubixdata
 
     return spaxel_assignment
