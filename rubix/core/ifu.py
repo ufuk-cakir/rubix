@@ -30,28 +30,13 @@ def get_calculate_spectra(config: dict) -> Callable:
         logger.debug(
             f"Input shapes: Metallicity: {len(rubixdata.stars.metallicity)}, Age: {len(rubixdata.stars.age)}"
         )
-        #print(rubixdata.stars.metallicity)
-        #print(rubixdata.stars.metallicity.shape)
         
-            
         # Ensure metallicity and age are arrays and reshape them to be at least 1-dimensional
         age_data = jax.device_get(rubixdata.stars.age)
         metallicity_data = jax.device_get(rubixdata.stars.metallicity)
-        
         # Ensure they are not scalars or empty; convert to 1D arrays if necessary
         age = jnp.atleast_1d(age_data)
         metallicity = jnp.atleast_1d(metallicity_data)
-
-        # Debugging: Print shapes to verify
-        #print(f"Metallicity shape: {metallicity.shape}, Age shape: {age.shape}")
-
-        # Check if either is still a scalar or empty, which indicates a problem
-        #if metallicity.shape == () or age.shape == ():
-        #    raise ValueError("Metallicity or age is a scalar or empty, which is not expected.")
-        #print(rubixdata.stars.metallicity.shape)
-        #print(f"Metallicity shape before call: {metallicity.shape}, Age shape before call: {age.shape}")
-        #metallicity = rubixdata.stars.metallicity
-        #age = rubixdata.stars.age
 
         spectra = lookup_interpolation_pmap(
             #rubixdata.stars.metallicity, rubixdata.stars.age

@@ -48,7 +48,8 @@ class StarsData:
     datacube: Optional[jnp.ndarray] = None
 
     def tree_flatten(self):
-        children = (self.coords, self.velocity, self.mass, self.metallicity, self.age)
+        children = (self.coords, self.velocity, self.mass, self.metallicity, self.age, self.pixel_assignment,
+                    self.spatial_bin_edges, self.mask, self.spectra, self.datacube)
         aux_data = {}
         return children, aux_data
 
@@ -68,9 +69,15 @@ class GasData:
     metallicity: Optional[jnp.ndarray] = None
     sfr: Optional[jnp.ndarray] = None
     electron_abundance: Optional[jnp.ndarray] = None
+    pixel_assignment: Optional[jnp.ndarray] = None
+    spatial_bin_edges: Optional[jnp.ndarray] = None
+    mask: Optional[jnp.ndarray] = None
+    spectra: Optional[jnp.ndarray] = None
+    datacube: Optional[jnp.ndarray] = None
 
     def tree_flatten(self):
-        children = (self.coords, self.velocity, self.mass, self.density, self.internal_energy, self.metallicity, self.sfr, self.electron_abundance)
+        children = (self.coords, self.velocity, self.mass, self.density, self.internal_energy, self.metallicity, self.sfr, 
+                    self.electron_abundance, self.pixel_assignment, self.spatial_bin_edges, self.mask, self.spectra, self.datacube)
         aux_data = {}
         return children, aux_data
 
@@ -246,8 +253,14 @@ def prepare_input(config: Union[dict, str]) -> object:
                 )  # type:ignore
                     for attribute, value in data["particle_data"]["stars"].items():
                         jax_value = jnp.array(value)
+                        #print("len jax value")
+                        #print(len(jax_value))
+                        #print(jax_value)
                         subset_value = jax_value[indices]
                         setattr(rubixdata.stars, attribute, subset_value)
+                        #print("written jax short array in rubixdata with len")
+                        #print(len(subset_value))
+                        #print(subset_value)
                     logger.warning(
                     f"The Subset value is set in config. Using only subset of size {size} for stars"
                 )
@@ -314,10 +327,10 @@ def get_reshape_data(config: Union[dict, str]) -> Callable:
 
         return input_data
     """
-    """
+   
     def reshape_data(rubixdata: object) -> object:
         # Check if input_data has 'stars' and 'gas' attributes and process them separately
-        if rubixdata.gas.velocity is not None:
+        if rubixdata.stars.velocity is not None:
             attributes = [attr for attr in dir(rubixdata.stars) if not attr.startswith('__')]
             for key in attributes:
                 # Get the attribute value; continue to next key if it's None
@@ -339,8 +352,8 @@ def get_reshape_data(config: Union[dict, str]) -> Callable:
                 reshaped_value = reshape_array(attr_value)
                 setattr(rubixdata.gas, key, reshaped_value)
 
-            return rubixdata
-        """
+        return rubixdata
+    """
     def reshape_data(
         rubixdata: object,
         keys=["coords", "velocity", "metallicity", "mass", "age", "pixel_assignment"],
@@ -351,5 +364,5 @@ def get_reshape_data(config: Union[dict, str]) -> Callable:
                 reshaped_value = reshape_array(attr_value)
                 setattr(rubixdata.stars, key, reshaped_value)
             return rubixdata
-
+     """
     return reshape_data

@@ -141,15 +141,20 @@ class IllustrisHandler(BaseHandler):
     def _get_halfmassrad_stars(self, f):
         halfmass_rad_stars = f["SubhaloData"]["halfmassrad_stars"][()]
         # Get the attributes to convert values from Coordinates field
-        attributes_coords = f["PartType4"]["Coordinates"].attrs
-        """
+        #attributes_coords = f["PartType4"]["Coordinates"].attrs
+        
         present_fields = set(f.keys())
         attributes_coords = None
 
+        #for part_type in present_fields:
+        #        attributes_coords = f[part_type]["Coordinates"].attrs
+        #        break  # Stop after finding the first match
+        
         for part_type in present_fields:
+            if "Coordinates" in f[part_type]:
                 attributes_coords = f[part_type]["Coordinates"].attrs
-                break  # Stop after finding the first match
-        """
+                break  # Found 'Coordinates', stop the loop
+
         #attributes_coords = f[present_fields[0]]["Coordinates"].attrs
         
         # Convert to physical Units
@@ -172,16 +177,21 @@ class IllustrisHandler(BaseHandler):
         center = np.array([pos_x, pos_y, pos_z])
 
         # Get the attributes to convert values from Coordinates field
-        attributes_coords = f["PartType4"]["Coordinates"].attrs
-        """
+        #attributes_coords = f["PartType4"]["Coordinates"].attrs
+        
         present_fields = set(f.keys())
         attributes_coords = None
 
-        for part_type in present_fields:
-                attributes_coords = f[part_type]["Coordinates"].attrs
-                break  # Stop after finding the first match
-        """
+        #for part_type in present_fields:
+        #        attributes_coords = f[part_type]["Coordinates"].attrs
+        #        break  # Stop after finding the first match
         
+        for part_type in present_fields:
+            if "Coordinates" in f[part_type]:
+                attributes_coords = f[part_type]["Coordinates"].attrs
+                break  # Found 'Coordinates', stop the loop
+
+
         #attributes_coords = f[present_fields[0]]["Coordinates"].attrs
 
         # Convert to physical Units

@@ -45,17 +45,17 @@ def get_spaxel_assignment(config: dict) -> Callable:
     spatial_bin_edges = get_spatial_bin_edges(config)
 
     def spaxel_assignment(rubixdata: object) -> object:
-        #if rubixdata.stars.coords is not None:
-        pixel_assignment = square_spaxel_assignment(
-            rubixdata.stars.coords, spatial_bin_edges
-        )
-        rubixdata.stars.pixel_assignment = pixel_assignment
-        rubixdata.stars.spatial_bin_edges = spatial_bin_edges
+        if rubixdata.stars.coords is not None:
+            pixel_assignment = square_spaxel_assignment(
+                rubixdata.stars.coords, spatial_bin_edges
+            )
+            rubixdata.stars.pixel_assignment = pixel_assignment
+            rubixdata.stars.spatial_bin_edges = spatial_bin_edges
         #pixel_assignment_jax = jnp.array(pixel_assignment)
         #setattr(rubixdata.stars, "pixel_assignment", pixel_assignment_jax)
         #spatial_bin_edges_jax = jnp.array(spatial_bin_edges)
         #setattr(rubixdata.stars, "spatial_bin_edges", spatial_bin_edges_jax)
-        """
+
         if rubixdata.gas.coords is not None:
             pixel_assignment = square_spaxel_assignment(
                 rubixdata.gas.coords, spatial_bin_edges
@@ -66,7 +66,7 @@ def get_spaxel_assignment(config: dict) -> Callable:
             #setattr(rubixdata.gas, "pixel_assignment", pixel_assignment_jax)
             #spatial_bin_edges_jax = jnp.array(spatial_bin_edges)
             #setattr(rubixdata.gas, "spatial_bin_edges", spatial_bin_edges_jax)
-        """
+
         return rubixdata
 
     return spaxel_assignment
@@ -77,35 +77,36 @@ def get_filter_particles(config: dict):
     spatial_bin_edges = get_spatial_bin_edges(config)
 
     def filter_particles(rubixdata: object) -> object:
-        #if "stars" in config["data"]["args"]["particle_type"]:
-        mask = mask_particles_outside_aperture(rubixdata.stars.coords, spatial_bin_edges)
+        if "stars" in config["data"]["args"]["particle_type"]:
+        #if rubixdata.stars.coords is not None:
+            mask = mask_particles_outside_aperture(rubixdata.stars.coords, spatial_bin_edges)
 
-        # input_data["coords"] = input_data["coords"][mask]
-        # input_data["velocities"] = input_data["velocities"][mask]
-        #input_data["mass"] = jnp.where(mask, input_data["mass"], 0)
-        #input_data["age"] = jnp.where(mask, input_data["age"], 0)
-        #input_data["metallicity"] = jnp.where(mask, input_data["metallicity"], 0)
-        #attributes = [attr for attr in dir(rubixdata.stars) if not attr.startswith('__') and attr not in ('coords', 'velocity')]
-        #for attr in attributes:
-        #    rubixdata.stars.__setattr__(attr, jnp.where(mask, rubixdata.stars.__getattribute__(attr), 0))
-        #rubixdata.stars.mask = mask
-            # Exclude methods by checking if the attribute is callable
+            # input_data["coords"] = input_data["coords"][mask]
+            # input_data["velocities"] = input_data["velocities"][mask]
+            #input_data["mass"] = jnp.where(mask, input_data["mass"], 0)
+            #input_data["age"] = jnp.where(mask, input_data["age"], 0)
+            #input_data["metallicity"] = jnp.where(mask, input_data["metallicity"], 0)
+            #attributes = [attr for attr in dir(rubixdata.stars) if not attr.startswith('__') and attr not in ('coords', 'velocity')]
+            #for attr in attributes:
+            #    rubixdata.stars.__setattr__(attr, jnp.where(mask, rubixdata.stars.__getattribute__(attr), 0))
+            #rubixdata.stars.mask = mask
+                # Exclude methods by checking if the attribute is callable
+            
+            attributes = [attr for attr in dir(rubixdata.stars) if not attr.startswith('__') and not callable(getattr(rubixdata.stars, attr)) and attr not in ('coords', 'velocity')]
+            for attr in attributes:
+                current_attr_value = getattr(rubixdata.stars, attr)
+                # Apply mask only if current_attr_value is an ndarray
+                if isinstance(current_attr_value, jnp.ndarray):
+                    setattr(rubixdata.stars, attr, jnp.where(mask, current_attr_value, 0))
+            mask_jax = jnp.array(mask)
+            setattr(rubixdata.stars, "mask", mask_jax)
+            #rubixdata.stars.mask = mask
+
         
-        attributes = [attr for attr in dir(rubixdata.stars) if not attr.startswith('__') and not callable(getattr(rubixdata.stars, attr)) and attr not in ('coords', 'velocity')]
-        for attr in attributes:
-            current_attr_value = getattr(rubixdata.stars, attr)
-            # Apply mask only if current_attr_value is an ndarray
-            if isinstance(current_attr_value, jnp.ndarray):
-                setattr(rubixdata.stars, attr, jnp.where(mask, current_attr_value, 0))
-        mask_jax = jnp.array(mask)
-        setattr(rubixdata.stars, "mask", mask_jax)
-        #rubixdata.stars.mask = mask
-
-        """
         if "gas" in config["data"]["args"]["particle_type"]:
             mask = mask_particles_outside_aperture(rubixdata.gas.coords, spatial_bin_edges)
 
-            attributes = [attr for attr in dir(rubixdata.gas) if not attr.startswith('__') and not callable(getattr(rubixdata.stars, attr)) and attr not in ('coords', 'velocity')]
+            attributes = [attr for attr in dir(rubixdata.gas) if not attr.startswith('__') and not callable(getattr(rubixdata.gas, attr)) and attr not in ('coords', 'velocity')]
             for attr in attributes:
                 current_attr_value = getattr(rubixdata.gas, attr)
                 if isinstance(current_attr_value, jnp.ndarray):
@@ -114,7 +115,7 @@ def get_filter_particles(config: dict):
             mask_jax = jnp.array(mask)
             setattr(rubixdata.gas, "mask", mask_jax)
             #rubixdata.gas.mask = mask
-        """
+
         return rubixdata
 
     return filter_particles
