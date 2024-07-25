@@ -123,7 +123,7 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
     doppler_shift = get_velocities_doppler_shift_vmap(ssp_wave, velocity_direction)
 
     def doppler_shift_and_resampling(rubixdata: object) -> object:
-        if rubixdata.stars.velocity is not None:
+        if rubixdata.stars.spectra is not None:
             # Doppler shift the SSP Wavelengths based on the velocity of the stars
             doppler_shifted_ssp_wave = doppler_shift(rubixdata.stars.velocity)
             logger.info("Doppler shifting and resampling stellar spectra...")
@@ -140,7 +140,7 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
             setattr(rubixdata.stars, "spectra", spectrum_resampled)
             # jax.debug.print("doppler shift and resampl: Spectra {}", inputs["spectra"])
 
-        if rubixdata.gas.velocity is not None:
+        if rubixdata.gas.spectra is not None:
             # Doppler shift the SSP Wavelengths based on the velocity of the gas particles
             doppler_shifted_ssp_wave = doppler_shift(rubixdata.gas.velocity)
             logger.info("Doppler shifting and resampling gas spectra...")
