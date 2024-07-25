@@ -8,3 +8,25 @@ MUSE:
   wave_centre: 6975.775
   aperture_type: "square"
   pixel_type: "square"
+
+NIRSpec_G235H_F170LP:
+  fov: 3.0
+  spatial_res: 0.1
+  wave_range: [16600,31500]
+  wave_res: 10
+  lsf_fwhm: 2.3548*4.0
+  signal_to_noise: null
+  wave_centre: 24050
+  aperture_type: "square"
+  pixel_type: "square"
+
+NIRSpec_G395H_F290LP:
+  fov: 3.0
+  spatial_res: 0.1
+  wave_range: [28700,51400]
+  wave_res: 10
+  lsf_fwhm: 2.3548*6.7
+  signal_to_noise: null
+  wave_centre: 40050
+  aperture_type: "square"
+  pixel_type: "square"
