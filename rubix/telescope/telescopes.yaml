@@ -30,3 +30,59 @@ NIRSpec_G395H_F290LP:
   wave_centre: 40050
   aperture_type: "square"
   pixel_type: "square"
+
+MaNGA_12:
+  fov: 12
+  spatial_res: 0.5
+  wave_range: [3622,10354]
+  wave_res: 1.04
+  lsf_fwhm: 2.85
+  signal_to_noise: null
+  wave_centre: 4700
+  aperture_type: "hexagonal"
+  pixel_type: "square"
+
+MaNGA_32:
+  fov: 32
+  spatial_res: 0.5
+  wave_range: [3622,10354]
+  wave_res: 1.04
+  lsf_fwhm: 2.85
+  signal_to_noise: null
+  wave_centre: 4700
+  aperture_type: "hexagonal"
+  pixel_type: "square"
+
+SAMI:
+  fov: 15
+  spatial_res: 0.5
+  wave_range: [3750,5750]
+  wave_res: 1.04
+  lsf_fwhm: 2.65
+  signal_to_noise: null
+  wave_centre: 4800
+  aperture_type: "circular"
+  pixel_type: "square"
+
+HECTOR:
+  fov: 30
+  spatial_res: 0.1
+  wave_range: [3720,5910]
+  wave_res: 1.6
+  lsf_fwhm: 1.3
+  signal_to_noise: null
+  wave_centre: 4815
+  aperture_type: "hexagonal"
+  pixel_type: "square"
+
+CALIFA:
+  fov: 74
+  spatial_res: 1.0
+  wave_range: [3700,4750]
+  wave_res: 2.7
+  lsf_fwhm: 2.7
+  signal_to_noise: null
+  wave_centre: 4225
+  aperture_type: "hexagonal"
+  pixel_type: "square"
+  
