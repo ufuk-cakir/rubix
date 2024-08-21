@@ -9,7 +9,7 @@ class BaseTelescope(eqx.Module):
     wave_res: float
     lsf_fwhm: float
     signal_to_noise: float
-    wave_centre: float
+    #wave_centre: float
     sbin: int
     aperture_region: Float[Array, " sbin*sbin"]
     pixel_type: str
