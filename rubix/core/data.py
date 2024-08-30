@@ -261,24 +261,41 @@ def prepare_input(config: Union[dict, str]) -> object:
             logger.info(f"Centering {partType} particles")
             rubixdata = center_particles(rubixdata, partType)
 
-            # Subset the attributes
-            for attribute in data["particle_data"][partType].keys():
-                attr_value = getattr(getattr(rubixdata, partType), attribute)
-                if attr_value.ndim == 2:  # For attributes with shape (N, 3)
-                    setattr(
-                        getattr(rubixdata, partType),
-                        attribute,
-                        attr_value[jax_indices, :],
-                    )
-                else:  # For attributes with shape (N,)
-                    setattr(
-                        getattr(rubixdata, partType), attribute, attr_value[jax_indices]
-                    )
+            if "data" in config:
+                if "subset" in config["data"]:  # type:ignore
+                    if config["data"]["subset"]["use_subset"]:  # type:ignore
+                        size = config["data"]["subset"]["subset_size"]  # type:ignore
+                        # Randomly sample indices
+                        # Set random seed for reproducibility
+                        np.random.seed(42)
+                        indices = np.random.choice(
+                            np.arange(len(rubixdata.stars.coords)),
+                            size=size,  # type:ignore
+                            replace=False,
+                        )  # type:ignore
+                        # Subset the attributes
+                        jax_indices = jnp.array(indices)
+                        for attribute in data["particle_data"][partType].keys():
+                            attr_value = getattr(
+                                getattr(rubixdata, partType), attribute
+                            )
+                            if attr_value.ndim == 2:  # For attributes with shape (N, 3)
+                                setattr(
+                                    getattr(rubixdata, partType),
+                                    attribute,
+                                    attr_value[jax_indices, :],
+                                )
+                            else:  # For attributes with shape (N,)
+                                setattr(
+                                    getattr(rubixdata, partType),
+                                    attribute,
+                                    attr_value[jax_indices],
+                                )
 
-            # Log the subset warning
-            logger.warning(
-                f"The Subset value is set in config. Using only subset of size {size} for {partType}"
-            )
+                        # Log the subset warning
+                        logger.warning(
+                            f"The Subset value is set in config. Using only subset of size {size} for {partType}"
+                        )
 
     """
     if "stars" in config["data"]["args"]["particle_type"]:
