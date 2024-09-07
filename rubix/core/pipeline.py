@@ -17,7 +17,7 @@ from .ifu import (
 )
 from .rotation import get_galaxy_rotation
 from .ssp import get_ssp
-from .telescope import get_spaxel_assignment, get_telescope
+from .telescope import get_spaxel_assignment, get_telescope, get_filter_particles
 from .psf import get_convolve_psf
 from .lsf import get_convolve_lsf
 from .noise import get_apply_noise
@@ -119,6 +119,7 @@ class RubixPipeline:
 
         # TODO: maybe there is a nicer way to load the functions from the yaml config?
         rotate_galaxy = get_galaxy_rotation(self.user_config)
+        filter_particles = get_filter_particles(self.user_config)
         spaxel_assignment = get_spaxel_assignment(self.user_config)
         calculate_spectra = get_calculate_spectra(self.user_config)
         reshape_data = get_reshape_data(self.user_config)
@@ -133,6 +134,7 @@ class RubixPipeline:
 
         functions = [
             rotate_galaxy,
+            filter_particles,
             spaxel_assignment,
             calculate_spectra,
             reshape_data,

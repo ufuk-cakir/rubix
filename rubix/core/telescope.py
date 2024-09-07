@@ -1,15 +1,14 @@
-import jax
+import jax.numpy as jnp
 from jaxtyping import Float, Array
-from rubix.cosmology import RubixCosmology
 from rubix.telescope.utils import (
     calculate_spatial_bin_edges,
     square_spaxel_assignment,
-    filter_particles_outside_aperture,
+    mask_particles_outside_aperture,
 )
 from rubix.telescope.base import BaseTelescope
 from rubix.telescope.factory import TelescopeFactory
 from .cosmology import get_cosmology
-from typing import Tuple, Callable
+from typing import Callable
 
 
 def get_telescope(config: dict) -> BaseTelescope:
@@ -56,25 +55,22 @@ def get_spaxel_assignment(config: dict) -> Callable:
     return spaxel_assignment
 
 
-# Not used, leaving here as reference for now
-# def get_filter_particles(config: dict):
-#     """Get the function to filter particles outside the aperture."""
-#     spatial_bin_edges = get_spatial_bin_edges(config)
-#
-#     def filter_particles(input_data: dict):
-#         mask = filter_particles_outside_aperture(
-#             input_data["coords"], spatial_bin_edges
-#         )
-#
-#         input_data["coords"] = input_data["coords"][mask]
-#         input_data["velocities"] = input_data["velocities"][mask]
-#         input_data["masses"] = input_data["masses"][mask]
-#         input_data["age"] = input_data["age"][mask]
-#         input_data["metallicity"] = input_data["metallicity"][mask]
-#
-#         return input_data
-#
-#     return filter_particles
+def get_filter_particles(config: dict):
+    """Get the function to filter particles outside the aperture."""
+    spatial_bin_edges = get_spatial_bin_edges(config)
+
+    def filter_particles(input_data: dict):
+        mask = mask_particles_outside_aperture(input_data["coords"], spatial_bin_edges)
+
+        # input_data["coords"] = input_data["coords"][mask]
+        # input_data["velocities"] = input_data["velocities"][mask]
+        input_data["mass"] = jnp.where(mask, input_data["mass"], 0)
+        input_data["age"] = jnp.where(mask, input_data["age"], 0)
+        input_data["metallicity"] = jnp.where(mask, input_data["metallicity"], 0)
+
+        return input_data
+
+    return filter_particles
 
 
 # def get_split_data(config: dict, n_particles) -> Callable:
