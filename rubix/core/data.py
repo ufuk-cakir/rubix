@@ -14,7 +14,7 @@ from rubix.logger import get_logger
 from rubix.utils import load_galaxy_data, read_yaml
 from rubix import config as rubix_config
 
-
+"""
 # Registering the dataclass with JAX for automatic tree traversal
 @partial(jax.tree_util.register_pytree_node_class)
 @dataclass
@@ -126,6 +126,42 @@ class RubixData:
     @classmethod
     def tree_unflatten(cls, aux_data, children):
         return cls(*children)
+"""
+
+
+class RubixData:
+    def __init__(self, galaxy, stars, gas):
+        self.galaxy = galaxy
+        self.stars = stars
+        self.gas = gas
+
+
+class Galaxy:
+    def __init__(self):
+        self.redshift = None
+        self.center = None
+        self.halfmassrad_stars = None
+
+
+class StarsData:
+    def __init__(self):
+        self.coords = None
+        self.velocity = None
+        self.metallicity = None
+        self.mass = None
+        self.age = None
+
+
+class GasData:
+    def __init__(self):
+        self.coords = None
+        self.velocity = None
+        self.mass = None
+        self.density = None
+        self.internal_energy = None
+        self.metallicity = None
+        self.sfr = None
+        self.electron_abundance = None
 
 
 def convert_to_rubix(config: Union[dict, str]):
@@ -223,7 +259,7 @@ def reshape_array(
 
 
 def prepare_input(config: Union[dict, str]) -> object:
-    print(config)
+    # print(config)
 
     logger_config = config["logger"] if "logger" in config else None  # type:ignore
     logger = get_logger(logger_config)
@@ -232,9 +268,6 @@ def prepare_input(config: Union[dict, str]) -> object:
 
     # Load the data from the file
     data, units = load_galaxy_data(file_path)
-
-    file_path = config["output_path"]  # type:ignore
-    file_path = os.path.join(file_path, "rubix_galaxy.h5")
 
     # Galaxy = create_dynamic_dataclass("Galaxy", rubix_config["BaseHandler"]["galaxy"])
     # StarsData = create_dynamic_dataclass("StarsData", rubix_config["BaseHandler"]["particles"]["stars"])
