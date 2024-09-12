@@ -14,7 +14,7 @@ from rubix.logger import get_logger
 from rubix.utils import load_galaxy_data, read_yaml
 from rubix import config as rubix_config
 
-"""
+
 # Registering the dataclass with JAX for automatic tree traversal
 @partial(jax.tree_util.register_pytree_node_class)
 @dataclass
@@ -126,9 +126,9 @@ class RubixData:
     @classmethod
     def tree_unflatten(cls, aux_data, children):
         return cls(*children)
+
+
 """
-
-
 class RubixData:
     def __init__(self, galaxy, stars, gas):
         self.galaxy = galaxy
@@ -162,6 +162,7 @@ class GasData:
         self.metallicity = None
         self.sfr = None
         self.electron_abundance = None
+"""
 
 
 def convert_to_rubix(config: Union[dict, str]):
@@ -301,11 +302,18 @@ def prepare_input(config: Union[dict, str]) -> object:
                         # Randomly sample indices
                         # Set random seed for reproducibility
                         np.random.seed(42)
-                        indices = np.random.choice(
-                            np.arange(len(rubixdata.stars.coords)),
-                            size=size,  # type:ignore
-                            replace=False,
-                        )  # type:ignore
+                        if rubixdata.stars.coords is not None:
+                            indices = np.random.choice(
+                                np.arange(len(rubixdata.stars.coords)),
+                                size=size,  # type:ignore
+                                replace=False,
+                            )  # type:ignore
+                        else:
+                            indices = np.random.choice(
+                                np.arange(len(rubixdata.gas.coords)),
+                                size=size,  # type:ignore
+                                replace=False,
+                            )
                         # Subset the attributes
                         jax_indices = jnp.array(indices)
                         for attribute in data["particle_data"][partType].keys():

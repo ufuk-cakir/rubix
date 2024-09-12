@@ -362,17 +362,16 @@ def test_get_reshape_data(mock_reshape_array):
         MockGasData(velocity=None),
     )
 
-    mock_reshape_array.side_effect = lambda x: (
-        reshaped_data.stars.__dict__[
-            [k for k, v in input_data.stars.__dict__.items() if jnp.array_equal(v, x)][
-                0
-            ]
-        ]
-        if x in input_data.stars.__dict__.values()
-        else reshaped_data.gas.__dict__[
-            [k for k, v in input_data.gas.__dict__.items() if jnp.array_equal(v, x)][0]
-        ]
-    )
+    def side_effect(x):
+        for k, v in input_data.stars.__dict__.items():
+            if jnp.array_equal(v, x):
+                return reshaped_data.stars.__dict__[k]
+        for k, v in input_data.gas.__dict__.items():
+            if jnp.array_equal(v, x):
+                return reshaped_data.gas.__dict__[k]
+        return None
+
+    mock_reshape_array.side_effect = side_effect
 
     result = reshape_func(input_data)
 
