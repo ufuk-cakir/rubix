@@ -65,13 +65,56 @@ class IllustrisHandler(BaseHandler):
         extra_fields = present_fields - expected_fields
 
         if not matching_fields:
-            raise ValueError(f"No expected fields found in the file. Expected at least one of: {self.ILLUSTRIS_DATA}")
-        
-        if extra_fields:
-            raise ValueError(f"Unexpected fields found in the file: {extra_fields}")
+            raise ValueError(
+                f"No expected fields found in the file. Expected at least one of: {self.ILLUSTRIS_DATA}"
+            )
+
+        for field in extra_fields:
+            if field.startswith("PartType"):
+                raise NotImplementedError(
+                    f"Unsupported particle type found in the file: {field}"
+                )
+            else:
+                raise ValueError(f"Unexpected fields found in the file: {extra_fields}")
 
         self._logger.debug(f"Matching fields: {matching_fields}")
 
+    def _check_particle_data(self, particle_data, units):
+        self._logger.debug("Checking if the fields are present in the particle data...")
+        self._logger.debug(f"Keys in the particle data: {particle_data.keys()}")
+        self._logger.debug(f"Expected fields: {self.MAPPED_PARTICLE_KEYS}")
+
+        present_fields = set(particle_data.keys())
+        expected_fields = set(self.MAPPED_PARTICLE_KEYS.keys())
+
+        matching_fields = present_fields.intersection(expected_fields)
+        extra_fields = present_fields - expected_fields
+
+        if not matching_fields:
+            raise ValueError(
+                f"No expected fields found in the particle data. Expected at least one of: {self.MAPPED_PARTICLE_KEYS.keys()}"
+            )
+
+        for field in extra_fields:
+            if field.startswith("PartType"):
+                raise NotImplementedError(
+                    f"Unsupported particle type found in the particle data: {field}"
+                )
+            else:
+                raise ValueError(
+                    f"Unexpected fields found in the particle data: {extra_fields}"
+                )
+
+        self._logger.debug(f"Matching fields: {matching_fields}")
+
+        # Check for missing fields within each present particle type
+        for particle_type, fields in self.MAPPED_PARTICLE_KEYS.items():
+            if particle_type in particle_data:
+                for field in fields:
+                    if field not in particle_data[particle_type]:
+                        raise ValueError(
+                            f"Missing field {field} in particle data for particle type {particle_type}"
+                        )
 
     def _load_data(self):
         # open the file
@@ -104,6 +147,8 @@ class IllustrisHandler(BaseHandler):
 
     def _get_data_from_header(self, f):
         # Check if the file has the required fields
+        if "Header" not in f:
+            raise ValueError("Header is missing from the HDF5 file")
         if "Time" not in f["Header"].attrs:
             raise ValueError("Time not found in the header attributes")
         if "HubbleParam" not in f["Header"].attrs:
@@ -141,22 +186,22 @@ class IllustrisHandler(BaseHandler):
     def _get_halfmassrad_stars(self, f):
         halfmass_rad_stars = f["SubhaloData"]["halfmassrad_stars"][()]
         # Get the attributes to convert values from Coordinates field
-        #attributes_coords = f["PartType4"]["Coordinates"].attrs
-        
+        # attributes_coords = f["PartType4"]["Coordinates"].attrs
+
         present_fields = set(f.keys())
         attributes_coords = None
 
-        #for part_type in present_fields:
+        # for part_type in present_fields:
         #        attributes_coords = f[part_type]["Coordinates"].attrs
         #        break  # Stop after finding the first match
-        
+
         for part_type in present_fields:
             if "Coordinates" in f[part_type]:
                 attributes_coords = f[part_type]["Coordinates"].attrs
                 break  # Found 'Coordinates', stop the loop
 
-        #attributes_coords = f[present_fields[0]]["Coordinates"].attrs
-        
+        # attributes_coords = f[present_fields[0]]["Coordinates"].attrs
+
         # Convert to physical Units
         halfmass_rad_stars = convert_values_to_physical(
             halfmass_rad_stars,
@@ -168,7 +213,6 @@ class IllustrisHandler(BaseHandler):
         )
         return halfmass_rad_stars
 
-
     def _get_center(self, f):
         pos_x = f["SubhaloData"]["pos_x"][()]
         pos_y = f["SubhaloData"]["pos_y"][()]
@@ -177,22 +221,21 @@ class IllustrisHandler(BaseHandler):
         center = np.array([pos_x, pos_y, pos_z])
 
         # Get the attributes to convert values from Coordinates field
-        #attributes_coords = f["PartType4"]["Coordinates"].attrs
-        
+        # attributes_coords = f["PartType4"]["Coordinates"].attrs
+
         present_fields = set(f.keys())
         attributes_coords = None
 
-        #for part_type in present_fields:
+        # for part_type in present_fields:
         #        attributes_coords = f[part_type]["Coordinates"].attrs
         #        break  # Stop after finding the first match
-        
+
         for part_type in present_fields:
             if "Coordinates" in f[part_type]:
                 attributes_coords = f[part_type]["Coordinates"].attrs
                 break  # Found 'Coordinates', stop the loop
 
-
-        #attributes_coords = f[present_fields[0]]["Coordinates"].attrs
+        # attributes_coords = f[present_fields[0]]["Coordinates"].attrs
 
         # Convert to physical Units
         center = convert_values_to_physical(
