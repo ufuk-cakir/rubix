@@ -85,16 +85,15 @@ class IllustrisHandler(BaseHandler):
         self._logger.debug(f"Expected fields: {self.MAPPED_PARTICLE_KEYS}")
 
         present_fields = set(particle_data.keys())
-        expected_fields = set(self.MAPPED_PARTICLE_KEYS.keys())
+        expected_fields = set(self.MAPPED_PARTICLE_KEYS.values())
 
         matching_fields = present_fields.intersection(expected_fields)
         extra_fields = present_fields - expected_fields
 
         if not matching_fields:
             raise ValueError(
-                f"No expected fields found in the particle data. Expected at least one of: {self.MAPPED_PARTICLE_KEYS.keys()}"
+                f"No expected fields found in the particle data. Expected at least one of: {list(expected_fields)}"
             )
-
         for field in extra_fields:
             if field.startswith("PartType"):
                 raise NotImplementedError(
@@ -108,10 +107,17 @@ class IllustrisHandler(BaseHandler):
         self._logger.debug(f"Matching fields: {matching_fields}")
 
         # Check for missing fields within each present particle type
-        for particle_type, fields in self.MAPPED_PARTICLE_KEYS.items():
-            if particle_type in particle_data:
-                for field in fields:
-                    if field not in particle_data[particle_type]:
+        for particle_type, mapped_name in self.MAPPED_PARTICLE_KEYS.items():
+            if mapped_name in particle_data:
+                required_fields = list(self.MAPPED_FIELDS[particle_type].values())
+                self._logger.debug(
+                    f"Required fields for {mapped_name}: {required_fields}"
+                )
+                self._logger.debug(
+                    f"Available fields in particle_data[{mapped_name}]: {list(particle_data[mapped_name].keys())}"
+                )
+                for field in required_fields:
+                    if field not in particle_data[mapped_name]:
                         raise ValueError(
                             f"Missing field {field} in particle data for particle type {particle_type}"
                         )

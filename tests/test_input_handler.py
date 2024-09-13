@@ -5,6 +5,20 @@ from rubix import config
 
 
 class ConcreteInputHandler(BaseHandler):
+
+    MAPPED_FIELDS = {
+        "PartType4": {
+            "Coordinates": "coords",
+            "Masses": "mass",
+            "Metallicity": "metallicity",
+            "Velocities": "velocity",
+            "Age": "age",
+        },
+    }
+    MAPPED_PARTICLE_KEYS = {
+        "PartType4": "stars",
+    }
+
     def get_particle_data(self):
         # Mock particle data that satisfies the requirements
         return {
@@ -162,7 +176,7 @@ def test_missing_particle_field_error(input_handler):
         particle_data = input_handler.get_particle_data()
         del particle_data["stars"]["coords"]
         input_handler._check_particle_data(particle_data, input_handler.get_units())
-    assert "None of the expected particle types found in particle data" in str(
+    assert "Missing field coords in particle data for particle type PartType4" in str(
         excinfo.value
     )
 
