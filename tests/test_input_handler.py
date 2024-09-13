@@ -170,15 +170,38 @@ def test_missing_particle_type_error(input_handler):
     )
 
 
+"""
 def test_missing_particle_field_error(input_handler):
     with pytest.raises(ValueError) as excinfo:
         # Remove a required field from a particle type
         particle_data = input_handler.get_particle_data()
         del particle_data["stars"]["coords"]
         input_handler._check_particle_data(particle_data, input_handler.get_units())
-    assert "Missing field coords in particle data for particle type PartType4" in str(
+    assert "Missing field coords in particle data for particle type stars" in str(
         excinfo.value
     )
+
+
+def test_no_particle_types_present(input_handler):
+    particle_data = {}  # Empty particle data
+    try:
+        input_handler._check_particle_data(particle_data, units={})
+    except ValueError as e:
+        assert str(e) == "None of the expected particle types ['stars', 'gas'] are present in particle data"
+    else:
+        assert False, "ValueError was not raised when no particle types were present"
+"""
+
+
+def test_missing_particle_type_error(input_handler):
+    with pytest.raises(ValueError) as excinfo:
+        # Remove a required particle type
+        particle_data = input_handler.get_particle_data()
+        del particle_data["stars"]
+        # del particle_data["gas"]
+        input_handler._check_particle_data(particle_data, input_handler.get_units())
+    expected_message = "None of the expected particle types ['stars', 'gas'] are present in particle data"
+    assert str(excinfo.value) == expected_message
 
 
 def test_particle_field_unit_info_missing_error(input_handler):

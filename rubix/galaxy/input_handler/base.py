@@ -129,18 +129,53 @@ class BaseHandler(ABC):
             if field not in units["galaxy"]:
                 raise ValueError(f"Units for {field} not found in units")
 
+    """
     def _check_particle_data(self, particle_data, units):
-        # Check if any required fields are present
-        if not any(key in particle_data for key in self.config["particles"]):
-            raise ValueError(
-                "None of the expected particle types found in particle data"
-            )
-        # Check if the units are correct
-        for key, fields in particle_data.items():
-            # Use .get() to avoid KeyError if key is not in units
-            unit_fields = units.get(key, {})
-            for field in fields:
-                if field not in unit_fields:
+        # Check if all required fields are present
+        for key in self.config["particles"]:
+            if key not in particle_data:
+                raise ValueError(f"Missing particle type {key} in particle data")
+            for field in self.config["particles"][key]:
+                if field not in particle_data[key]:
                     raise ValueError(
-                        f"Units for {field} not found in units for particle type {key}"
+                        f"Missing field {field} in particle data for particle type {key}"
+                    )
+
+        # Check if the units are correct
+        for key in particle_data:
+            for field in particle_data[key]:
+                if field not in units[key]:
+                    raise ValueError(f"Units for {field} not found in units")
+    """
+
+    def _check_particle_data(self, particle_data, units):
+        # Get the list of expected particle types from the configuration
+        expected_particle_types = list(self.config["particles"].keys())
+
+        # Find the particle types that are actually present in the particle data
+        present_particle_types = [
+            key for key in expected_particle_types if key in particle_data
+        ]
+
+        # If none of the expected particle types are present, raise a ValueError
+        if not present_particle_types:
+            raise ValueError(
+                f"None of the expected particle types {expected_particle_types} are present in particle data"
+            )
+
+        # For each particle type that is present, check that all required fields are present
+        for particle_type in present_particle_types:
+            required_fields = self.config["particles"][particle_type]
+            for field in required_fields:
+                if field not in particle_data[particle_type]:
+                    raise ValueError(
+                        f"Missing field {field} in particle data for particle type {particle_type}"
+                    )
+
+            # Now check if units are specified for all fields in particle_data[particle_type]
+            particle_units = units.get(particle_type, {})
+            for field in particle_data[particle_type]:
+                if field not in particle_units:
+                    raise ValueError(
+                        f"Units for {field} not found in units for particle type {particle_type}"
                     )
