@@ -226,8 +226,37 @@ ssp:
           units: 'Lsun/Angstrom' # Luminosity of the template as per pyFSPS documentation
           in_log: false # If the field is stored in log scale
 
+cloudy:
+  units:
+    redshift: ""
+    metallicity: ""
+    density: "cm^-3"
+    temperature: "K"
+  templates:
+    UVBplusCMB:
+      name: "UVB + CMB"
+      format: "DAT"
+      source: "Justin and Aura"
+      file_name: "UVB_plus_CMB_strongUV_line_emissivities.dat"
+      fields:
+        redshift:
+          name: "redshift"
+          units: ""
+          in_log: false
+        metallicity:
+          name: "metallicity"
+          units: ""
+          in_log: true
+        density:
+          name: "density"
+          units: "cm^-3"
+          in_log: true
+        temperature:
+          name: "temperature"
+          units: "K"
+          in_log: true
+
 ifu:
   # Configuration Related to IFU calculation
   doppler:
     velocity_direction: "y" # The velocity component used to calculate doppler shift
-
