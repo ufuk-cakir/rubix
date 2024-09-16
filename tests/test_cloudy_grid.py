@@ -271,9 +271,7 @@ def test_dispersionfactor(mock_cloudy_gas_lookup, mock_rubixdata):
 
 def test_gaussian():
     # Create an instance of the class containing the gaussian method
-    instance = CloudyGasLookup.__new__(
-        CloudyGasLookup
-    )  # Replace with the actual class name
+    instance = CloudyGasLookup.__new__(CloudyGasLookup)
     x = jnp.array([0.0, 1.0, 2.0])
     a = 1.0
     b = 1.0
@@ -287,9 +285,8 @@ def test_gaussian():
 
 def test_get_wavelengthrange():
     # Create an instance of the class containing the get_wavelengthrange method
-    instance = CloudyGasLookup.__new__(
-        CloudyGasLookup
-    )  # Replace with the actual class name
+    instance = CloudyGasLookup.__new__(CloudyGasLookup)
+    instance.line_names = ["O  6 400.00A", "MG 2 500.00A", "MG 2 700.00A"]
     instance.get_wavelengths = lambda: jnp.array([400, 700])
 
     steps = 4000
@@ -306,20 +303,19 @@ def test_get_wavelengthrange():
         output, expected_wavelengthrange
     ), f"Expected {expected_wavelengthrange}, but got {output}"
 
-    def test_get_spectra(mock_cloudy_gas_lookup, mock_rubixdata):
-        # Call the get_spectra function
-        result = mock_cloudy_gas_lookup.get_spectra(mock_rubixdata)
 
-        # Check that the spectra and wavelengthrange are not None
-        assert result.gas.spectra is not None
-        assert result.gas.wavelengthrange is not None
+def test_get_spectra(mock_cloudy_gas_lookup, mock_rubixdata):
+    # Call the get_spectra function
+    result = mock_cloudy_gas_lookup.get_spectra(mock_rubixdata)
 
-        # Check the shape of the spectra
-        assert len(result.gas.spectra) == len(mock_rubixdata.gas.luminosity)
-        assert result.gas.spectra[0].shape == (4000,)
+    # Check that the spectra and wavelengthrange are not None
+    assert result.gas.spectra is not None
+    assert result.gas.wavelengthrange is not None
 
-        # Check that the sum of the spectrum is larger than 0
-        for spectrum in result.gas.spectra:
-            assert (
-                jnp.sum(spectrum) > 0
-            ), "The sum of the spectrum should be larger than 0"
+    # Check the shape of the spectra
+    assert len(result.gas.spectra) == len(mock_rubixdata.gas.luminosity)
+    assert result.gas.spectra[0].shape == (4000,)
+
+    # Check that the sum of the spectrum is larger than 0
+    for spectrum in result.gas.spectra:
+        assert jnp.sum(spectrum) > 0, "The sum of the spectrum should be larger than 0"

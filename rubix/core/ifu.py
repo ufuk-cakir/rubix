@@ -54,18 +54,27 @@ def get_calculate_spectra(config: dict) -> Callable:
 
 
 def get_scale_spectrum_by_mass(config: dict) -> Callable:
-    """Returns a function that scales the spectra by the mass of the stars"""
+    """Returns a function that scales the spectra by the mass of the stars or gas or both"""
 
     logger = get_logger(config.get("logger", None))
 
     def scale_spectrum_by_mass(rubixdata: object) -> object:
-
         logger.info("Scaling Spectra by Mass...")
-        mass = jnp.expand_dims(rubixdata.stars.mass, axis=-1)
-        # rubixdata.stars.spectra = rubixdata.stars.spectra * mass
-        spectra_mass = rubixdata.stars.spectra * mass
-        setattr(rubixdata.stars, "spectra", spectra_mass)
-        # jax.debug.print("mass mult: Spectra {}", inputs["spectra"])
+
+        cube_type = config["data"]["args"].get("cube_type", [])
+
+        if "stars" in cube_type:
+            logger.info("Scaling Stars Spectra by Mass...")
+            mass = jnp.expand_dims(rubixdata.stars.mass, axis=-1)
+            spectra_mass = rubixdata.stars.spectra * mass
+            setattr(rubixdata.stars, "spectra", spectra_mass)
+
+        if "gas" in cube_type:
+            logger.info("Scaling Gas Spectra by Mass...")
+            mass = jnp.expand_dims(rubixdata.gas.mass, axis=-1)
+            spectra_mass = rubixdata.gas.spectra * mass
+            setattr(rubixdata.gas, "spectra", spectra_mass)
+
         return rubixdata
 
     return scale_spectrum_by_mass

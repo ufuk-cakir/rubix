@@ -116,7 +116,7 @@ class CloudyGasLookup:
                 lambda line_data: line_data[
                     redshift_idx, metallicity_idx, hden_idx, temp_idx
                 ]
-            )(self.line_emissivity)
+            )(jnp.array(self.line_emissivity))
 
         vmap_get_emissivity = vmap(get_emissivity_for_one_particle, in_axes=(0, 0, 0))
 
