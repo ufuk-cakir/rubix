@@ -25,9 +25,23 @@ def get_convolve_lsf(config: dict) -> Callable:
     def convolve_lsf(rubixdata: object) -> object:
         """Convolve the input datacube with the LSF."""
         logger.info("Convolving with LSF...")
-        rubixdata.stars.datacube = apply_lsf(
-            datacube=rubixdata.stars.datacube, lsf_sigma=sigma, wave_resolution=wave_resolution
-        )
+
+        cube_type = config["data"]["args"].get("cube_type", [])
+
+        if "stars" in cube_type:
+            rubixdata.stars.datacube = apply_lsf(
+                datacube=rubixdata.stars.datacube,
+                lsf_sigma=sigma,
+                wave_resolution=wave_resolution,
+            )
+
+        if "gas" in cube_type:
+            rubixdata.gas.datacube = apply_lsf(
+                datacube=rubixdata.gas.datacube,
+                lsf_sigma=sigma,
+                wave_resolution=wave_resolution,
+            )
+
         return rubixdata
 
     return convolve_lsf

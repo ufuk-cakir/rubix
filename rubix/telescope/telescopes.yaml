@@ -8,3 +8,14 @@ MUSE:
   wave_centre: 6975.775
   aperture_type: "square"
   pixel_type: "square"
+
+TESTGAS:
+  fov: 40
+  spatial_res: 1
+  wave_range: [1000,3000]
+  wave_res: 1.25
+  lsf_fwhm: 2.51
+  signal_to_noise: null
+  wave_centre: 2000
+  aperture_type: "square"
+  pixel_type: "square"
