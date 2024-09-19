@@ -5,12 +5,6 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 import requests
-from unittest.mock import patch, MagicMock
-from rubix.spectra.ssp.grid import SSPGrid, HDF5SSPGrid, pyPipe3DSSPGrid
-import rubix
-import numpy as np
-import jax.numpy as jnp
-import os
 from astropy.io import fits
 
 import rubix
@@ -68,7 +62,6 @@ def test_from_hdf5():
         patch("os.path.exists") as mock_exists,
         patch("rubix.spectra.ssp.grid.h5py.File") as mock_file,
     ):
-
         mock_exists.return_value = True
         mock_instance = MagicMock()
         mock_file.return_value = mock_instance
@@ -413,7 +406,6 @@ def test_checkout_SSP_template():
         patch("requests.get") as mock_get,
         patch("builtins.open", create=True) as mock_open,
     ):
-
         mock_exists.return_value = False
         mock_get.return_value.status_code = 200
         mock_get.return_value.content = b"mock file content"
@@ -444,7 +436,6 @@ def test_checkout_SSP_template_HDF5SSPGrid():
         patch("requests.get") as mock_get,
         patch("builtins.open", create=True) as mock_open,
     ):
-
         mock_exists.return_value = False
         mock_get.return_value.status_code = 200
         mock_get.return_value.content = b"mock file content"
@@ -515,14 +506,11 @@ def test_checkout_SSP_template_file_download_error():
         mock_get.side_effect = requests.exceptions.HTTPError("Download error")
 
         # Call the function and verify that it raises a ValueError
-        try:
+        with pytest.raises(
+            FileNotFoundError,
+            match="Could not download file test.hdf5 from url http://example.com/.",
+        ):
             SSPGrid.checkout_SSP_template(config, file_location)
-            assert False, "Expected ValueError to be raised"
-        except FileNotFoundError as e:
-            assert (
-                str(e)
-                == "Could not download file test.hdf5 from url http://example.com/."
-            )
 
 
 def test_checkout_SSP_template_file_download_error_HDF5SSPGrid():
@@ -581,12 +569,6 @@ def test_checkout_SSP_template_SSL_error_HDF5SSPGrid():
             match="Could not download file test.hdf5 from url http://example.com/.",
         ):
             HDF5SSPGrid.checkout_SSP_template(config, file_location)
-            assert False, "Expected ValueError to be raised"
-        except FileNotFoundError as e:
-            assert (
-                str(e)
-                == "Could not download file test.hdf5 from url http://example.com/."
-            )
 
 
 def test_checkout_SSP_template_SSL_error_HDF5SSPGrid():
@@ -645,14 +627,11 @@ def test_checkout_SSP_template_file_download_failed():
         mock_get.return_value.status_code = 404
 
         # Call the function and verify that it raises a FileNotFoundError
-        try:
+        with pytest.raises(
+            FileNotFoundError,
+            match=f"Could not download file {config['file_name']} from url {config['source']}.",
+        ):
             SSPGrid.checkout_SSP_template(config, file_location)
-            assert False, "Expected FileNotFoundError to be raised"
-        except FileNotFoundError as e:
-            assert (
-                str(e)
-                == f"Could not download file {config['file_name']} from url {config['source']}."
-            )
 
 
 def test_checkout_SSP_template_file_download_failed_HDF5SSPGrid():
@@ -675,14 +654,11 @@ def test_checkout_SSP_template_file_download_failed_HDF5SSPGrid():
         mock_get.return_value.status_code = 404
 
         # Call the function and verify that it raises a FileNotFoundError
-        try:
+        with pytest.raises(
+            FileNotFoundError,
+            match=f"Could not download file {config['file_name']} from url {config['source']}.",
+        ):
             HDF5SSPGrid.checkout_SSP_template(config, file_location)
-            assert False, "Expected FileNotFoundError to be raised"
-        except FileNotFoundError as e:
-            assert (
-                str(e)
-                == f"Could not download file {config['file_name']} from url {config['source']}."
-            )
 
 
 def test_get_lookup_interpolation():
