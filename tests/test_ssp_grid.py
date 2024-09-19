@@ -575,17 +575,17 @@ def test_checkout_SSP_template_SSL_error_HDF5SSPGrid():
             requests.exceptions.HTTPError("Download error"),
         ]
 
-        # Call the function and verify that it raises a ValueError
-        try:
+        with pytest.raises(
+            FileNotFoundError,
+            match="Could not download file test.hdf5 from url http://example.com/.",
+        ):
             HDF5SSPGrid.checkout_SSP_template(config, file_location)
-            assert False, "Expected ValueError to be raised"
-        except FileNotFoundError as e:
-            assert (
-                str(e)
-                == "Could not download file test.hdf5 from url http://example.com/."
-            )
-        assert rubix.spectra.ssp.grid.requests.get.called_once_with(
-            config["source"] + "/" + config["file_name"], verify=False
+
+        # there is a nested try-catch block in checkout_SSP_template that is traversed when request.get
+        # is mocked, so it must have been called twice
+        assert rubix.spectra.ssp.grid.requests.get.call_count == 2
+        rubix.spectra.ssp.grid.requests.get.assert_called_with(
+            config["source"] + config["file_name"], verify=False
         )
 
 
