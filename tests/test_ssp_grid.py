@@ -510,8 +510,9 @@ def test_checkout_SSP_template_SSL_error_HDF5SSPGrid():
         ):
             HDF5SSPGrid.checkout_SSP_template(config, file_location)
 
-        # there is a nested try-catch block in checkout_SSP_template that is traversed when request.get
-        # is mocked, so it must have been called twice
+        # there is a nested try-catch block in checkout_SSP_template that
+        # is traversed when request.get is mocked, so it must have been
+        # called twice
         assert rubix.spectra.ssp.grid.requests.get.call_count == 2
         rubix.spectra.ssp.grid.requests.get.assert_called_with(
             config["source"] + config["file_name"], verify=False
