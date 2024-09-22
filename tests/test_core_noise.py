@@ -1,4 +1,5 @@
 import pytest
+
 from rubix.core.noise import get_apply_noise
 
 

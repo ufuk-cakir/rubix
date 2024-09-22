@@ -10,8 +10,8 @@ assignees: ''
 **What's the question at hand**
 
 
-**What's you current status?** 
-Describe you though process and how you arrived at the discussion point. 
+**What's you current status?**
+Describe you though process and how you arrived at the discussion point.
 
-**Relevant details** 
-Elaborate a bit on your thought process or question. 
+**Relevant details**
+Elaborate a bit on your thought process or question.

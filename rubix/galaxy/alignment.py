@@ -281,4 +281,3 @@ def rotate_galaxy(positions, velocities, masses, halfmass_radius, alpha, beta, g
     vel_final = apply_rotation(vel_rot, alpha, beta, gamma)
 
     return pos_final, vel_final
-

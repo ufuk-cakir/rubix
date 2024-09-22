@@ -38,7 +38,7 @@ jobs:
     - name: Install Python package
       run: |
         python -m pip install .[tests]
-    
+
     - name: Run Python tests
       run: |
         python -m pytest --nbval
@@ -76,5 +76,3 @@ jobs:
         files: ./tests/coverage.xml
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        
-    

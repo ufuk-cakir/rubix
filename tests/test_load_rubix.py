@@ -1,4 +1,4 @@
-'''import pytest
+"""import pytest
 import h5py
 import numpy as np
 from rubix.utils import (
@@ -78,4 +78,4 @@ def test_load_stars_data_centered(mock_hdf5_file):
         assert np.array_equal(
             data["coords"][0].value, np.array([1, 2, 3])
         ), "Arrays are not equal"
-'''
+"""

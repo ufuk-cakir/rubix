@@ -65,11 +65,11 @@ def get_galaxy_rotation(config: dict):
             )
 
             # Update the inputs
-            #rubixdata.stars.coords = coords
-            #rubixdata.stars.velocity = velocities
+            # rubixdata.stars.coords = coords
+            # rubixdata.stars.velocity = velocities
             setattr(rubixdata.stars, "coords", coords)
             setattr(rubixdata.stars, "velocity", velocities)
-        
+
         if "gas" in config["data"]["args"]["particle_type"]:
             # Get the inputs
             coords = rubixdata.gas.coords
@@ -89,8 +89,8 @@ def get_galaxy_rotation(config: dict):
             )
 
             # Update the inputs
-            #rubixdata.gas.coords = coords
-            #rubixdata.gas.velocity = velocities
+            # rubixdata.gas.coords = coords
+            # rubixdata.gas.velocity = velocities
             setattr(rubixdata.gas, "coords", coords)
             setattr(rubixdata.gas, "velocity", velocities)
 
