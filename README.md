@@ -33,6 +33,13 @@ python -m pytest
 This project depends on [jax](https://github.com/google/jax). It only installed for cpu computations with the testing dependencies. For installation instructions with gpu support,
 please refer to [here](https://github.com/google/jax?tab=readme-ov-file#installation).
 
+
+## Documentation
+Sphinx Documentation of all the functions is currently available under [this link](https://cakir-ufuk.de/rubix-doc).
+
+## Configuration Generator Tool
+A tool to interactively generate a user configuration is available under [this link](https://cakir-ufuk.de/docs/getting-started/configuration/).
+
 ## Acknowledgments
 
 This repository was set up using the [SSC Cookiecutter for Python Packages](https://github.com/ssciwr/cookiecutter-python-package).
