@@ -384,7 +384,7 @@ def test_load_filter_with_nonexistent_filters_path():
 
         filter_curves = load_filter(facility, instrument, filters_path=filters_path)
 
-        assert mock_save_filters.called_once_with(facility, filters_path)
+        mock_save_filters.assert_called_once_with(facility, filters_path)
 
 
 @patch("os.makedirs")
