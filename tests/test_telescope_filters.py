@@ -436,8 +436,8 @@ def test_load_filter_list_for_instrument(mock_table_read, mock_filter):
     filter_dir = "/path/to/filters"
 
     mock_transmissivity = MagicMock()
-    mock_transmissivity["Wavelength"].filled.return_value = [1, 2, 3]
-    mock_transmissivity["Transmission"].filled.return_value = [0.1, 0.2, 0.3]
+    mock_transmissivity["Wavelength"].filled.return_value = jnp.array([1, 2, 3])
+    mock_transmissivity["Transmission"].filled.return_value = jnp.array([0.1, 0.2, 0.3])
     mock_table_read.return_value = mock_transmissivity
 
     mock_filter_instance = MagicMock(spec=Filter)
@@ -453,7 +453,7 @@ def test_load_filter_list_for_instrument(mock_table_read, mock_filter):
         f"{filter_dir}/{filter_prefix}.{filter_name[0]}.csv"
     )
     mock_filter.assert_called()
-    assert mock_filter.called_once_with(
+    mock_filter.assert_called_once_with(
         mock_transmissivity["Wavelength"].filled.return_value,
         mock_transmissivity["Transmission"].filled.return_value,
         f"{filter_prefix}.{filter_name[0]}",
