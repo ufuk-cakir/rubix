@@ -128,43 +128,6 @@ class RubixData:
         return cls(*children)
 
 
-"""
-class RubixData:
-    def __init__(self, galaxy, stars, gas):
-        self.galaxy = galaxy
-        self.stars = stars
-        self.gas = gas
-
-
-class Galaxy:
-    def __init__(self):
-        self.redshift = None
-        self.center = None
-        self.halfmassrad_stars = None
-
-
-class StarsData:
-    def __init__(self):
-        self.coords = None
-        self.velocity = None
-        self.metallicity = None
-        self.mass = None
-        self.age = None
-
-
-class GasData:
-    def __init__(self):
-        self.coords = None
-        self.velocity = None
-        self.mass = None
-        self.density = None
-        self.internal_energy = None
-        self.metallicity = None
-        self.sfr = None
-        self.electron_abundance = None
-"""
-
-
 def convert_to_rubix(config: Union[dict, str]):
     """Converts the data to Rubix format
 
@@ -270,10 +233,6 @@ def prepare_input(config: Union[dict, str]) -> object:
     # Load the data from the file
     data, units = load_galaxy_data(file_path)
 
-    # Galaxy = create_dynamic_dataclass("Galaxy", rubix_config["BaseHandler"]["galaxy"])
-    # StarsData = create_dynamic_dataclass("StarsData", rubix_config["BaseHandler"]["particles"]["stars"])
-    # GasData = create_dynamic_dataclass("GasData", rubix_config["BaseHandler"]["particles"]["gas"])
-
     # Load the data from the file
     # TODO: maybe also pass the units here, currently this is not used
     data, units = load_galaxy_data(file_path)
@@ -295,102 +254,48 @@ def prepare_input(config: Union[dict, str]) -> object:
             logger.info(f"Centering {partType} particles")
             rubixdata = center_particles(rubixdata, partType)
 
-            if "data" in config:
-                if "subset" in config["data"]:  # type:ignore
-                    if config["data"]["subset"]["use_subset"]:  # type:ignore
-                        size = config["data"]["subset"]["subset_size"]  # type:ignore
-                        # Randomly sample indices
-                        # Set random seed for reproducibility
-                        np.random.seed(42)
-                        if rubixdata.stars.coords is not None:
-                            indices = np.random.choice(
-                                np.arange(len(rubixdata.stars.coords)),
-                                size=size,  # type:ignore
-                                replace=False,
-                            )  # type:ignore
-                        else:
-                            indices = np.random.choice(
-                                np.arange(len(rubixdata.gas.coords)),
-                                size=size,  # type:ignore
-                                replace=False,
-                            )
-                        # Subset the attributes
-                        jax_indices = jnp.array(indices)
-                        for attribute in data["particle_data"][partType].keys():
-                            attr_value = getattr(
-                                getattr(rubixdata, partType), attribute
-                            )
-                            if attr_value.ndim == 2:  # For attributes with shape (N, 3)
-                                setattr(
-                                    getattr(rubixdata, partType),
-                                    attribute,
-                                    attr_value[jax_indices, :],
-                                )
-                            else:  # For attributes with shape (N,)
-                                setattr(
-                                    getattr(rubixdata, partType),
-                                    attribute,
-                                    attr_value[jax_indices],
-                                )
-
-                        # Log the subset warning
-                        logger.warning(
-                            f"The Subset value is set in config. Using only subset of size {size} for {partType}"
-                        )
-
-    """
-    if "stars" in config["data"]["args"]["particle_type"]:
-        for attribute, value in data["particle_data"]["stars"].items():
-            jax_value = jnp.array(value)
-            setattr(rubixdata.stars, attribute, jax_value)
-        rubixdata = center_particles(rubixdata, "stars")
-
-    if "gas" in config["data"]["args"]["particle_type"]:
-        for attribute, value in data["particle_data"]["gas"].items():
-            jax_value = jnp.array(value)
-            setattr(rubixdata.gas, attribute, value)
-        rubixdata = center_particles(rubixdata, "gas")
-
-    if "data" in config:
-        if "subset" in config["data"]:  # type:ignore
-            if config["data"]["subset"]["use_subset"]:  # type:ignore
-                size = config["data"]["subset"]["subset_size"]  # type:ignore
+            if (
+                "data" in config
+                and "subset" in config["data"]
+                and config["data"]["subset"]["use_subset"]
+            ):
+                size = config["data"]["subset"]["subset_size"]
                 # Randomly sample indices
                 # Set random seed for reproducibility
                 np.random.seed(42)
-                if "stars" in config["data"]["args"]["particle_type"]:
+                if rubixdata.stars.coords is not None:
                     indices = np.random.choice(
-                    np.arange(len(rubixdata.stars.coords)),
-                    size=size,  # type:ignore
-                    replace=False,
-                )  # type:ignore
-                    rubixdata.stars.coords = rubixdata.stars.coords[indices,:]
-                    rubixdata.stars.velocity = rubixdata.stars.velocity[indices,:]
-                    rubixdata.stars.metallicity = rubixdata.stars.metallicity[indices]
-                    rubixdata.stars.mass = rubixdata.stars.mass[indices]
-                    rubixdata.stars.age = rubixdata.stars.age[indices]
-                    logger.warning(
-                    f"The Subset value is set in config. Using only subset of size {size} for stars"
-                )
-                if "gas" in config["data"]["args"]["particle_type"]:
+                        np.arange(len(rubixdata.stars.coords)),
+                        size=size,  # type:ignore
+                        replace=False,
+                    )  # type:ignore
+                else:
                     indices = np.random.choice(
-                    np.arange(len(rubixdata.stars.coords)),
-                    size=size,  # type:ignore
-                    replace=False,
-                )  # type:ignore
-                    rubixdata.gas.coords = rubixdata.gas.coords[indices,:]
-                    rubixdata.gas.velocity = rubixdata.gas.velocity[indices,:]
-                    rubixdata.gas.metallicity = rubixdata.gas.metallicity[indices]
-                    rubixdata.gas.mass = rubixdata.gas.mass[indices]
-                    rubixdata.gas.density = rubixdata.gas.density[indices]
-                    rubixdata.gas.internal_energy = rubixdata.gas.internal_energy[indices]
-                    rubixdata.gas.metallcity = rubixdata.gas.metallicity[indices]
-                    rubixdata.gas.sfr = rubixdata.gas.sfr[indices]
-                    rubixdata.gas.electron_abundance = rubixdata.gas.electron_abundance[indices]
-                    logger.warning(
-                    f"The Subset value is set in config. Using only subset of size {size} for gas"
+                        np.arange(len(rubixdata.gas.coords)),
+                        size=size,  # type:ignore
+                        replace=False,
+                    )
+                # Subset the attributes
+                jax_indices = jnp.array(indices)
+                for attribute in data["particle_data"][partType].keys():
+                    attr_value = getattr(getattr(rubixdata, partType), attribute)
+                    if attr_value.ndim == 2:  # For attributes with shape (N, 3)
+                        setattr(
+                            getattr(rubixdata, partType),
+                            attribute,
+                            attr_value[jax_indices, :],
+                        )
+                    else:  # For attributes with shape (N,)
+                        setattr(
+                            getattr(rubixdata, partType),
+                            attribute,
+                            attr_value[jax_indices],
+                        )
+
+                # Log the subset warning
+                logger.warning(
+                    f"The Subset value is set in config. Using only subset of size {size} for {partType}"
                 )
-    """
 
     return rubixdata
 
@@ -410,17 +315,6 @@ def get_reshape_data(config: Union[dict, str]) -> Callable:
     """Returns a function to reshape the data
 
     Maps the `reshape_array` function to the input data dictionary.
-    """
-    """
-    def reshape_data(
-        input_data: dict,
-        keys=["coords", "velocity", "metallicity", "mass", "age", "pixel_assignment"],
-    ) -> dict:
-        # TODO:Maybe write this more elegantly
-        for key in keys:
-            input_data[key] = reshape_array(input_data[key])
-
-        return input_data
     """
 
     def reshape_data(rubixdata: object) -> object:
@@ -457,16 +351,4 @@ def get_reshape_data(config: Union[dict, str]) -> Callable:
 
         return rubixdata
 
-    """
-    def reshape_data(
-        rubixdata: object,
-        keys=["coords", "velocity", "metallicity", "mass", "age", "pixel_assignment"],
-        ) -> object:
-            # TODO:Maybe write this more elegantly
-            for key in keys:
-                attr_value = getattr(rubixdata.stars, key)
-                reshaped_value = reshape_array(attr_value)
-                setattr(rubixdata.stars, key, reshaped_value)
-            return rubixdata
-     """
     return reshape_data
