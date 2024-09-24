@@ -39,7 +39,8 @@ def test_get_convolve_correct_behavior():
             "name": "MUSE",
             "psf": {"name": "gaussian", "size": 5, "sigma": 0.6},
             "lsf": {"sigma": 0.6},
-        }
+        },
+        "data": {"args": {"cube_type": ["stars"]}},
     }
 
     convolve_lsf = get_convolve_lsf(config)

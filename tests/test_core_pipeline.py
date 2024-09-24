@@ -46,7 +46,7 @@ user_config = {
     },
     "data": {
         "subset": {"use_subset": True, "subset_size": 5},
-        "args": {"particle_type": ["stars"]},
+        "args": {"particle_type": ["stars"], "cube_type": ["stars"]},
     },
     "output_path": output_path,
     "telescope": {

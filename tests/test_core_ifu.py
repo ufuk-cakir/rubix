@@ -43,6 +43,7 @@ sample_config = {
         "log_file_path": None,
         "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     },
+    "data": {"args": {"cube_type": ["stars"]}},
     "telescope": {"name": "MUSE"},
     "cosmology": {"name": "PLANCK15"},
     "galaxy": {"dist_z": 0.1},
