@@ -277,7 +277,7 @@ def load_filter(
         filter_ID = f"{facility}/{instrument}"
         filter_curves.extend(
             _load_filter_list_for_instrument(
-                filter_table, filter_ID, filter_name, filter_dir
+                filter_table, filter_ID, filter_name, filters_path
             )
         )
 
@@ -286,7 +286,7 @@ def load_filter(
             filter_ID = f"{facility}/{inst}"
             filter_curves.extend(
                 _load_filter_list_for_instrument(
-                    filter_table, filter_ID, filter_name, filter_dir
+                    filter_table, filter_ID, filter_name, filters_path
                 )
             )
 
@@ -296,7 +296,7 @@ def load_filter(
         filter_ID = facility
         filter_curves.extend(
             _load_filter_list_for_instrument(
-                filter_table, filter_ID, filter_name, filter_dir
+                filter_table, filter_ID, filter_name, filters_path
             )
         )
 
@@ -337,11 +337,24 @@ def _load_filter_list_for_instrument(
         for ID in filter_table["filterID"]:
             if ID.startswith(filter_prefix):
                 # filter_data = filter_table.loc[ID]
+                #tmp_ID = ID.split("/")[-1]
+                # check if the filter file is present on disk
+                # if not, download it from the SVO Filter Profile Service
+                # and save it to the specified path
+                # this is needed if from the previous run the specific filters were not saved to disk or only the instrument table was saved.
+                if not os.path.exists(f"{filter_dir}/{ID}.csv"):
+                    _logger.info(
+                        f"Filter file {ID}.csv not found in {filter_dir}."
+                    )
+                    _logger.info(
+                        f"Start downloading telescope filter files for {filter_prefix}."
+                    )
+                    save_filters(filter_prefix, filter_dir)
                 transmissivity = Table.read(f"{filter_dir}/{ID}.csv")
                 filter_list.append(
                     Filter(
-                        jnp.asarray(transmissivity["Wavelength"].filled()),
-                        jnp.asarray(transmissivity["Transmission"].filled()),
+                        jnp.asarray(transmissivity["Wavelength"]),
+                        jnp.asarray(transmissivity["Transmission"]),
                         ID,
                     )
                 )
@@ -350,6 +363,16 @@ def _load_filter_list_for_instrument(
         for f_name in filter_name:
             filter_ID = f"{filter_prefix}.{f_name}"
             # filter_data = filter_table.loc[f_name]
+            # check if the filter file is present on disk
+            # if not, download it from the SVO Filter Profile Service
+            # and save it to the specified path
+            # this is needed if from the previous run the specific filters were not saved to disk or only the instrument table was saved.
+            if not os.path.exists(f"{filter_dir}/{filter_ID}.csv"):
+                _logger.info(f"Filter file {filter_ID}.csv not found in {filter_dir}.")
+                _logger.info(
+                    f"Start downloading telescope filter files for {filter_prefix}."
+                )
+                save_filters(filter_prefix, filter_dir)
             transmissivity = Table.read(f"{filter_dir}/{filter_ID}.csv")
             filter_list.append(
                 Filter(
@@ -396,7 +419,7 @@ def save_filters(facility: str, filters_path: Optional[str] = FILTERS_PATH):
         # Filter ID in the format SVO: 'facilty/instrument.filter'
         save_name = filter_name.split("/")[-1]
         filter_data = SvoFps.get_transmission_data(filter_name)
-        filter_data.write(f"{filter_dir}/{filter_name}.csv", format="csv")
+        filter_data.write(f"{filter_dir}/{save_name}.csv", format="csv")
 
     _logger.info(f"Filter files for {facility} successfully downloaded!")
     _logger.info(f"File {save_name} saved to {filter_dir}.")
