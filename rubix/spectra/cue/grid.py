@@ -8,7 +8,7 @@ from rubix.core.telescope import get_telescope
 
 class CueGasLookup:
     def __init__(self, config):
-        config = config
+        self.config = config
 
     def illustris_gas_temp(self, rubixdata):
         """
@@ -97,7 +97,7 @@ class CueGasLookup:
         theta = jnp.transpose(jnp.array(theta))
         return theta
 
-    def get_wavelengthrange(self, steps=4000):
+    def get_wavelengthrange(self, steps=10000):
         """
         Returns a range of wavelengths for the spectra dependent on the wavelength range of the emission lines.
         """
@@ -125,6 +125,41 @@ class CueGasLookup:
         rubixdata.gas.continuum = continuum
         # rubixdata.gas.continuum[0] is the wavelength
         # rubixdata.gas.continuum[1][i] is the luminosity for the ith particle
+        return rubixdata
+
+    def get_resample_continuum(self, rubixdata):
+        """
+        Resamples the spectrum to the new wavelength range using interpolation.
+
+        Parameters:
+        original_wavelength (jnp.ndarray): The original wavelength array.
+        continuum (jnp.ndarray): The original spectrum array.
+        new_wavelength (jnp.ndarray): The new wavelength array to resample to.
+
+        Returns:
+        rubixdata.gas.continuum (jnp.ndarray): The resampled wavelength and spectrum array.
+        """
+        new_wavelength = self.get_wavelengthrange()
+        continuum = rubixdata.gas.continuum[1]
+        original_wavelength = rubixdata.gas.continuum[0]
+        resampled_continuum = []
+        for i in range(len(rubixdata.gas.mass)):
+            resampled_continuum_i = jnp.interp(
+                new_wavelength, original_wavelength, continuum[i]
+            )
+            resampled_continuum.append(resampled_continuum_i)
+        # resampled_continuum = jnp.interp(new_wavelength, original_wavelength, continuum)
+        rubixdata.gas.continuum = [new_wavelength, resampled_continuum]
+        return rubixdata
+
+    def get_emission_peaks(self, rubixdata):
+        """
+        Returns the wavelength and the luminosity (erg/Hz) for 138 emission lines for each gas cell.
+        Stores in rubixdata.gas.emission_peaks.
+        """
+        theta = self.get_theta(rubixdata)
+        emission_peaks = self.calculate_lines(theta)
+        rubixdata.gas.emission_peaks = emission_peaks
         return rubixdata
 
     def dispersionfactor(self, rubixdata):
