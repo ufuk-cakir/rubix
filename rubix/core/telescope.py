@@ -103,7 +103,7 @@ def get_filter_particles(config: dict):
                 for attr in dir(rubixdata.gas)
                 if not attr.startswith("__")
                 and not callable(getattr(rubixdata.gas, attr))
-                and attr not in ("coords", "velocity")
+                and attr not in ("coords", "velocity", "metals")
             ]
             for attr in attributes:
                 current_attr_value = getattr(rubixdata.gas, attr)
@@ -113,6 +113,8 @@ def get_filter_particles(config: dict):
             mask_jax = jnp.array(mask)
             setattr(rubixdata.gas, "mask", mask_jax)
             # rubixdata.gas.mask = mask
+            masked_metals = jnp.where(mask_jax[:, jnp.newaxis], rubixdata.gas.metals, 0)
+            setattr(rubixdata.gas, "metals", masked_metals)
 
         return rubixdata
 
