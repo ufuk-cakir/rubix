@@ -79,6 +79,7 @@ class GasData:
     density: Optional[jnp.ndarray] = None
     internal_energy: Optional[jnp.ndarray] = None
     metallicity: Optional[jnp.ndarray] = None
+    metals: Optional[jnp.ndarray] = None
     sfr: Optional[jnp.ndarray] = None
     electron_abundance: Optional[jnp.ndarray] = None
     pixel_assignment: Optional[jnp.ndarray] = None
@@ -95,6 +96,7 @@ class GasData:
             self.density,
             self.internal_energy,
             self.metallicity,
+            self.metals,
             self.sfr,
             self.electron_abundance,
             self.pixel_assignment,
