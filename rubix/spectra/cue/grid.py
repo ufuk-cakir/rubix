@@ -71,11 +71,16 @@ class CueGasLookup:
         log_OII_HeII = jnp.full(len(rubixdata.gas.mass), 4.55)
         log_HeI_OII = jnp.full(len(rubixdata.gas.mass), 0.7)
         log_HI_HeI = jnp.full(len(rubixdata.gas.mass), 0.85)
-        log_QH = rubixdata.gas.electron_abundance
-        n_H = rubixdata.gas.density
-        log_OH_ratio = rubixdata.gas.metals[:, 4] / rubixdata.gas.metals[:, 0]
-        log_NO_ratio = rubixdata.gas.metals[:, 3] / rubixdata.gas.metals[:, 4]
-        log_CO_ratio = rubixdata.gas.metals[:, 2] / rubixdata.gas.metals[:, 4]
+        # log_QH = rubixdata.gas.electron_abundance
+        # n_H = rubixdata.gas.density
+        # log_OH_ratio = rubixdata.gas.metals[:, 4] / rubixdata.gas.metals[:, 0]
+        # log_NO_ratio = rubixdata.gas.metals[:, 3] / rubixdata.gas.metals[:, 4]
+        # log_CO_ratio = rubixdata.gas.metals[:, 2] / rubixdata.gas.metals[:, 4]
+        log_QH = jnp.full(len(rubixdata.gas.mass), 49.58)
+        n_H = jnp.full(len(rubixdata.gas.mass), 10**2.5)
+        log_OH_ratio = jnp.full(len(rubixdata.gas.mass), -0.85)
+        log_NO_ratio = jnp.full(len(rubixdata.gas.mass), -0.134)
+        log_CO_ratio = jnp.full(len(rubixdata.gas.mass), -0.134)
         # theta = []
         # for i in range(len(rubixdata.gas.mass)):
         #    theta_i = [alpha_HeII[i], alpha_OII[i], alpha_HeI[i], alpha_HI[i], log_OII_HeII[i], log_HeI_OII[i], log_HI_HeI[i], log_QH[i], n_H[i], log_OH_ratio[i], log_NO_ratio[i], log_CO_ratio[i]]
@@ -139,17 +144,28 @@ class CueGasLookup:
         Returns:
         rubixdata.gas.continuum (jnp.ndarray): The resampled wavelength and spectrum array.
         """
+
         new_wavelength = self.get_wavelengthrange()
+        rubixdata = self.get_continuum(rubixdata)
         continuum = rubixdata.gas.continuum[1]
         original_wavelength = rubixdata.gas.continuum[0]
-        resampled_continuum = []
-        for i in range(len(rubixdata.gas.mass)):
-            resampled_continuum_i = jnp.interp(
-                new_wavelength, original_wavelength, continuum[i]
-            )
-            resampled_continuum.append(resampled_continuum_i)
+
+        # resampled_continuum = []
+        # for i in range(len(rubixdata.gas.mass)):
+        #    resampled_continuum_i = jnp.interp(
+        #        new_wavelength, original_wavelength, continuum[i]
+        #    )
+        #    resampled_continuum.append(resampled_continuum_i)
         # resampled_continuum = jnp.interp(new_wavelength, original_wavelength, continuum)
+
+        # Define the interpolation function
+        def interp_fn(continuum_i):
+            return jnp.interp(new_wavelength, original_wavelength, continuum_i)
+
+        # Vectorize the interpolation function
+        resampled_continuum = vmap(interp_fn)(continuum)
         rubixdata.gas.continuum = [new_wavelength, resampled_continuum]
+
         return rubixdata
 
     def get_emission_peaks(self, rubixdata):
@@ -243,7 +259,24 @@ class CueGasLookup:
         )
 
         # Store the spectra and wavelength range in rubixdata
-        rubixdata.gas.spectra = spectra_all
+        rubixdata.gas.emission_spectra = spectra_all
         rubixdata.gas.wavelengthrange = wavelengthrange
+
+        return rubixdata
+
+    def get_gas_emission(self, rubixdata):
+        """ "
+        Returns the combined spectrum of gas contnuum and emission lines, bot from the Cue lookup
+        """
+
+        rubixdata = self.get_emission_lines(rubixdata)
+        rubixdata = self.get_resample_continuum(rubixdata)
+
+        continuum = rubixdata.gas.continuum[1]
+        emission_lines = rubixdata.gas.emission_spectra
+
+        gas_emission = continuum + emission_lines
+
+        rubixdata.gas.spectra = gas_emission
 
         return rubixdata
