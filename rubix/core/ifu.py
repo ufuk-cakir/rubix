@@ -15,6 +15,7 @@ from rubix.spectra.ifu import (
 from .ssp import get_lookup_interpolation_pmap, get_ssp
 from .telescope import get_telescope
 from rubix.spectra.cloudy.grid import CloudyGasLookup
+from rubix.spectra.cue.grid import CueGasLookup
 
 
 def get_calculate_spectra(config: dict) -> Callable:
@@ -152,6 +153,7 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
         doppler_shift = get_velocities_doppler_shift_vmap(ssp_wave, velocity_direction)
 
     if "gas" in cube_type:
+        """
         filepath = "../rubix/spectra/cloudy/templates/UVB_plus_CMB_strongUV_line_emissivities.dat"
         cloudy = CloudyGasLookup(filepath)
 
@@ -161,6 +163,15 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
         # Function to Doppler shift the wavelength based on the velocity of the gas particles
         doppler_shift_cloudy = get_velocities_doppler_shift_vmap_gas(
             cloudy_wave, velocity_direction
+        )
+        """
+        cue = CueGasLookup(config)
+        cue_wave = cue.get_wavelengthrange()
+        logger.debug(f"CUE Wave: {cue_wave.shape}")
+
+        # Function to Doppler shift the wavelength based on the velocity of the gas particles
+        doppler_shift_cloudy = get_velocities_doppler_shift_vmap_gas(
+            cue_wave, velocity_direction
         )
 
     def doppler_shift_and_resampling(rubixdata: object) -> object:
