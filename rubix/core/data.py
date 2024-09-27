@@ -233,10 +233,6 @@ def prepare_input(config: Union[dict, str]) -> object:
     # Load the data from the file
     data, units = load_galaxy_data(file_path)
 
-    # Galaxy = create_dynamic_dataclass("Galaxy", rubix_config["BaseHandler"]["galaxy"])
-    # StarsData = create_dynamic_dataclass("StarsData", rubix_config["BaseHandler"]["particles"]["stars"])
-    # GasData = create_dynamic_dataclass("GasData", rubix_config["BaseHandler"]["particles"]["gas"])
-
     # Load the data from the file
     # TODO: maybe also pass the units here, currently this is not used
     data, units = load_galaxy_data(file_path)
