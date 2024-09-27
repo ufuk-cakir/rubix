@@ -160,6 +160,15 @@ class CueGasLookup:
         theta = self.get_theta(rubixdata)
         emission_peaks = self.calculate_lines(theta)
         rubixdata.gas.emission_peaks = emission_peaks
+
+        emission_peaks_modify = rubixdata.gas.emission_peaks[1]
+        # Replace inf values with zero
+        emission_peaks_cleaned = jnp.nan_to_num(
+            emission_peaks_modify, posinf=0.0, neginf=0.0
+        )
+        # Update the original array
+        rubixdata.gas.emission_peaks = [emission_peaks[0], emission_peaks_cleaned]
+
         return rubixdata
 
     def dispersionfactor(self, rubixdata):
@@ -174,8 +183,9 @@ class CueGasLookup:
         c = 2.99792458 * 10**10  # cm s-1
         m_p = 1.6726e-24  # g
 
-        wavelengths = self.calculate_lines()[0]
+        rubixdata = self.get_emission_peaks(rubixdata)
         rubixdata = self.illustris_gas_temp(rubixdata)
+        wavelengths = rubixdata.gas.emission_peaks[0]
 
         dispersionfactor = np.sqrt(
             (8 * k_B * rubixdata.gas.temperature * np.log(2)) / (m_p * c**2)
@@ -184,7 +194,6 @@ class CueGasLookup:
 
         dispersion = dispersionfactor * wavelengths
         rubixdata.gas.dispersionfactor = dispersion
-
         return rubixdata
 
     def gaussian(self, x, a, b, c):
@@ -199,14 +208,17 @@ class CueGasLookup:
         The spectra takes the flux and dispersion factor of each gas cell and calculates the Gaussian emission line and adds all up for each gas cell.
         Stores the spectra in rubixdata.gas.spectra.
         """
-        # get wavelengths and wavelengthrange
-        wavelengths = self.get_all_wavelengths()
+        # get wavelengths of lookup and wavelengthrange of telescope
+        rubixdata = self.get_emission_peaks(rubixdata)
+        wavelengths = rubixdata.gas.emission_peaks[0]
+        wave_start = get_telescope(self.config).wave_range[0]
+        wave_end = get_telescope(self.config).wave_range[1]
         wavelengthrange = self.get_wavelengthrange()
         # update rubixdata with temperature, dispersionfactor and luminosity
         rubixdata = self.illustris_gas_temp(rubixdata)
         rubixdata = self.dispersionfactor(rubixdata)
 
-        rubixdata = self.get_luminosity(rubixdata)
+        rubixdata = self.get_emission_peaks(rubixdata)
 
         spectra_all = []
 
@@ -227,7 +239,7 @@ class CueGasLookup:
 
         # Compute the spectra for all particles
         spectra_all = vmap_spectrum(
-            rubixdata.gas.luminosity, rubixdata.gas.dispersionfactor
+            rubixdata.gas.emission_peaks[1], rubixdata.gas.dispersionfactor
         )
 
         # Store the spectra and wavelength range in rubixdata
