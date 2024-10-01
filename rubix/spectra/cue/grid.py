@@ -4,6 +4,10 @@ from jax import vmap
 from rubix.spectra.cue.cue.src.cue.line import predict as line_predict
 from rubix.spectra.cue.cue.src.cue.continuum import predict as cont_predict
 from rubix.core.telescope import get_telescope
+from rubix.spectra.ifu import convert_luminoisty_to_flux_gas
+from rubix import config as rubix_config
+from rubix.logger import get_logger
+from rubix.cosmology.base import BaseCosmology
 
 
 class CueGasLookup:
@@ -12,9 +16,19 @@ class CueGasLookup:
 
     def illustris_gas_temp(self, rubixdata):
         """
+        Calculation the tempeature for each gas cell in the galaxy.
+
         Returns the temperature of the gas in the galaxy according to the Illustris simulation.
         See https://www.tng-project.org/data/docs/faq/ under Section General point 6 for more details.
+
+        Parameters:
+        rubixdata (RubixData): The RubixData object containing the gas data.
+
+        Returns:
+        rubixdata (RubixData): The RubixData object with the gas temperature added to rubixdata.gas.temperature.
         """
+        logger = get_logger(self.config.get("logger", None))
+        logger.info("Calculating gas temperature")
         # Convert internal energy
         internal_energy_u = rubixdata.gas.internal_energy
         # Electron abundance
@@ -53,17 +67,72 @@ class CueGasLookup:
 
         My interpretation of the output:
         first array: wavelengt in Angstrom
-        second array: luminosity in erg/Hz
+        second array: luminosity in erg/s
+
+        Parameters:
+        theta (jnp.ndarray): The theta parameters describing the shape of the ionizing spectrum and the ionizing gas properties, 12 values.
+
+        Returns:
+        jnp.ndarray: The predicted emission lines.
+        lines[0] is the wavelength in Angstrom
+        lines[1] is the luminosity in erg/s for the emission lines in each gas cell
         """
+        logger = get_logger(self.config.get("logger", None))
+        logger.warning(
+            "Calculating emission lines assumes that we trust the outcome of the Cue model (Li et al. 2024)."
+        )
         self.lines = line_predict(theta=theta).nn_predict()
         return self.lines
 
     def calculate_continuum(self, theta):
-        """Calculate the continuum using the provided theta parameters."""
+        """
+        Calculate the gas continuum using the provided theta parameters.
+
+        My interpretation of the input: these are the parameters from Table 1 in Li et al. 2024
+        gammas: power-law slopes (alpha_HeII, alpha_OII, alpha_HeI and alpha_HI)
+        log_L_ratios:   flux ratios of the two bluest segments (log F_OII/F_HeII)
+                        flux ratios of the second and third segment (log F_HeI/F_OII)
+                        fliux ratios of the two reddest segments (log F_HI/F_HeI)
+        log_QH: ionization parameter log U (in Illustris ElectronAbundance)
+        n_H: hydrogen density (not in log scale!!!) in 1/cm^3 (in Illustris Denisty)
+        log_OH_ratio: oxygen abundance (in Illustris GFM_Metals[4]/GFM_Metals[0])
+        log_NO_ratio: nitrogen-to-oxygen ratio (in Illustris GFM_Metals[3]/GFM_Metals[4])
+        log_CO_ratio: carbon-to-oxygen ratio (in Illustris GFM_Metals[2]/GFM_Metals[4])
+
+        My interpretation of the output:
+        first array: wavelengt in Angstrom
+        second array: luminosity in erg/s
+
+        Parameters:
+        theta (jnp.ndarray): The theta parameters describing the shape of the ionizing spectrum and the ionizing gas properties, 12 values.
+
+        Returns:
+        jnp.ndarray: The predicted continuum.
+        continuum[0] is the wavelength in Angstrom
+        continuum[1] is the luminosity in erg/s for the continuum in each gas cell
+        """
+        logger = get_logger(self.config.get("logger", None))
+        logger.info("Calculating continuum")
         self.continuum = cont_predict(theta=theta).nn_predict()
         return self.continuum
 
     def get_theta(self, rubixdata):
+        """
+        Returns the theta parameters for the Cue model (Li et al. 2024) for the shape of the ionizing spectrum and the ionizing gas properties.
+        The theta parameters are calculated for each gas cell with the Illustris data.
+        Be aware that we are using default values for the theta parameters for the ionizing spectrum shape from the CUE github repository.
+        https://github.com/yi-jia-li/cue
+
+        Parameters:
+        rubixdata (RubixData): The RubixData object containing the gas data.
+
+        Returns:
+        jnp.ndarray: The theta parameters that are the input for the Cue model.
+        """
+        logger = get_logger(self.config.get("logger", None))
+        logger.warning(
+            "Using default theta parameters for the Cue model (Li et al. 2024) for the shape of the ionizing spectrum. Ionizing gas properties are calculated for each gas cell with the Illustris data."
+        )
         alpha_HeII = jnp.full(len(rubixdata.gas.mass), 21.5)
         alpha_OII = jnp.full(len(rubixdata.gas.mass), 14.85)
         alpha_HeI = jnp.full(len(rubixdata.gas.mass), 6.45)
@@ -81,10 +150,7 @@ class CueGasLookup:
         log_OH_ratio = jnp.full(len(rubixdata.gas.mass), -0.85)
         log_NO_ratio = jnp.full(len(rubixdata.gas.mass), -0.134)
         log_CO_ratio = jnp.full(len(rubixdata.gas.mass), -0.134)
-        # theta = []
-        # for i in range(len(rubixdata.gas.mass)):
-        #    theta_i = [alpha_HeII[i], alpha_OII[i], alpha_HeI[i], alpha_HI[i], log_OII_HeII[i], log_HeI_OII[i], log_HI_HeI[i], log_QH[i], n_H[i], log_OH_ratio[i], log_NO_ratio[i], log_CO_ratio[i]]
-        #    theta.append(theta_i)
+
         theta = [
             alpha_HeII,
             alpha_OII,
@@ -105,10 +171,12 @@ class CueGasLookup:
     def get_wavelengthrange(self, steps=1000):
         """
         Returns a range of wavelengths for the spectra dependent on the wavelength range of the emission lines.
+        The wavelength range is set to 1000 to 10000 Angstrom, because we currently focus on the optical range.
+        This can be easily changed in the future, as long as the Cue model is able to predict the emission lines in the desired wavelength range.
         """
-        # telescope = get_telescope(self.config)
-        # wave_start = telescope.wave_range[0]
-        # wave_end = telescope.wave_range[1]
+
+        logger = get_logger(self.config.get("logger", None))
+        logger.warning("Wavelengthrange is set to 1000 to 10000 Angstrom.")
         steps = int(steps)
         wave_start = 1e3
         wave_end = 1e4
@@ -119,10 +187,14 @@ class CueGasLookup:
         """
         Returns the continuum of the gas in the galaxy according to the cue lookup.
         The continuum is calculated using the provided theta parameters.
+
+        Parameters:
+        rubixdata (RubixData): The RubixData object containing the gas data.
+
+        Returns:
+        rubixdata (RubixData): The RubixData object with the gas continuum added to rubixdata.gas.continuum.
         continuum[0] is the wavelength in Angstrom
-        continuum[1] is the luminosity in erg/Hz
-        Stores the continuum in rubixdata.gas.continuum.
-        Output: rubixdata
+        continuum[1] is the luminosity in erg/s
         """
         theta = self.get_theta(rubixdata)
         # continuum = []
@@ -137,12 +209,16 @@ class CueGasLookup:
 
     def get_resample_continuum(self, rubixdata):
         """
-        Resamples the spectrum to the new wavelength range using interpolation.
+        Resamples the spectrum of the gas continuum to the new wavelength range using interpolation.
+        The new wavelength range is the same for the emission lines.
+        We do this step to be able to add the continuum and the emission lines together later.
 
         Parameters:
-        original_wavelength (jnp.ndarray): The original wavelength array.
+        rubixdata (RubixData): The RubixData object containing the gas data.
+
+        original_wavelength (jnp.ndarray): The original wavelength array of continuum.
         continuum (jnp.ndarray): The original spectrum array.
-        new_wavelength (jnp.ndarray): The new wavelength array to resample to.
+        new_wavelength (jnp.ndarray): The new wavelength array to resample to, which is the same for the emission lines.
 
         Returns:
         rubixdata.gas.continuum (jnp.ndarray): The resampled wavelength and spectrum array.
@@ -173,8 +249,15 @@ class CueGasLookup:
 
     def get_emission_peaks(self, rubixdata):
         """
-        Returns the wavelength and the luminosity (erg/Hz) for 138 emission lines for each gas cell.
-        Stores in rubixdata.gas.emission_peaks.
+        Returns the wavelength and the luminosity (erg/s) for 138 emission lines for each gas cell.
+        The emission lines are calculated using the provided theta parameters.
+        As lookup table we use the Cue model (Li et al. 2024).
+
+        Parameters:
+        rubixdata (RubixData): The RubixData object containing the gas data.
+
+        Returns:
+        rubixdata (RubixData): The RubixData object with the gas emission lines added to rubixdata.gas.emission_peaks.
         """
         theta = self.get_theta(rubixdata)
         emission_peaks = self.calculate_lines(theta)
@@ -196,7 +279,18 @@ class CueGasLookup:
         We follow the formular of https://pyastronomy.readthedocs.io/en/latest/pyaslDoc/aslDoc/thermalBroad.html
         To get the dispersion, this factor has to be multiplied by the wavelength of the emission line.
         Expected to be around 1 Angstom for temperatures of 10^4 K.
+
+        Parameters:
+        rubixdata (RubixData): The RubixData object containing the gas data.
+
+        Returns:
+        rubixdata (RubixData): The RubixData object with the gas dispersion factor added to rubixdata.gas.dispersionfactor.
         """
+        logger = get_logger(self.config.get("logger", None))
+        logger.info("Calculating dispersion factor")
+        logger.warning(
+            "The dispersion factor for line width currentl only assumes thermal broadening."
+        )
         # Constants (https://www.physics.rutgers.edu/~abrooks/342/constants.html)
         k_B = 1.3807 * 10 ** (-16)  # cm2 g s-2 K-1
         c = 2.99792458 * 10**10  # cm s-1
@@ -218,15 +312,31 @@ class CueGasLookup:
     def gaussian(self, x, a, b, c):
         """
         Returns a Gaussian function.
+
+        Parameters:
+        x (jnp.ndarray): The wavelength range.
+        a (float): The amplitude of the Gaussian function.
+        b (float): The peak position of the Gaussian function.
+        c (float): The standard deviation of the Gaussian function.
+
+        Returns:
+        jnp.ndarray: The Gaussian function.
         """
         return a * jnp.exp(-((x - jnp.array(b)) ** 2) / (2 * c**2))
 
     def get_emission_lines(self, rubixdata):
         """
-        Returns the spectra of the gas in the galaxy according to the Cloudy lookup table.
-        The spectra takes the flux and dispersion factor of each gas cell and calculates the Gaussian emission line and adds all up for each gas cell.
-        Stores the spectra in rubixdata.gas.spectra.
+        Returns the spectra of the gas in the galaxy according to the Cue lookup table.
+        The spectra takes the luminosity and dispersion factor of each gas cell and calculates the Gaussian emission line and adds all up for each gas cell.
+
+        Parameters:
+        rubixdata (RubixData): The RubixData object containing the gas data.
+
+        Returns:
+        rubixdata (RubixData): The RubixData object with the gas emission spectra added to rubixdata.gas.emission_spectra.
         """
+        logger = get_logger(self.config.get("logger", None))
+        logger.info("Calculating gas emission lines")
         # get wavelengths of lookup and wavelengthrange of telescope
         rubixdata = self.get_emission_peaks(rubixdata)
         wavelengths = rubixdata.gas.emission_peaks[0]
@@ -269,8 +379,16 @@ class CueGasLookup:
 
     def get_gas_emission(self, rubixdata):
         """ "
-        Returns the combined spectrum of gas contnuum and emission lines, bot from the Cue lookup
+        Returns the added spectrum of gas contnuum and emission lines, both from the Cue lookup
+
+        Parameters:
+        rubixdata (RubixData): The RubixData object containing the gas data.
+
+        Returns:
+        rubixdata (RubixData): The RubixData object with the gas emission added to rubixdata.gas.spectra.
         """
+        logger = get_logger(self.config.get("logger", None))
+        logger.info("Calculating gas emission (continuum and emission lines combined)")
 
         rubixdata = self.get_emission_lines(rubixdata)
         rubixdata = self.get_resample_continuum(rubixdata)
@@ -285,5 +403,50 @@ class CueGasLookup:
         )
 
         rubixdata.gas.spectra = gas_emission_cleaned
+
+        return rubixdata
+
+    def get_gas_emission_flux(self, rubixdata):
+        logger = get_logger(self.config.get("logger", None))
+        """
+        Converts the gas emission spectra to flux.
+        Because of very small and very large values, we have to multiply the luminosity and factor with a factor.
+        Flux in erg/s/cm^2/Angstrom.
+
+        Parameters:
+        rubixdata (RubixData): The RubixData object containing the gas data.
+
+        Returns:
+        rubixdata (RubixData): The RubixData object with the gas emission flux added to rubixdata.gas.spectra.
+        """
+        logger = get_logger(self.config.get("logger", None))
+        logger.info("Calculating gas emission flux from luminosity")
+
+        rubixdata = self.get_gas_emission(rubixdata)
+        telescope = get_telescope(self.config)
+        spatial_res = telescope.spatial_res
+
+        logger.warning(
+            "Assuming Planck Cosmology for converting from luminosity to flux."
+        )
+        cosmo = BaseCosmology(0.3089, -1.0, 0.0, 0.6774)
+        observation_lum_dist = cosmo.luminosity_distance_to_z(
+            self.config["galaxy"]["dist_z"]
+        )
+
+        factor = convert_luminoisty_to_flux_gas(
+            observation_lum_dist,
+            observation_z=self.config["galaxy"]["dist_z"],
+            pixel_size=spatial_res,
+            CONSTANTS=rubix_config["constants"],
+        )
+        factor = jnp.float32(factor)
+
+        luminosity = rubixdata.gas.spectra * 1e-30
+        luminosity = luminosity * 1e-20
+
+        flux = luminosity * factor
+
+        rubixdata.gas.spectra = flux
 
         return rubixdata
