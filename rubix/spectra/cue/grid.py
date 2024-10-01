@@ -102,13 +102,16 @@ class CueGasLookup:
         theta = jnp.transpose(jnp.array(theta))
         return theta
 
-    def get_wavelengthrange(self, steps=10000):
+    def get_wavelengthrange(self, steps=1000):
         """
         Returns a range of wavelengths for the spectra dependent on the wavelength range of the emission lines.
         """
-        telescope = get_telescope(self.config)
-        wave_start = telescope.wave_range[0]
-        wave_end = telescope.wave_range[1]
+        # telescope = get_telescope(self.config)
+        # wave_start = telescope.wave_range[0]
+        # wave_end = telescope.wave_range[1]
+        steps = int(steps)
+        wave_start = 1e3
+        wave_end = 1e4
         wavelengthrange = jnp.linspace(wave_start, wave_end, steps)
         return wavelengthrange
 
@@ -227,8 +230,8 @@ class CueGasLookup:
         # get wavelengths of lookup and wavelengthrange of telescope
         rubixdata = self.get_emission_peaks(rubixdata)
         wavelengths = rubixdata.gas.emission_peaks[0]
-        wave_start = get_telescope(self.config).wave_range[0]
-        wave_end = get_telescope(self.config).wave_range[1]
+        # wave_start = get_telescope(self.config).wave_range[0]
+        # wave_end = get_telescope(self.config).wave_range[1]
         wavelengthrange = self.get_wavelengthrange()
         # update rubixdata with temperature, dispersionfactor and luminosity
         rubixdata = self.illustris_gas_temp(rubixdata)
@@ -277,6 +280,10 @@ class CueGasLookup:
 
         gas_emission = continuum + emission_lines
 
-        rubixdata.gas.spectra = gas_emission
+        gas_emission_cleaned = jnp.nan_to_num(
+            gas_emission, posinf=0.0, neginf=0.0, nan=0.0
+        )
+
+        rubixdata.gas.spectra = gas_emission_cleaned
 
         return rubixdata

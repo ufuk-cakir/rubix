@@ -8,6 +8,7 @@ from rubix.logger import get_logger
 from rubix.spectra.ifu import (
     cosmological_doppler_shift,
     resample_spectrum,
+    resample_spectrum_gas,
     velocity_doppler_shift,
     calculate_cube,
 )
@@ -84,6 +85,8 @@ def get_scale_spectrum_by_mass(config: dict) -> Callable:
 
 # Vectorize the resample_spectrum function
 def get_resample_spectrum_vmap(target_wavelength) -> Callable:
+    logger = get_logger(rubix_config.get("logger", None))
+
     def resample_spectrum_vmap(initial_spectrum, initial_wavelength):
         return resample_spectrum(
             initial_spectrum=initial_spectrum,
@@ -100,6 +103,24 @@ def get_resample_spectrum_pmap(target_wavelength) -> Callable:
     return jax.pmap(vmapped_resample_spectrum)
 
 
+# Vectorize the resample_spectrum function
+def get_resample_spectrum_vmap_gas(target_wavelength) -> Callable:
+    def resample_spectrum_vmap_gas(initial_spectrum, initial_wavelength):
+        return resample_spectrum_gas(
+            initial_spectrum=initial_spectrum,
+            initial_wavelength=initial_wavelength,
+            target_wavelength=target_wavelength,
+        )
+
+    return jax.vmap(resample_spectrum_vmap_gas, in_axes=(0, 0))
+
+
+# Parallelize the vectorized function across devices
+def get_resample_spectrum_pmap_gas(target_wavelength) -> Callable:
+    vmapped_resample_spectrum_gas = get_resample_spectrum_vmap_gas(target_wavelength)
+    return jax.pmap(vmapped_resample_spectrum_gas)
+
+
 def get_velocities_doppler_shift_vmap(
     ssp_wave: jax.Array, velocity_direction: str
 ) -> Callable:
@@ -112,13 +133,13 @@ def get_velocities_doppler_shift_vmap(
 
 
 def get_velocities_doppler_shift_vmap_gas(
-    cloudy_wave: jax.Array, velocity_direction: str
+    cue_wave: jax.Array, velocity_direction: str
 ) -> Callable:
     def func(velocity):
         if velocity.ndim == 1 and velocity.shape[0] == 3:
             velocity = velocity.reshape(1, 3)
         return velocity_doppler_shift(
-            wavelength=cloudy_wave, velocity=velocity, direction=velocity_direction
+            wavelength=cue_wave, velocity=velocity, direction=velocity_direction
         )
 
     return jax.vmap(func, in_axes=0)
@@ -165,17 +186,26 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
             cloudy_wave, velocity_direction
         )
         """
+        # Get the CUE wavelength grid to doppler shift the wavelengths
         cue = CueGasLookup(config)
-        cue_wave = cue.get_wavelengthrange()
-        logger.debug(f"CUE Wave: {cue_wave.shape}")
+        cue_wavelength = cue.get_wavelengthrange()
+        # logger.debug(f"CUE Wave: {cue_wavelength}")
 
+        # Doppler shift the CUE wavelength based on the cosmological distance of the observed galaxy
+        cue_wave = cosmological_doppler_shift(
+            z=galaxy_redshift, wavelength=cue_wavelength
+        )
+        logger.debug(f"CUE Wave: {cue_wave.shape}")
+        # logger.debug(f"cue_wave: {cue_wave}")
+        # logger.debug(f"velocity_direction: {velocity_direction}")
         # Function to Doppler shift the wavelength based on the velocity of the gas particles
-        doppler_shift_cloudy = get_velocities_doppler_shift_vmap_gas(
+        doppler_shift_cue = get_velocities_doppler_shift_vmap_gas(
             cue_wave, velocity_direction
         )
 
     def doppler_shift_and_resampling(rubixdata: object) -> object:
         cube_type = config["data"]["args"].get("cube_type", [])
+        logger.debug(f"Cube Type: {cube_type}")
 
         if "stars" in cube_type:
             # Doppler shift the SSP Wavelengths based on the velocity of the stars
@@ -192,23 +222,38 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
 
         if "gas" in cube_type:
             # Doppler shift the Cloudy Wavelengths based on the velocity of the gas particles
-            doppler_shifted_cloudy_wave = doppler_shift_cloudy(rubixdata.gas.velocity)
-            if doppler_shifted_cloudy_wave.shape[1] == 1:
-                # Reshape to remove the single-dimensional entry
-                doppler_shifted_cloudy_wave = doppler_shifted_cloudy_wave.reshape(
-                    doppler_shifted_cloudy_wave.shape[0], -1
-                )
-            logger.info("Doppler shifting and resampling gas spectra...")
+            # logger.debug(f"Velocity: {rubixdata.gas.velocity}")
+            logger.debug(f"Gas spectra shape: {rubixdata.gas.spectra.shape}")
+            # Reshape the gas spectra to (1, 100, 1000)
+            rubixdata.gas.spectra = jnp.expand_dims(rubixdata.gas.spectra, axis=0)
             logger.debug(
-                f"Doppler Shifted CLOUDY Wave: {doppler_shifted_cloudy_wave.shape}"
+                f"Processed rubixdata.gas.spectra shape: {rubixdata.gas.spectra.shape}"
             )
+            rubixdata.gas.velocity = jnp.expand_dims(rubixdata.gas.velocity, axis=0)
+            doppler_shifted_cue_wave = doppler_shift_cue(rubixdata.gas.velocity)
+            # logger.debug(f"Doppler Shifted CUE Wave: {doppler_shifted_cue_wave}")
+            if doppler_shifted_cue_wave.shape[1] == 1:
+                # Reshape to remove the single-dimensional entry
+                doppler_shifted_cue_wave = doppler_shifted_cue_wave.reshape(
+                    doppler_shifted_cue_wave.shape[0], -1
+                )
+
+            logger.info("Doppler shifting and resampling gas spectra...")
+            logger.debug(f"Doppler shifted CUE Wave: {doppler_shifted_cue_wave.shape}")
             logger.debug(f"Telescope Wave Seq: {telescope.wave_seq.shape}")
+            logger.debug(f"Spectra before resampling: {rubixdata.gas.spectra}")
             # Function to resample the spectrum to the telescope wavelength grid
-            resample_spectrum_pmap = get_resample_spectrum_vmap(telescope_wavelenght)
+            resample_spectrum_pmap = get_resample_spectrum_pmap_gas(
+                telescope_wavelenght
+            )
             spectrum_resampled_gas = resample_spectrum_pmap(
-                rubixdata.gas.spectra, doppler_shifted_cloudy_wave
+                rubixdata.gas.spectra, doppler_shifted_cue_wave
+            )
+            spectrum_resampled_gas = jnp.nan_to_num(
+                spectrum_resampled_gas, nan=0.0, posinf=0.0, neginf=0.0
             )
             setattr(rubixdata.gas, "spectra", spectrum_resampled_gas)
+            logger.debug(f"Spectra after resampling: {rubixdata.gas.spectra}")
 
         return rubixdata
 
@@ -230,6 +275,10 @@ def get_calculate_datacube(config: dict) -> Callable:
 
         if "stars" in cube_type:
             logger.info("Calculating Data Cube Stars...")
+            logger.debug(f"Star spectra shape: {rubixdata.stars.spectra.shape}")
+            logger.debug(
+                f"Star pixel assignment shape: {rubixdata.stars.pixel_assignment.shape}"
+            )
             ifu_cubes = calculate_cube_pmap(
                 spectra=rubixdata.stars.spectra,
                 spaxel_index=rubixdata.stars.pixel_assignment,
@@ -244,15 +293,28 @@ def get_calculate_datacube(config: dict) -> Callable:
 
         if "gas" in cube_type:
             logger.info("Calculating Data Cube Gas...")
-            ifu_cube_gas = calculate_cube(
+            logger.debug(f"Gas spectra shape: {rubixdata.gas.spectra.shape}")
+            # if rubixdata.gas.spectra.shape[0] == 1:
+            #    rubixdata.gas.spectra = jnp.squeeze(rubixdata.gas.spectra, axis=0)
+            if rubixdata.gas.pixel_assignment.shape[0] != 1:
+                rubixdata.gas.pixel_assignment = jnp.expand_dims(
+                    rubixdata.gas.pixel_assignment, axis=0
+                )
+            logger.debug(
+                f"Processed rubixdata.gas.spectra shape: {rubixdata.gas.spectra.shape}"
+            )
+            logger.debug(f"Gas spectra shape: {rubixdata.gas.spectra.shape}")
+            logger.debug(
+                f"Gas pixel assignment shape: {rubixdata.gas.pixel_assignment.shape}"
+            )
+            ifu_cubes_gas = calculate_cube_pmap(
                 spectra=rubixdata.gas.spectra,
                 spaxel_index=rubixdata.gas.pixel_assignment,
-                num_spaxels=num_spaxels,
             )
-            # datacube_gas = jnp.sum(ifu_cube_gas, axis=0)
-            logger.debug(f"Datacube Shape: {ifu_cube_gas.shape}")
+            datacube_gas = jnp.sum(ifu_cubes_gas, axis=0)
+            logger.debug(f"Datacube Shape: {datacube_gas.shape}")
             # logger.debug(f"This is the datacube: {ifu_cube_gas}")
-            datacube_gas_jax = jnp.array(ifu_cube_gas)
+            datacube_gas_jax = jnp.array(datacube_gas)
             setattr(rubixdata.gas, "datacube", datacube_gas_jax)
             # rubixdata.gas.datacube = datacube
             return rubixdata
