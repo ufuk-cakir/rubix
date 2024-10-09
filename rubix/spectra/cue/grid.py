@@ -128,6 +128,11 @@ class CueGasLookup:
 
         Returns:
         jnp.ndarray: The theta parameters that are the input for the Cue model.
+
+        Cue states in their code in line.py
+        Nebular Line Emission Prediction
+        :param theta: nebular parameters of n samples, (n, 12) matrix
+        :param gammas, log_L_ratios, log_QH, n_H, log_OH_ratio, log_NO_ratio, log_CO_ratio: 12 input parameters
         """
         logger = get_logger(self.config.get("logger", None))
         logger.warning(
@@ -141,15 +146,28 @@ class CueGasLookup:
         log_HeI_OII = jnp.full(len(rubixdata.gas.mass), 0.7)
         log_HI_HeI = jnp.full(len(rubixdata.gas.mass), 0.85)
         # log_QH = rubixdata.gas.electron_abundance
-        # n_H = rubixdata.gas.density
-        # log_OH_ratio = rubixdata.gas.metals[:, 4] / rubixdata.gas.metals[:, 0]
-        # log_NO_ratio = rubixdata.gas.metals[:, 3] / rubixdata.gas.metals[:, 4]
-        # log_CO_ratio = rubixdata.gas.metals[:, 2] / rubixdata.gas.metals[:, 4]
+        n_H = rubixdata.gas.density
+        # n_H = jnp.full(len(rubixdata.gas.mass), 10**2.5)
+        OH_ratio = rubixdata.gas.metals[:, 4] / rubixdata.gas.metals[:, 0]
+        NO_ratio = rubixdata.gas.metals[:, 3] / rubixdata.gas.metals[:, 4]
+        CO_ratio = rubixdata.gas.metals[:, 2] / rubixdata.gas.metals[:, 4]
+
+        log_oh_sol = -3.07
+        log_co_sol = -0.37
+        log_no_sol = -0.88
+
+        oh_factor = 16 / 1
+        co_factor = 12 / 16
+        no_factor = 14 / 16
+
+        final_log_oh = jnp.log10(OH_ratio * oh_factor) / log_oh_sol
+        final_log_co = jnp.log10(CO_ratio * co_factor) / 10**log_co_sol
+        final_log_no = jnp.log10(NO_ratio * no_factor) / 10**log_no_sol
         log_QH = jnp.full(len(rubixdata.gas.mass), 49.58)
-        n_H = jnp.full(len(rubixdata.gas.mass), 10**2.5)
-        log_OH_ratio = jnp.full(len(rubixdata.gas.mass), -0.85)
-        log_NO_ratio = jnp.full(len(rubixdata.gas.mass), -0.134)
-        log_CO_ratio = jnp.full(len(rubixdata.gas.mass), -0.134)
+
+        # log_OH_ratio = jnp.full(len(rubixdata.gas.mass), -0.85)
+        # log_NO_ratio = jnp.full(len(rubixdata.gas.mass), -0.134)
+        # log_CO_ratio = jnp.full(len(rubixdata.gas.mass), -0.134)
 
         theta = [
             alpha_HeII,
@@ -161,9 +179,9 @@ class CueGasLookup:
             log_HI_HeI,
             log_QH,
             n_H,
-            log_OH_ratio,
-            log_NO_ratio,
-            log_CO_ratio,
+            final_log_oh,
+            final_log_no,
+            final_log_co,
         ]
         theta = jnp.transpose(jnp.array(theta))
         return theta
