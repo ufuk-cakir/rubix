@@ -33,14 +33,4 @@ Publications about RUBIX:
    :maxdepth: 2
    :caption: Contents:
 
-   modules
-   rubix
-   rubix.pipeline
    rubix.core
-   rubix.cosmology
-   rubix.telescope
-   rubix.telescope.noise
-   rubix.galaxy
-   rubix.galaxy.input_handler
-   rubix.spectra
-   rubix.spectra.ssp

@@ -19,6 +19,7 @@ rubix.core.data module
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: redshift, halfmassrad_stars, center, tree_flatten, tree_unflatten, galaxy, gas, stars, coords, velocity, age, mass, density, internal_energy, metallicity, sfr, electron_abundance, pixel_assignment, spatial_bin_edges, mask, spectra, datacube
 
 rubix.core.ifu module
 ---------------------
