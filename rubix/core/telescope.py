@@ -115,7 +115,7 @@ def get_spaxel_assignment(config: dict) -> Callable:
 
 
 @jaxtyped(typechecker=typechecker)
-def get_filter_particles(config: dict):
+def get_filter_particles(config: dict) -> Callable:
     """
     Get the function to filter particles outside the aperture.
 

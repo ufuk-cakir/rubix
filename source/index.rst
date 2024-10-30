@@ -30,7 +30,8 @@ Publications about RUBIX:
 - [1] Fast GPU-Powered and Auto-Differentiable Forward Modeling of IFU Data Cubes - U. Çakır, A. Schaible and T. Buck (NeurIPS 2024)
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    rubix.core
+   rubix.cosmology

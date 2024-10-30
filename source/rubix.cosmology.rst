@@ -11,6 +11,7 @@ rubix.cosmology.base module
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: Om0, w0, wa, h
 
 rubix.cosmology.utils module
 ----------------------------
