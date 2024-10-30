@@ -33,6 +33,7 @@ class AbstractPipeline(ABC):
         for t in transformers:
             self.register_transformer(t)
 
+        print("registered transformers: ", list(self.transformers.keys()))
         self.assemble()
 
     def assemble(self):

@@ -120,8 +120,7 @@ class RubixPipeline:
         rotate_galaxy = get_galaxy_rotation(self.user_config)
         filter_particles = get_filter_particles(self.user_config)
         spaxel_assignment = get_spaxel_assignment(self.user_config)
-        calculate_spectra = get_gas_emission(self.user_config)
-        reshape_data = get_reshape_data(self.user_config)
+        gas_emission = get_gas_emission(self.user_config)
         scale_spectrum_by_mass = get_scale_spectrum_by_mass(self.user_config)
         doppler_shift_and_resampling = get_doppler_shift_and_resampling(
             self.user_config
@@ -135,8 +134,7 @@ class RubixPipeline:
             rotate_galaxy,
             filter_particles,
             spaxel_assignment,
-            # reshape_data,
-            calculate_spectra,
+            gas_emission,
             scale_spectrum_by_mass,
             doppler_shift_and_resampling,
             calculate_datacube,
@@ -160,6 +158,9 @@ class RubixPipeline:
         # Create the pipeline
         time_start = time.time()
         functions = self._get_pipeline_functions()
+
+        print("functions in run: ", functions)
+
         self._pipeline = pipeline.LinearTransformerPipeline(
             self.pipeline_config, functions
         )

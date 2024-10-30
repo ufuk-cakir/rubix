@@ -34,8 +34,6 @@ dependencies = [
     "equinox",
     "jax[cpu]!=0.4.27,!=0.4.29",
     "interpax",
-    "cue @ git+https://github.com/yi-jia-li/cue.git@main",
-
 ]
 
 [project.optional-dependencies]
@@ -57,6 +55,7 @@ docs = [
     "sphinx_rtd_theme",
 ]
 
+cuda = ["jax[cuda12!=0.4.27,!=0.4.29"]
 
 # The following section contains setuptools-specific configuration
 # options. For a full reference of available options, check the overview

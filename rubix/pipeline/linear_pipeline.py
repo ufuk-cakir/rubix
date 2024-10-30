@@ -46,6 +46,8 @@ class LinearTransformerPipeline(apl.AbstractPipeline):
         if current_name not in self.config["Transformers"]:
             raise RuntimeError(f"Node '{current_name}' not found in the config")
 
+        print("transformers known: ", self.transformers.keys())
+        print("transformers looked for: ", self.config["Transformers"].keys())
         for key, node in self.config["Transformers"].items():
             if current_name == node["depends_on"]:
                 func = bound_transformer(*node["args"], **node["kwargs"])(
