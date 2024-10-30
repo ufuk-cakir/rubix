@@ -31,7 +31,8 @@ Publications about RUBIX:
 
 .. toctree::
    :maxdepth: 3
-   :caption: Contents:
+   :caption: Code documentation:
 
    rubix.core
    rubix.cosmology
+   rubix.galaxy

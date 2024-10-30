@@ -19,6 +19,7 @@ rubix.galaxy.input\_handler.factory module
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: BaseHandler, IllustrisHandler
 
 rubix.galaxy.input\_handler.illustris module
 --------------------------------------------
@@ -27,6 +28,7 @@ rubix.galaxy.input\_handler.illustris module
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: MAPPED_FIELDS, MAPPED_PARTICLE_KEYS, SIMULATION_META_KEYS, GALAXY_SUBHALO_KEYS, UNITS, ILLUSTRIS_DATA
 
 Module contents
 ---------------
@@ -35,3 +37,4 @@ Module contents
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: URL, IllustrisHandler

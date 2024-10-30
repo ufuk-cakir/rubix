@@ -7,6 +7,13 @@ from rubix import config
 
 
 class IllustrisHandler(BaseHandler):
+    """
+    This class is used to handle the input data from the Illustris simulation.
+    The data is stored in HDF5 files, which are read using the h5py library.
+    The data is then converted to physical units using the values in the header of the file.
+    The data is then stored in a dictionary, which can be accessed using the get_particle_data() method.
+    """
+
     MAPPED_FIELDS = config["IllustrisHandler"]["MAPPED_FIELDS"]
     # This Dictionary maps the particle name in the simulation to the name used in Rubix
     MAPPED_PARTICLE_KEYS = config["IllustrisHandler"]["MAPPED_PARTICLE_KEYS"]

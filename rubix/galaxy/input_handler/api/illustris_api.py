@@ -6,15 +6,10 @@ from rubix import config
 
 
 class IllustrisAPI:
-    """This class is used to load data from the Illustris API.
+    """
+    This class is used to load data from the Illustris API.
 
     It loads both subhalo data and particle data from a given simulation, snapshot, and subhalo ID.
-    The default fields that are downloaded are:
-    - For gas particles: "Coordinates", "Density", "Masses", "ParticleIDs", "GFM_Metallicity", "SubfindHsml",
-    "StarFormationRate", "InternalEnergy", "Velocities", "ElectronAbundance", "GFM_Metals"
-
-    - For star particles: "Coordinates", "GFM_InitialMass", "Masses", "ParticleIDs", "GFM_Metallicity",
-    "GFM_StellarFormationTime", "Velocities"
 
     Check the source for the API documentation for more information: https://www.tng-project.org/data/docs/api/
     """
@@ -107,18 +102,16 @@ class IllustrisAPI:
         return filename  # return the filename string
 
     def get_subhalo(self, id):
-        """Get subhalo data from the Illustris API.
+        """
+        Get subhalo data from the Illustris API.
 
         Returns the subhalo data for the given subhalo ID.
 
-        Parameters
-        ----------
-        id : int
-            Subhalo ID to load.
-        Returns
-        -------
-        r : dict
-            The subhalo data.
+        Args:
+            id (int): Subhalo ID to load.
+
+        Returns:
+            The subhalo data as a dictionary (r).
 
         """
 
@@ -160,20 +153,17 @@ class IllustrisAPI:
         return returndict
 
     def get_particle_data(self, id: int, particle_type, fields: Union[str, List[str]]):
-        """Get particle data from the Illustris API.
+        """
+        Get particle data from the Illustris API.
 
         Returns the particle data for the given subhalo ID.
-        Parameters
-        ----------
-        id : int
-            Subhalo ID to load.
-        fields : str or list
-            Fields to load. If a string, the fields should be comma-separated.
 
-        Returns
-        -------
-        data : dict
-            Dictionary containing the particle data in the given fields.
+        Args:
+            id (int): Subhalo ID to load.
+            fields (str or list): Fields to load. If a string, the fields should be comma-separated.
+
+        Returns:
+            Dictionary containing the particle data in the given fields (data).
         """
         # Get fields in the right format
         if isinstance(fields, str):
@@ -193,24 +183,21 @@ class IllustrisAPI:
         return data
 
     def load_galaxy(self, id: int, overwrite: bool = False, reuse: bool = False):
-        """Download Galaxy Data from the Illustris API.
+        """
+        Download Galaxy Data from the Illustris API.
 
         This function downloads both the subhalo data and the particle data for stars and gas particles, for the fields specified in DEFAULT_FIELDS.
         It saves the data in a HDF5 file.
 
-        Parameters
-        ----------
-        id : int
-            The ID of the subhalo to download.
-        verbose : bool
-            Whether to print out information about the download.
+        Args:
+            id (int): The ID of the subhalo to download.
+            overwrite (bool): Whether to overwrite the file if it already exists. Default is False.
+            reuse (bool): Whether to reuse the file if it already exists. Default is False.
 
-        Returns
-        -------
-        dict
-            The galaxy data.
+        Returns:
+            The galaxy data as dictionary.
 
-        Examples
+        Example
         --------
         >>> illustris_api = IllustrisAPI(api_key, simulation="TNG50-1", snapshot=99, particle_type=["stars", "gas"])
         >>> data = illustris_api.load_galaxy(id=0, verbose=True)
