@@ -24,34 +24,24 @@ from .psf import get_convolve_psf
 from .lsf import get_convolve_lsf
 from .noise import get_apply_noise
 
+from jaxtyping import Array, Float, jaxtyped
+from beartype import beartype as typechecker
+
 
 class RubixPipeline:
     """
     RubixPipeline is responsible for setting up and running the data processing pipeline.
 
-    Parameters
-    ----------
-    user_config : dict or str
-        User configuration for the pipeline.
+    Args:
+        user_config (dict or str): Parsed user configuration for the pipeline.
+        pipeline_config (dict): Configuration for the pipeline.
+        logger(Logger) : Logger instance for logging messages.
+        ssp(object) : Stellar population synthesis model.
+        telescope(object) : Telescope configuration.
+        data (dict): Dictionary containing particle data.
+        func (callable): Compiled pipeline function to process data.
 
-    Attributes
-    ----------
-    user_config : dict
-        Parsed user configuration.
-    pipeline_config : dict
-        Configuration for the pipeline.
-    logger : Logger
-        Logger instance for logging messages.
-    ssp : object
-        Stellar population synthesis model.
-    telescope : object
-        Telescope configuration.
-    data : dict
-        Dictionary containing particle data.
-    func : callable
-        Compiled pipeline function to process data.
-
-    Examples
+    Example
     --------
     >>> from rubix.core.pipeline import RubixPipeline
     >>> config = "path/to/config.yml"
@@ -74,9 +64,7 @@ class RubixPipeline:
         """
         Prepares and loads the data for the pipeline.
 
-        Returns
-        -------
-        dict
+        Returns:
             Dictionary containing particle data with keys:
             'n_particles', 'coords', 'velocities', 'metallicity', 'mass', and 'age'.
         """
@@ -104,13 +92,12 @@ class RubixPipeline:
 
         return rubixdata
 
+    @jaxtyped(typechecker=typechecker)
     def _get_pipeline_functions(self) -> list:
         """
         Sets up the pipeline functions.
 
-        Returns
-        -------
-        list
+        Returns:
             List of functions to be used in the pipeline.
         """
         self.logger.info("Setting up the pipeline...")
@@ -186,4 +173,7 @@ class RubixPipeline:
 
     # TODO: implement gradient calculation
     def gradient(self):
+        """
+        This function will calculate the gradient of the pipeline, but is yet not implemented.
+        """
         raise NotImplementedError("Gradient calculation is not implemented yet")

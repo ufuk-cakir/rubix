@@ -33,6 +33,14 @@ def get_calculate_spectra(config: dict) -> Callable:
 
     Example
     -------
+    >>> config = {
+    ...     "ssp": {
+    ...         "template": {
+    ...             "name": "BruzualCharlot2003"
+    ...             },
+    ...          },
+    ...     }
+
     >>> from rubix.core.ifu import get_calculate_spectra
     >>> calcultae_spectra = get_calculate_spectra(config)
 

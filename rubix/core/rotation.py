@@ -3,8 +3,37 @@ import jax
 from rubix.logger import get_logger
 from rubix.galaxy.alignment import rotate_galaxy as rotate_galaxy_core
 
+from jaxtyping import Array, Float, jaxtyped
+from beartype import beartype as typechecker
 
+
+@jaxtyped(typechecker=typechecker)
 def get_galaxy_rotation(config: dict):
+    """
+    Get the function to rotate the galaxy based on the configuration.
+
+    Args:
+        config (dict): Configuration dictionary.
+
+    Returns:
+        The function to rotate the galaxy.
+
+    Example
+    --------
+    >>> config = {
+    ...     ...
+    ...     "galaxy":
+    ...         {"dist_z": 0.1,
+    ...         "rotation": {"type": "edge-on"},
+    ...         },
+    ...     ...
+    ... }
+
+    >>> from rubix.core.rotation import get_galaxy_rotation
+    >>> rotate_galaxy = get_galaxy_rotation(config)
+    >>> rubixdata = rotate_galaxy(rubixdata)
+    """
+
     # Check if rotation information is provided under galaxy config
     if "rotation" not in config["galaxy"]:
         raise ValueError("Rotation information not provided in galaxy config")
@@ -43,7 +72,8 @@ def get_galaxy_rotation(config: dict):
         beta = config["galaxy"]["rotation"]["beta"]
         gamma = config["galaxy"]["rotation"]["gamma"]
 
-    def rotate_galaxy(rubixdata: object, type: str = "face-on"):
+    @jaxtyped(typechecker=typechecker)
+    def rotate_galaxy(rubixdata: object, type: str = "face-on") -> object:
         logger.info(f"Rotating galaxy with alpha={alpha}, beta={beta}, gamma={gamma}")
 
         if "stars" in config["data"]["args"]["particle_type"]:

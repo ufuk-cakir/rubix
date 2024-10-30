@@ -3,10 +3,39 @@ from rubix.telescope.psf.psf import get_psf_kernel, apply_psf
 from typing import Callable, Dict
 import jax.numpy as jnp
 
+from jaxtyping import Array, Float, jaxtyped
+from beartype import beartype as typechecker
+
 
 # TODO: add option to disable PSF convolution
+@jaxtyped(typechecker=typechecker)
 def get_convolve_psf(config: dict) -> Callable:
-    """Get the point spread function (PSF) kernel based on the configuration."""
+    """
+    Get the point spread function (PSF) kernel based on the configuration.
+
+    Args:
+        config (dict): Configuration dictionary.
+
+    Returns:
+        The function to convolve the datacube with the PSF kernel.
+
+    Example
+    -------
+    >>> config = {
+    ...     ...
+    ...     "telescope": {
+    ...         "name": "MUSE",
+    ...         "psf": {"name": "gaussian", "size": 5, "sigma": 0.6},
+    ...         "lsf": {"sigma": 0.5},
+    ...         "noise": {"signal_to_noise": 1,"noise_distribution": "normal"},
+    ...    },
+    ...     ...
+    ... }
+
+    >>> from rubix.core.psf import get_convolve_psf
+    >>> convolve_psf = get_convolve_psf(config)
+    >>> rubixdata = convolve_psf(rubixdata)
+    """
     # Check if key exists in config file
     if "psf" not in config["telescope"]:
         raise ValueError("PSF configuration not found in telescope configuration")

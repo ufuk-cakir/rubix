@@ -10,9 +10,31 @@ from rubix.telescope.factory import TelescopeFactory
 from .cosmology import get_cosmology
 from typing import Callable
 
+from jaxtyping import Array, Float, jaxtyped
+from beartype import beartype as typechecker
 
+
+@jaxtyped(typechecker=typechecker)
 def get_telescope(config: dict) -> BaseTelescope:
-    """Get the telescope object based on the configuration."""
+    """
+    Get the telescope object based on the configuration.
+
+    Args:
+        config (dict): Configuration dictionary.
+
+    Returns:
+        The telescope object.
+
+    Example
+    -------
+    >>> from rubix.core.telescope import get_telescope
+    >>> config = {
+    ...     "telescope":
+    ...         {"name": "MUSE"},
+    ...     }
+    >>> telescope = get_telescope(config)
+    >>> print(telescope)
+    """
     # TODO: this currently only loads telescope that are supported.
     # add support for custom telescopes
     factory = TelescopeFactory()
@@ -20,8 +42,17 @@ def get_telescope(config: dict) -> BaseTelescope:
     return telescope
 
 
-def get_spatial_bin_edges(config: dict) -> Float[Array, " n_bins"]:
-    """Get the spatial bin edges based on the configuration."""
+@jaxtyped(typechecker=typechecker)
+def get_spatial_bin_edges(config: dict) -> jnp.ndarray:
+    """
+    Get the spatial bin edges based on the configuration.
+
+    Args:
+        config (dict): Configuration dictionary.
+
+    Returns:
+        The spatial bin edges.
+    """
     telescope = get_telescope(config)
     galaxy_dist_z = config["galaxy"]["dist_z"]
     cosmology = get_cosmology(config)
@@ -37,8 +68,27 @@ def get_spatial_bin_edges(config: dict) -> Float[Array, " n_bins"]:
     return spatial_bin_edges
 
 
+@jaxtyped(typechecker=typechecker)
 def get_spaxel_assignment(config: dict) -> Callable:
-    """Get the spaxel assignment function based on the configuration."""
+    """
+    Get the spaxel assignment function based on the configuration.
+
+    Args:
+        config (dict): Configuration dictionary.
+
+    Returns:
+        The spaxel assignment function.
+
+    Example
+    -------
+    >>> from rubix.core.telescope import get_spaxel_assignment
+    >>> bin_particles = get_spaxel_assignment(config)
+
+    >>> rubixdata = bin_particles(rubixdata)
+
+    >>> print(rubixdata.stars.pixel_assignment)
+    >>> print(rubixdata.stars.spatial_bin_edges)
+    """
     telescope = get_telescope(config)
     if telescope.pixel_type not in ["square"]:
         raise ValueError(f"Pixel type {telescope.pixel_type} not supported")
@@ -64,8 +114,24 @@ def get_spaxel_assignment(config: dict) -> Callable:
     return spaxel_assignment
 
 
+@jaxtyped(typechecker=typechecker)
 def get_filter_particles(config: dict):
-    """Get the function to filter particles outside the aperture."""
+    """
+    Get the function to filter particles outside the aperture.
+
+    Args:
+        config (dict): Configuration dictionary.
+
+    Returns:
+        The filter particles function
+
+    Example
+    -------
+    >>> from rubix.core.telescope import get_filter_particles
+    >>> filter_particles = get_filter_particles(config)
+
+    >>> rubixdata = filter_particles(rubixdata)
+    """
     spatial_bin_edges = get_spatial_bin_edges(config)
 
     def filter_particles(rubixdata: object) -> object:
@@ -117,30 +183,3 @@ def get_filter_particles(config: dict):
         return rubixdata
 
     return filter_particles
-
-
-# def get_split_data(config: dict, n_particles) -> Callable:
-#     telescope = get_telescope(config)
-#     n_pixels = telescope.sbin**2
-#
-#     def split_data(input_data: dict) -> dict:
-#         # Split the data into two parts
-#
-#         masses, metallicity, ages = restructure_data(
-#             input_data["mass"],
-#             input_data["metallicity"],
-#             input_data["age"],
-#             input_data["pixel_assignment"],
-#             n_pixels,
-#             # n_particles,
-#         )
-#
-#         # Reshape the data to match the number of GPUs
-#
-#         input_data["masses"] = masses
-#         input_data["metallicity"] = metallicity
-#         input_data["age"] = ages
-#
-#         return input_data
-#
-#     return split_data
