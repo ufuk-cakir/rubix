@@ -14,6 +14,15 @@ def get_cosmology(config: dict):
 
     Returns:
         RubixCosmology
+
+    Example
+    --------
+    >>> config = {
+    ...     ...
+    ...     "cosmology":
+    ...         {"name": "PLANCK15"},
+    ...     ...
+    ... }
     """
     if config["cosmology"]["name"].upper() == "PLANCK15":
         from rubix.cosmology import PLANCK15
