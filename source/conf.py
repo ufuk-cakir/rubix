@@ -12,8 +12,8 @@ sys.path.insert(0, os.path.abspath("../"))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "rubix"
-copyright = "2024, Ufuk, Anna Lena, Tobias"
-author = "Ufuk, Anna Lena, Tobias"
+copyright = "2024, Ufuk, Tobias, Anna Lena"
+author = "Ufuk, Tobias, Anna Lena"
 release = "0.1"
 
 # -- General configuration ---------------------------------------------------
@@ -41,7 +41,7 @@ exclude_patterns = []
 html_theme = "sphinx_book_theme"
 # Optional: You can add theme options to customize your documentation
 html_theme_options = {
-    "repository_url": "https://github.com/your-username/your-repo",
+    "repository_url": "https://github.com/ufuk-cakir/rubix",
     "use_repository_button": True,
 }
 

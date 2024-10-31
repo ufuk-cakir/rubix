@@ -11,9 +11,8 @@ class LinearTransformerPipeline(apl.AbstractPipeline):
     pipeline in the form of a simple, 1-D chain of composed functions in which
     each function uses the output of the function before it as arguments.
 
-    Parameters
-    ----------
-    apl : Abstract base class for all pipeline implementations
+    Args:
+        apl: Abstract base class for all pipeline implementations
     """
 
     def __init__(self, cfg: dict, transformers: list):
@@ -33,14 +32,12 @@ class LinearTransformerPipeline(apl.AbstractPipeline):
 
     def update_pipeline(self, current_name):
         """
-        update_pipeline add a new pipeline node with name 'current_name' to
-            the pipeline, taking into account internal linear dependencies.
-            Mostly used internally for adding nodes one by one.
+        update_pipeline adds a new pipeline node with name 'current_name' to
+        the pipeline, taking into account internal linear dependencies.
+        Mostly used internally for adding nodes one by one.
 
-        Parameters
-        ----------
-        current_name : Name of the node to add
-
+        Args:
+            current_name: Name of the node to add
         """
 
         if current_name not in self.config["Transformers"]:
@@ -57,7 +54,7 @@ class LinearTransformerPipeline(apl.AbstractPipeline):
 
     def build_pipeline(self):
         """
-        build_pipeline Build up the pipeline from the internally stored
+        build_pipeline builds up the pipeline from the internally stored
         configuration.
         This only works when all transformers the pipeline is composed of have
         been registered with it. Multiple different versions (configurations) of
@@ -161,28 +158,24 @@ class LinearTransformerPipeline(apl.AbstractPipeline):
     def apply(self, *args, static_args=[], static_kwargs=[], **kwargs):
         """
         apply Apply the pipeline to a set of input positional arguments *args
-            and keyword arguments **kwargs that match the
-            signature of the first method in the pipeline with static
-            (keyword) arguments that are not traced. First applies the jax jit
-            to the pre-assembled pipeline, then applies the result to the
-            arguments.
-        Parameters
-        ----------
-        static_args : list, optional
-            List of positional argument indices that should not be traced,
-            by default []
-        static_kwargs : list, optional
-            list of keyword arguments that should not be traced, by default []
+        and keyword arguments **kwargs that match the
+        signature of the first method in the pipeline with static
+        (keyword) arguments that are not traced. First applies the jax jit
+        to the pre-assembled pipeline, then applies the result to the
+        arguments.
 
-        Returns
-        -------
-        object
-            Result of the application of the pipeline to the provided input.
+        Args:
+            *args: Positional arguments to apply the pipeline to
+            static_args (list, optional): Positional arguments that should not be traced, by default [].
+            static_kwargs (list, optional): Keyword arguments that should not be traced, by default [].
+            **kwargs: Keyword arguments to apply the pipeline to
 
-        Raises
-        ------
-        ValueError
-            _description_
+        Returns:
+            Result of the application of the pipeline to the provided input as object.
+
+        Raises:
+            ValueError
+                _description_
         """
         print("Arguments: ", *args)
         if len(args) == 0:

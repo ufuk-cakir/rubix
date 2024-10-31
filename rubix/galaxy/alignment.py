@@ -66,7 +66,7 @@ def center_particles(rubixdata: object, key) -> object:
 
 @jaxtyped(typechecker=typechecker)
 def moment_of_inertia_tensor(
-    positions: jnp.ndarray, masses: jnp.ndarrays, halfmass_radius: jnp.ndarray
+    positions: jnp.ndarray, masses: jnp.ndarray, halfmass_radius: jnp.ndarray
 ) -> jnp.ndarray:
     """
     Calculate the moment of inertia tensor for a given set of positions and masses within the half-light radius.

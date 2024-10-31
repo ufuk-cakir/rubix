@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-RUBIX documentation
-===================
+Welcome to RUBIX's documentation!
+=================================
 
 RUBIX is a tested and modular Open Source tool developed in JAX, designed to forward model IFU cubes of galaxies from cosmological hydrodynamical simulations.
 The code automatically parallelizes computations across multiple GPUs, demonstrating performance
@@ -26,8 +26,26 @@ We are working on adding more features and improving the code, espectially we wo
 If you are interested in contributing to the code or have ideas for further features, please contact us.
 If you use the code in your research, please cite the following paper: ???
 
-Publications about RUBIX:
-- [1] Fast GPU-Powered and Auto-Differentiable Forward Modeling of IFU Data Cubes - U. Çakır, A. Schaible and T. Buck (NeurIPS 2024)
+
+.. toctree::
+   :maxdepth: 2
+   :caption: RUBIX documentation:
+
+   self
+   installation
+   publications
+
+Notebooks
+===================
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Notebooks:
+
+   notebooks/rubix_pipeline.ipynb
+
+Code base documentation
+===================
 
 .. toctree::
    :maxdepth: 3
@@ -36,3 +54,4 @@ Publications about RUBIX:
    rubix.core
    rubix.cosmology
    rubix.galaxy
+   rubix.pipeline

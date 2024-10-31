@@ -11,6 +11,7 @@ rubix.pipeline.abstract\_pipeline module
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: apply, build_expression, build_pipeline
 
 rubix.pipeline.linear\_pipeline module
 --------------------------------------
