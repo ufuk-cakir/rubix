@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch, mock_open
 from rubix.telescope.filters.filters import (
     Filter,
     FilterCurves,
@@ -87,15 +87,29 @@ def test_filter_curves_initialization():
     assert filt_curves[0] == filt
 
 
-def test_filter_curves_plot():
+@patch('rubix.telescope.filters.filters.plt.show')
+@patch('rubix.telescope.filters.filters.plt.subplots')
+def test_filter_curves_plot(mock_subplots, mock_show):
     wavelength = jnp.array([400, 500, 600])
     response = jnp.array([0.1, 0.5, 0.9])
     name = "Test Filter"
 
+    mock_ax = MagicMock()
+    mock_fig = MagicMock()
+    mock_subplots.return_value = (mock_fig, mock_ax)
+
     filt = Filter(wavelength, response, name)
     filt_curves = FilterCurves([filt])
 
-    # filt_curves.plot()
+    mock_filter = MagicMock()
+    filter_curves = FilterCurves([mock_filter, mock_filter])
+
+    filter_curves.plot()
+
+    mock_subplots.assert_called_once()
+    assert mock_filter.plot.call_count == 2
+    mock_filter.plot.assert_any_call(mock_ax)
+    mock_show.assert_called_once()
 
 
 def test_apply_filter_curves():
@@ -152,6 +166,22 @@ def test_convolve_filter_with_spectra_cube():
     assert convolved_image.shape == (2, 2)
     assert jnp.allclose(convolved_image, expected_image_value, atol=1e-2)
 
+def test_convolve_filter_with_spectra_wrong_format():
+    # Define a simple filter and spectrum cube where the result of convolution is known
+    wavelength = jnp.array([400, 500, 600])
+    response = jnp.array([1.0, 1.0, 1.0])  # Flat response for simplicity
+    invalid_cube = jnp.array([[1, 2], [3, 4]])  # Example of a 2D array which is invalid
+    name = "Test Filter"
+
+    filt = Filter(wavelength, response, name)
+
+    with pytest.raises(ValueError) as e:
+        convolved_image = convolve_filter_with_spectra(filt, invalid_cube, wavelength)
+
+    assert (
+        str(e.value)
+        == "Input array must be 1D (spectrum) or 3D (cube of spectra)."
+    )
 
 def test_load_filter():
     facility = "SLOAN"
@@ -418,14 +448,17 @@ def test_save_filters(
         )
         mock_get_transmission_data.assert_called_once_with("SLOAN/SDSS.r")
         mock_filter_data.write.assert_any_call(
-            f"{os.path.join(filters_path, facility)}/SLOAN/SDSS.r.csv", format="csv"
+            f"{os.path.join(filters_path, facility)}/SDSS.r.csv", format="csv"
         )
         assert result == mock_filter_list
 
 
 @patch("rubix.telescope.filters.filters.Filter")
 @patch("astropy.table.Table.read")
-def test_load_filter_list_for_instrument(mock_table_read, mock_filter):
+@patch("rubix.telescope.filters.filters.open", new_callable=mock_open)
+@patch("rubix.telescope.filters.filters.os.path.exists", return_value=False)
+@patch("rubix.telescope.filters.filters.save_filters")
+def test_load_filter_list_for_instrument(mock_save_filters, mock_path_exist, mock_open, mock_table_read, mock_filter):
     # Arrange
     filter_table = Table(
         names=("filterID",),
@@ -442,7 +475,7 @@ def test_load_filter_list_for_instrument(mock_table_read, mock_filter):
 
     mock_filter_instance = MagicMock(spec=Filter)
     mock_filter.return_value = mock_filter_instance
-
+    
     # Act
     filter_list = _load_filter_list_for_instrument(
         filter_table, filter_prefix, filter_name, filter_dir
@@ -458,8 +491,61 @@ def test_load_filter_list_for_instrument(mock_table_read, mock_filter):
         mock_transmissivity["Transmission"].filled.return_value,
         f"{filter_prefix}.{filter_name[0]}",
     )
+    mock_save_filters.assert_called_once_with(filter_prefix, filter_dir)
     assert len(filter_list) == 1
     assert filter_list[0] == mock_filter_instance
+
+@patch("astropy.table.Table.read")
+@patch("rubix.telescope.filters.filters.open", new_callable=mock_open)
+@patch("rubix.telescope.filters.filters.os.path.exists", return_value=False)
+@patch("rubix.telescope.filters.filters.save_filters")
+def test_load_filter_list_for_instrument_filtername_none(mock_save_filters, mock_path_exist, mock_open, mock_table_read, mock_filter):
+    # Arrange
+    filter_table = Table(
+        names=("filterID",),
+        data=[("facility/instrument.filter1", "facility/instrument.filter2")],
+    )
+    filter_prefix = "facility/instrument"
+    filter_name = None
+    filter_dir = "/path/to/filters"
+
+    mock_transmissivity = MagicMock()
+    mock_transmissivity["Wavelength"].return_value = jnp.array([1, 2, 3])
+    mock_transmissivity["Transmission"].return_value = jnp.array([0.1, 0.2, 0.3])
+    mock_table_read.return_value = mock_transmissivity
+
+    # Act
+    filter_list = _load_filter_list_for_instrument(
+        filter_table, filter_prefix, filter_name, filter_dir
+    )
+
+    # Assert
+    mock_table_read.assert_called()
+    mock_filter.assert_called()
+    mock_save_filters.assert_called()#_once_with(filter_prefix, filter_dir)
+    assert len(filter_list) == 2
+    assert filter_list[0] == mock_filter_instance
+
+@patch("rubix.telescope.filters.filters.Filter")
+@patch("astropy.table.Table.read")
+@patch("rubix.telescope.filters.filters.open", new_callable=mock_open)
+@patch("rubix.telescope.filters.filters.os.path.exists", return_value=False)
+@patch("rubix.telescope.filters.filters.save_filters")
+@patch("rubix.telescope.filters.filters._logger")
+def test_load_filter_list_for_instrument_error(mock_logger, mock_save_filters, mock_path_exist, mock_open, mock_table_read, mock_filter):
+    # Arrange
+    invalid_filter_name = 123  # or any invalid type
+    filter_table = MagicMock()
+    filter_prefix = "facility/instrument"
+    filter_dir = "/path/to/filters"
+    
+    # Act
+    filter_list = _load_filter_list_for_instrument(
+        filter_table, filter_prefix, invalid_filter_name, filter_dir
+    )
+
+    # Assert
+    mock_logger.error.assert_called_once_with("Invalid filter_name type. Please provide a valid filter_name.")
 
 
 @patch("rubix.telescope.filters.filters.SvoFps.get_filter_list")
