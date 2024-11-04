@@ -176,7 +176,7 @@ def get_calculate_datacube(config: dict) -> Callable:
         )
         datacube = jnp.sum(ifu_cubes, axis=0)
         logger.debug(f"Datacube Shape: {datacube.shape}")
-        logger.debug(f"This is the datacube: {datacube}")
+        # logger.debug(f"This is the datacube: {datacube}")
         datacube_jax = jnp.array(datacube)
         setattr(rubixdata.stars, "datacube", datacube_jax)
         # rubixdata.stars.datacube = datacube
