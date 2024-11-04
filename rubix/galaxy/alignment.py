@@ -7,7 +7,7 @@ from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker
 
 
-@jaxtyped(typechecker=typechecker)
+# @jaxtyped(typechecker=typechecker)
 def center_particles(rubixdata: object, key) -> object:
     """
     Center the stellar particles around the galaxy center.
@@ -64,7 +64,7 @@ def center_particles(rubixdata: object, key) -> object:
     return rubixdata
 
 
-@jaxtyped(typechecker=typechecker)
+# @jaxtyped(typechecker=typechecker)
 def moment_of_inertia_tensor(
     positions: jnp.ndarray, masses: jnp.ndarray, halfmass_radius: jnp.ndarray
 ) -> jnp.ndarray:
@@ -121,7 +121,7 @@ def moment_of_inertia_tensor(
     return I
 
 
-@jaxtyped(typechecker=typechecker)
+# @jaxtyped(typechecker=typechecker)
 def rotation_matrix_from_inertia_tensor(I: jnp.ndarray) -> jnp.ndarray:
     """
     Calculate 3x3 rotation matrix by diagonalization of the moment of inertia tensor.
@@ -139,7 +139,7 @@ def rotation_matrix_from_inertia_tensor(I: jnp.ndarray) -> jnp.ndarray:
     return rotation_matrix
 
 
-@jaxtyped(typechecker=typechecker)
+# @jaxtyped(typechecker=typechecker)
 def apply_init_rotation(
     positions: jnp.ndarray, rotation_matrix: jnp.ndarray
 ) -> jnp.ndarray:
@@ -157,8 +157,9 @@ def apply_init_rotation(
     return jnp.dot(positions, rotation_matrix)
 
 
-@jaxtyped(typechecker=typechecker)
-def euler_rotation_matrix(alpha: Float, beta: Float, gamma: Float) -> jnp.ndarray:
+# @jaxtyped(typechecker=typechecker)
+# def euler_rotation_matrix(alpha: Float[jnp.ndarray, ""], beta: Float[jnp.ndarray, ""], gamma: Float[jnp.ndarray, ""]) -> Float[jnp.ndarray, "3 3"]:
+def euler_rotation_matrix(alpha, beta, gamma):
     """
     Create a 3x3 rotation matrix given Euler angles (in degrees)
 
@@ -205,10 +206,8 @@ def euler_rotation_matrix(alpha: Float, beta: Float, gamma: Float) -> jnp.ndarra
     return R.as_matrix()
 
 
-@jaxtyped(typechecker=typechecker)
-def apply_rotation(
-    positions: jnp.ndarray, alpha: Float, beta: Float, gamma: Float
-) -> jnp.ndarray:
+# @jaxtyped(typechecker=typechecker)
+def apply_rotation(positions, alpha, beta, gamma):
     """
     Apply a rotation to a set of positions given Euler angles.
 
@@ -226,16 +225,8 @@ def apply_rotation(
     return jnp.dot(positions, R)
 
 
-@jaxtyped(typechecker=typechecker)
-def rotate_galaxy(
-    positions: jnp.ndarray,
-    velocities: jnp.ndarray,
-    masses: jnp.ndarray,
-    halfmass_radius: jnp.ndarray,
-    alpha: Float,
-    beta: Float,
-    gamma: Float,
-) -> Tuple[jnp.ndarray, jnp.ndarray]:
+# @jaxtyped(typechecker=typechecker)
+def rotate_galaxy(positions, velocities, masses, halfmass_radius, alpha, beta, gamma):
     """
     Orientate the galaxy by applying a rotation matrix to the positions of the particles.
 

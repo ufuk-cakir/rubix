@@ -34,6 +34,7 @@ If you use the code in your research, please cite the following paper: ???
    self
    installation
    publications
+   licence
 
 Notebooks
 ===================
@@ -42,7 +43,15 @@ Notebooks
    :maxdepth: 2
    :caption: Notebooks:
 
-   notebooks/rubix_pipeline.ipynb
+   notebooks/create_rubix_data.ipynb
+   notebooks/pipeline_demo.ipynb
+   notebooks/rubix_pipeline_single_function.ipynb
+   notebooks/rubix_pipeline_stepwise.ipynb
+   notebooks/cosmology.ipynb
+   notebooks/telescope.ipynb
+   notebooks/spaxel_assignment.ipynb
+   notebooks/ssp_template.ipynb
+   notebooks/psf.ipynb
 
 Code base documentation
 ===================
