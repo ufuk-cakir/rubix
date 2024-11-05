@@ -45,19 +45,14 @@ def get_spaxel_assignment(config: dict) -> Callable:
     spatial_bin_edges = get_spatial_bin_edges(config)
 
     def spaxel_assignment(rubixdata: object) -> object:
-        if rubixdata.stars.coords is not None:
-            pixel_assignment = square_spaxel_assignment(
-                rubixdata.stars.coords, spatial_bin_edges
-            )
-            rubixdata.stars.pixel_assignment = pixel_assignment
-            rubixdata.stars.spatial_bin_edges = spatial_bin_edges
-
-        if rubixdata.gas.coords is not None:
-            pixel_assignment = square_spaxel_assignment(
-                rubixdata.gas.coords, spatial_bin_edges
-            )
-            rubixdata.gas.pixel_assignment = pixel_assignment
-            rubixdata.gas.spatial_bin_edges = spatial_bin_edges
+        for particle_name in ["stars", "gas"]:
+            particle = getattr(rubixdata, particle_name)
+            if particle.coords is not None:
+                pixel_assignment = square_spaxel_assignment(
+                    particle.coords, spatial_bin_edges
+                )
+                particle.pixel_assignment = pixel_assignment
+                particle.spatial_bin_edges = spatial_bin_edges
 
         return rubixdata
 
@@ -97,7 +92,6 @@ def get_filter_particles(config: dict):
             mask = mask_particles_outside_aperture(
                 rubixdata.gas.coords, spatial_bin_edges
             )
-
             attributes = [
                 attr
                 for attr in dir(rubixdata.gas)

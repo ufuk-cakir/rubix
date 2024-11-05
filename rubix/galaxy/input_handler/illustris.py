@@ -79,7 +79,6 @@ class IllustrisHandler(BaseHandler):
 
         self._logger.debug(f"Matching fields: {matching_fields}")
 
-    """
     def _check_particle_data(self, particle_data, units):
         self._logger.debug("Checking if the fields are present in the particle data...")
         self._logger.debug(f"Keys in the particle data: {particle_data.keys()}")
@@ -122,7 +121,6 @@ class IllustrisHandler(BaseHandler):
                         raise ValueError(
                             f"Missing field {field} in particle data for particle type {particle_type}"
                         )
-    """
 
     def _load_data(self):
         # open the file
@@ -238,6 +236,7 @@ class IllustrisHandler(BaseHandler):
         #        attributes_coords = f[part_type]["Coordinates"].attrs
         #        break  # Stop after finding the first match
 
+        # This is only to get the attributes in the HDF5 file to convert coordinates from Illustris units to physicqal units. Hence it is not important if this comes from gas or stars particle type, because both are stored in the dame units.
         for part_type in present_fields:
             if "Coordinates" in f[part_type]:
                 attributes_coords = f[part_type]["Coordinates"].attrs

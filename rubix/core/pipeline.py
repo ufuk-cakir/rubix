@@ -90,7 +90,6 @@ class RubixPipeline:
         self.logger.info(
             f"Data loaded with {star_count} star particles and {gas_count} gas particles."
         )
-        self.logger.info(f"Data loaded with {sys.getsizeof(rubixdata)} properties.")
         # Setup the data dictionary
         # TODO: This is a temporary solution, we need to figure out a better way to handle the data
         # This works, because JAX can trace through the data dictionary
