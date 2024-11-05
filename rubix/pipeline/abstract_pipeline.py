@@ -88,6 +88,8 @@ class AbstractPipeline(ABC):
         """
         get_jaxpr Get a jax intermediate expression for the function that
         represents an application of this pipeline to input data.
+        Please note that this only works with tatic positional arguments: JAX does currently not provide a way to have static keyword arguments when creating a jaxpr and not a jited function.
+        You can use `partial` to fix keyword arguments before calling this method.
 
         Parameters
         ----------
