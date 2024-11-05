@@ -476,7 +476,7 @@ def print_filter_list_info(facility: str, instrument: Optional[str] = None):
     print(filter_list.info)
 
 
-def print_filter_property(facility: str, instrument: str, filter_name: str):
+def print_filter_property(facility: str, filter_name: str, instrument: Optional[str] = None):
     """
     Print the properties of a filter available for a given facility, instrument and filter name.
     If you want to see the list of all facilities and instruments, follow the link below:
@@ -502,8 +502,11 @@ def print_filter_property(facility: str, instrument: str, filter_name: str):
     filter_list = SvoFps.get_filter_list(facility=facility, instrument=instrument)
     filter_list.add_index("filterID")
 
-    filter_ID = f"{facility}/{instrument}.{filter_name}"
-    # filter_data = SvoFps.get_transmission_data(filter_ID)
+    if instrument is not None:
+        filter_ID = f"{facility}/{instrument}.{filter_name}"
+        # filter_data = SvoFps.get_transmission_data(filter_ID)
+    else:
+        filter_ID = f"{facility}/{filter_name}"
 
     filter_info = filter_list.loc[filter_ID]
 
