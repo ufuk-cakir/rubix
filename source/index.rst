@@ -23,16 +23,17 @@ We are working on adding more features and improving the code, espectially we wo
 - Adding dust attenuation
 - Adding support for gradient calculation
 
-If you are interested in contributing to the code or have ideas for further features, please contact us.
+If you are interested in contributing to the code or have ideas for further features, please contact us via a github issue.
 If you use the code in your research, please cite the following paper: ???
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: RUBIX documentation:
 
    self
    installation
+   versions
    publications
    licence
 
@@ -40,7 +41,7 @@ Notebooks
 ===================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Notebooks:
 
    notebooks/create_rubix_data.ipynb
