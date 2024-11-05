@@ -17,6 +17,7 @@ from .ssp import get_lookup_interpolation_pmap, get_ssp
 from .telescope import get_telescope
 from rubix.spectra.cloudy.grid import CloudyGasLookup
 from rubix.spectra.cue.grid import CueGasLookup
+from rubix.core.cue import preprocess_config
 
 
 def get_calculate_spectra(config: dict) -> Callable:
@@ -186,8 +187,12 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
             cloudy_wave, velocity_direction
         )
         """
+        # Preprocess the config before creating CueGasLookup
+        preprocessed_config = preprocess_config(config)
+
+        # Now create CueGasLookup with preprocessed_data
         # Get the CUE wavelength grid to doppler shift the wavelengths
-        cue = CueGasLookup(config)
+        cue = CueGasLookup(preprocessed_config)
         cue_wavelength = cue.get_wavelengthrange()
         # logger.debug(f"CUE Wave: {cue_wavelength}")
 

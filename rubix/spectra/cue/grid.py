@@ -1,6 +1,9 @@
 import jax.numpy as jnp
 import numpy as np
 from jax import vmap
+
+# from rubix.spectra.cue.cue.src.cue.line import predict as line_predict
+# from rubix.spectra.cue.cue.src.cue.continuum import predict as cont_predict
 from cue.line import predict as line_predict
 from cue.continuum import predict as cont_predict
 from rubix.core.telescope import get_telescope
@@ -11,8 +14,11 @@ from rubix.cosmology.base import BaseCosmology
 
 
 class CueGasLookup:
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, preprocessed_data):
+        self.config = preprocessed_data["config"]
+        self.telescope = preprocessed_data["telescope"]
+        self.observation_lum_dist = preprocessed_data["observation_lum_dist"]
+        self.factor = preprocessed_data["factor"]
 
     def illustris_gas_temp(self, rubixdata):
         """
@@ -321,6 +327,7 @@ class CueGasLookup:
         dispersionfactor = np.sqrt(
             (8 * k_B * rubixdata.gas.temperature * np.log(2)) / (m_p * c**2)
         )
+        # dispersionfactor = jnp.ones(len(rubixdata.gas.mass))*10
         dispersionfactor = dispersionfactor[:, None]
 
         dispersion = dispersionfactor * wavelengths
@@ -441,29 +448,12 @@ class CueGasLookup:
         logger.info("Calculating gas emission flux from luminosity")
 
         rubixdata = self.get_gas_emission(rubixdata)
-        telescope = get_telescope(self.config)
-        spatial_res = telescope.spatial_res
 
-        logger.warning(
-            "Assuming Planck Cosmology for converting from luminosity to flux."
-        )
-        cosmo = BaseCosmology(0.3089, -1.0, 0.0, 0.6774)
-        observation_lum_dist = cosmo.luminosity_distance_to_z(
-            self.config["galaxy"]["dist_z"]
-        )
-
-        factor = convert_luminoisty_to_flux_gas(
-            observation_lum_dist,
-            observation_z=self.config["galaxy"]["dist_z"],
-            pixel_size=spatial_res,
-            CONSTANTS=rubix_config["constants"],
-        )
-        factor = jnp.float32(factor)
-
+        # Convert luminosity to flux using the preprocessed factor
         luminosity = rubixdata.gas.spectra * 1e-30
         luminosity = luminosity * 1e-20
 
-        flux = luminosity * factor
+        flux = luminosity * self.factor
 
         rubixdata.gas.spectra = flux
 
