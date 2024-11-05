@@ -1,11 +1,11 @@
 import jax.numpy as jnp
 import numpy as np
 from jax import vmap
+from rubix.spectra.cue.cue.src.cue.line import predict as line_predict
+from rubix.spectra.cue.cue.src.cue.continuum import predict as cont_predict
 
-# from rubix.spectra.cue.cue.src.cue.line import predict as line_predict
-# from rubix.spectra.cue.cue.src.cue.continuum import predict as cont_predict
-from cue.line import predict as line_predict
-from cue.continuum import predict as cont_predict
+# from cue.line import predict as line_predict
+# from cue.continuum import predict as cont_predict
 from rubix.core.telescope import get_telescope
 from rubix.spectra.ifu import convert_luminoisty_to_flux_gas
 from rubix import config as rubix_config
