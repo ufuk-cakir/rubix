@@ -55,7 +55,7 @@ docs = [
     "sphinx_rtd_theme",
 ]
 
-cuda = ["jax[cuda12!=0.4.27,!=0.4.29"]
+cuda = ["jax[cuda12]!=0.4.27,!=0.4.29"]
 
 # The following section contains setuptools-specific configuration
 # options. For a full reference of available options, check the overview
