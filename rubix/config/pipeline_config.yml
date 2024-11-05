@@ -79,14 +79,14 @@ calc_ifu_gas:
       depends_on: filter_particles
       args: []
       kwargs: {}
-    calculate_spectra:
-      name: calculate_spectra
+    gas_emission:
+      name: gas_emission
       depends_on: spaxel_assignment
       args: []
       kwargs: {}
     scale_spectrum_by_mass:
       name: scale_spectrum_by_mass
-      depends_on: calculate_spectra
+      depends_on: gas_emission
       args: []
       kwargs: {}
     doppler_shift_and_resampling:
