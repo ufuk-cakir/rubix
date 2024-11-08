@@ -7,8 +7,8 @@ from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker
 
 
-# @jaxtyped(typechecker=typechecker)
-def center_particles(rubixdata: object, key) -> object:
+@jaxtyped(typechecker=typechecker)
+def center_particles(rubixdata: object, key: str) -> object:
     """
     Center the stellar particles around the galaxy center.
 
@@ -64,10 +64,12 @@ def center_particles(rubixdata: object, key) -> object:
     return rubixdata
 
 
-# @jaxtyped(typechecker=typechecker)
+@jaxtyped(typechecker=typechecker)
 def moment_of_inertia_tensor(
-    positions: jnp.ndarray, masses: jnp.ndarray, halfmass_radius: jnp.ndarray
-) -> jnp.ndarray:
+    positions: Float[Array, "..."],
+    masses: Float[Array, "..."],
+    halfmass_radius: Float[Array, "..."],
+) -> Float[Array, "..."]:
     """
     Calculate the moment of inertia tensor for a given set of positions and masses within the half-light radius.
     Assumes the galaxy is already centered.
@@ -121,8 +123,8 @@ def moment_of_inertia_tensor(
     return I
 
 
-# @jaxtyped(typechecker=typechecker)
-def rotation_matrix_from_inertia_tensor(I: jnp.ndarray) -> jnp.ndarray:
+@jaxtyped(typechecker=typechecker)
+def rotation_matrix_from_inertia_tensor(I: Float[Array, "..."]) -> Float[Array, "..."]:
     """
     Calculate 3x3 rotation matrix by diagonalization of the moment of inertia tensor.
 
@@ -139,10 +141,10 @@ def rotation_matrix_from_inertia_tensor(I: jnp.ndarray) -> jnp.ndarray:
     return rotation_matrix
 
 
-# @jaxtyped(typechecker=typechecker)
+@jaxtyped(typechecker=typechecker)
 def apply_init_rotation(
-    positions: jnp.ndarray, rotation_matrix: jnp.ndarray
-) -> jnp.ndarray:
+    positions: Float[Array, "..."], rotation_matrix: Float[Array, "..."]
+) -> Float[Array, "..."]:
     """
     Apply a rotation matrix to a set of positions.
 
@@ -157,9 +159,11 @@ def apply_init_rotation(
     return jnp.dot(positions, rotation_matrix)
 
 
-# @jaxtyped(typechecker=typechecker)
+@jaxtyped(typechecker=typechecker)
 # def euler_rotation_matrix(alpha: Float[jnp.ndarray, ""], beta: Float[jnp.ndarray, ""], gamma: Float[jnp.ndarray, ""]) -> Float[jnp.ndarray, "3 3"]:
-def euler_rotation_matrix(alpha, beta, gamma):
+def euler_rotation_matrix(
+    alpha: float, beta: float, gamma: float
+) -> Float[Array, "3 3"]:
     """
     Create a 3x3 rotation matrix given Euler angles (in degrees)
 
@@ -207,7 +211,9 @@ def euler_rotation_matrix(alpha, beta, gamma):
 
 
 # @jaxtyped(typechecker=typechecker)
-def apply_rotation(positions, alpha, beta, gamma):
+def apply_rotation(
+    positions: Float[Array, "* 3"], alpha: float, beta: float, gamma: float
+) -> Float[Array, "* 3"]:
     """
     Apply a rotation to a set of positions given Euler angles.
 
@@ -226,7 +232,15 @@ def apply_rotation(positions, alpha, beta, gamma):
 
 
 # @jaxtyped(typechecker=typechecker)
-def rotate_galaxy(positions, velocities, masses, halfmass_radius, alpha, beta, gamma):
+def rotate_galaxy(
+    positions: Float[Array, "* 3"],
+    velocities: Float[Array, "* 3"],
+    masses: Float[Array, "..."],
+    halfmass_radius: Float[Array, "..."],
+    alpha: float,
+    beta: float,
+    gamma: float,
+) -> Tuple[Float[Array, "* 3"], Float[Array, "* 3"]]:
     """
     Orientate the galaxy by applying a rotation matrix to the positions of the particles.
 

@@ -49,16 +49,16 @@ def get_galaxy_rotation(config: dict):
         # if type is edge on, alpha = 90, beta = gamma = 0
         if config["galaxy"]["rotation"]["type"] == "face-on":
             logger.debug("Roataion Type found: Face-on")
-            alpha = 0
-            beta = 0
-            gamma = 0
+            alpha = 0.0
+            beta = 0.0
+            gamma = 0.0
 
         else:
             # type is edge-on
             logger.debug("Roataion Type found: edge-on")
-            alpha = 90
-            beta = 0
-            gamma = 0
+            alpha = 90.0
+            beta = 0.0
+            gamma = 0.0
 
     else:
         # If type is not provided, then alpha, beta, gamma should be set
