@@ -95,7 +95,7 @@ class RubixPipeline:
         # This works, because JAX can trace through the data dictionary
         # Other option may be named tuples or data classes to have fixed keys
 
-        self.logger.debug("Data: %s", rubixdata)
+        # self.logger.debug("Data: %s", rubixdata)
         # self.logger.debug(
         #    "Data Shape: %s",
         #    {k: v.shape for k, v in rubixdata.items() if hasattr(v, "shape")},
