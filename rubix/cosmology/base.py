@@ -4,6 +4,7 @@ from .utils import trapz
 
 import equinox as eqx
 
+from typing import Union
 from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker
 
@@ -58,7 +59,9 @@ class BaseCosmology(eqx.Module):
 
     @jaxtyped(typechecker=typechecker)
     @jit
-    def scale_factor_to_redshift(self, a: Float[Array, "..."]) -> Float[Array, "..."]:
+    def scale_factor_to_redshift(
+        self, a: Union[Float[Array, "..."], float]
+    ) -> Float[Array, "..."]:
         """
         The function converts the scale factor to redshift.
 
@@ -79,7 +82,7 @@ class BaseCosmology(eqx.Module):
 
     @jaxtyped(typechecker=typechecker)
     @jit
-    def _rho_de_z(self, z: Float[Array, "..."]) -> Float[Array, "..."]:
+    def _rho_de_z(self, z: Union[Float[Array, "..."], float]) -> Float[Array, "..."]:
         a = 1.0 / (1.0 + z)
         de_z = a ** (-3.0 * (1.0 + self.w0 + self.wa)) * lax.exp(
             -3.0 * self.wa * (1.0 - a)
@@ -88,7 +91,7 @@ class BaseCosmology(eqx.Module):
 
     @jaxtyped(typechecker=typechecker)
     @jit
-    def _Ez(self, z: Float[Array, "..."]) -> Float[Array, "..."]:
+    def _Ez(self, z: Union[Float[Array, "..."], float]) -> Float[Array, "..."]:
         zp1 = 1.0 + z
         Ode0 = 1.0 - self.Om0
         t = self.Om0 * zp1**3 + Ode0 * self._rho_de_z(z)
@@ -97,13 +100,15 @@ class BaseCosmology(eqx.Module):
 
     @jaxtyped(typechecker=typechecker)
     @jit
-    def _integrand_oneOverEz(self, z: Float[Array, "..."]) -> Float[Array, "..."]:
+    def _integrand_oneOverEz(
+        self, z: Union[Float[Array, "..."], float]
+    ) -> Float[Array, "..."]:
         return 1 / self._Ez(z)
 
-    @jaxtyped(typechecker=typechecker)
+    # @jaxtyped(typechecker=typechecker)
     @jit
     def comoving_distance_to_z(
-        self, redshift: Float[Array, "..."]
+        self, redshift: Union[Float[Array, "..."], float]
     ) -> Float[Array, "..."]:
         """
         The function calculates the comoving distance to a given redshift.
@@ -127,7 +132,7 @@ class BaseCosmology(eqx.Module):
     @jaxtyped(typechecker=typechecker)
     @jit
     def luminosity_distance_to_z(
-        self, redshift: Float[Array, "..."]
+        self, redshift: Union[Float[Array, "..."], float]
     ) -> Float[Array, "..."]:
         """
         The function calculates the luminosity distance to a given redshift.
@@ -149,7 +154,7 @@ class BaseCosmology(eqx.Module):
     @jaxtyped(typechecker=typechecker)
     @jit
     def angular_diameter_distance_to_z(
-        self, redshift: Float[Array, "..."]
+        self, redshift: Union[Float[Array, "..."], float]
     ) -> Float[Array, "..."]:
         """
         The function calculates the angular diameter distance to a given redshift.
@@ -171,7 +176,7 @@ class BaseCosmology(eqx.Module):
     @jaxtyped(typechecker=typechecker)
     @jit
     def distance_modulus_to_z(
-        self, redshift: Float[Array, "..."]
+        self, redshift: Union[Float[Array, "..."], float]
     ) -> Float[Array, "..."]:
         """
         The function calculates the distance modulus to a given redshift.
@@ -194,14 +199,16 @@ class BaseCosmology(eqx.Module):
 
     @jaxtyped(typechecker=typechecker)
     @jit
-    def _hubble_time(self, z: Float[Array, "..."]) -> Float[Array, "..."]:
+    def _hubble_time(self, z: Union[Float[Array, "..."], float]) -> Float[Array, "..."]:
         E0 = self._Ez(z)
         htime = 1e-16 * MPC / YEAR / self.h / E0
         return htime
 
     @jaxtyped(typechecker=typechecker)
     @jit
-    def lookback_to_z(self, redshift: Float[Array, "..."]) -> Float[Array, "..."]:
+    def lookback_to_z(
+        self, redshift: Union[Float[Array, "..."], float]
+    ) -> Float[Array, "..."]:
         """
         The function calculates the lookback time to a given redshift.
 
@@ -246,14 +253,18 @@ class BaseCosmology(eqx.Module):
 
     @jaxtyped(typechecker=typechecker)
     @jit
-    def _age_at_z_kern(self, redshift: Float[Array, "..."]) -> Float[Array, "..."]:
+    def _age_at_z_kern(
+        self, redshift: Union[Float[Array, "..."], float]
+    ) -> Float[Array, "..."]:
         t0 = self.age_at_z0()
         tlook = self.lookback_to_z(redshift)
         return t0 - tlook
 
     @jaxtyped(typechecker=typechecker)
     @jit
-    def age_at_z(self, redshift: Float[Array, "..."]) -> Float[Array, "..."]:
+    def age_at_z(
+        self, redshift: Union[Float[Array, "..."], float]
+    ) -> Float[Array, "..."]:
         """
         The function calculates the age of the universe at a given redshift.
 
@@ -277,7 +288,9 @@ class BaseCosmology(eqx.Module):
 
     @jaxtyped(typechecker=typechecker)
     @jit
-    def angular_scale(self, z: float) -> Float[Array, "..."]:
+    def angular_scale(
+        self, z: Union[Float[Array, "..."], float]
+    ) -> Float[Array, "..."]:
         """
         Angular scale in kpc/arcsec at redshift z.
 

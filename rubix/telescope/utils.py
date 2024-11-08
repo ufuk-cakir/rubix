@@ -71,7 +71,7 @@ def calculate_wave_edges(
 
 @jaxtyped(typechecker=typechecker)
 def square_spaxel_assignment(
-    coords: Float[Array, " * 3"], spatial_bin_edges: Float[Array, "..."]
+    coords: Float[Array, "..."], spatial_bin_edges: Float[Array, "..."]
 ) -> Int[Array, "..."]:
     """
     Bin the particle coordinates into a 2D image with the given bin edges for square pixels.

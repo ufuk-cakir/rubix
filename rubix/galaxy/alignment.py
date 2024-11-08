@@ -1,6 +1,6 @@
 import jax.numpy as jnp
 from jaxtyping import Float, Array
-from typing import Tuple
+from typing import Tuple, Union
 from jax.scipy.spatial.transform import Rotation
 
 from jaxtyping import Array, Float, jaxtyped
@@ -68,7 +68,7 @@ def center_particles(rubixdata: object, key: str) -> object:
 def moment_of_inertia_tensor(
     positions: Float[Array, "..."],
     masses: Float[Array, "..."],
-    halfmass_radius: Float[Array, "..."],
+    halfmass_radius: Union[Float[Array, "..."], float],
 ) -> Float[Array, "..."]:
     """
     Calculate the moment of inertia tensor for a given set of positions and masses within the half-light radius.

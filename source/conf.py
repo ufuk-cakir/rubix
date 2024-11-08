@@ -32,7 +32,7 @@ source_suffix = {
     ".myst": "myst-nb",
 }
 
-nb_execution_mode = "off"
+# nb_execution_mode = "off"
 
 templates_path = ["_templates"]
 exclude_patterns = []
