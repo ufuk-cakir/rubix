@@ -49,7 +49,8 @@ class BaseCosmology(eqx.Module):
     wa: jnp.float32
     h: jnp.float32
 
-    def __init__(self, Om0, w0, wa, h):
+    @jaxtyped(typechecker=typechecker)
+    def __init__(self, Om0: float, w0: float, wa: float, h: float):
         self.Om0 = jnp.float32(Om0)
         self.w0 = jnp.float32(w0)
         self.wa = jnp.float32(wa)
@@ -57,9 +58,7 @@ class BaseCosmology(eqx.Module):
 
     @jaxtyped(typechecker=typechecker)
     @jit
-    def scale_factor_to_redshift(
-        self, a: Float[jnp.ndarray, ""]
-    ) -> Float[jnp.ndarray, ""]:
+    def scale_factor_to_redshift(self, a: Float[Array, "..."]) -> Float[Array, "..."]:
         """
         The function converts the scale factor to redshift.
 
@@ -78,29 +77,34 @@ class BaseCosmology(eqx.Module):
         z = 1.0 / a - 1.0
         return z
 
+    @jaxtyped(typechecker=typechecker)
     @jit
-    def _rho_de_z(self, z):
+    def _rho_de_z(self, z: Float[Array, "..."]) -> Float[Array, "..."]:
         a = 1.0 / (1.0 + z)
         de_z = a ** (-3.0 * (1.0 + self.w0 + self.wa)) * lax.exp(
             -3.0 * self.wa * (1.0 - a)
         )
         return de_z
 
+    @jaxtyped(typechecker=typechecker)
     @jit
-    def _Ez(self, z):
+    def _Ez(self, z: Float[Array, "..."]) -> Float[Array, "..."]:
         zp1 = 1.0 + z
         Ode0 = 1.0 - self.Om0
         t = self.Om0 * zp1**3 + Ode0 * self._rho_de_z(z)
         E = jnp.sqrt(t)
         return E
 
+    @jaxtyped(typechecker=typechecker)
     @jit
-    def _integrand_oneOverEz(self, z):
+    def _integrand_oneOverEz(self, z: Float[Array, "..."]) -> Float[Array, "..."]:
         return 1 / self._Ez(z)
 
+    @jaxtyped(typechecker=typechecker)
     @jit
-    # @jaxtyped(typechecker=typechecker)
-    def comoving_distance_to_z(self, redshift):
+    def comoving_distance_to_z(
+        self, redshift: Float[Array, "..."]
+    ) -> Float[Array, "..."]:
         """
         The function calculates the comoving distance to a given redshift.
 
@@ -120,8 +124,11 @@ class BaseCosmology(eqx.Module):
         integrand = self._integrand_oneOverEz(z_table)
         return trapz(z_table, integrand) * C_SPEED * 1e-5 / self.h
 
+    @jaxtyped(typechecker=typechecker)
     @jit
-    def luminosity_distance_to_z(self, redshift):
+    def luminosity_distance_to_z(
+        self, redshift: Float[Array, "..."]
+    ) -> Float[Array, "..."]:
         """
         The function calculates the luminosity distance to a given redshift.
 
@@ -139,8 +146,11 @@ class BaseCosmology(eqx.Module):
         """
         return self.comoving_distance_to_z(redshift) * (1 + redshift)
 
+    @jaxtyped(typechecker=typechecker)
     @jit
-    def angular_diameter_distance_to_z(self, redshift):
+    def angular_diameter_distance_to_z(
+        self, redshift: Float[Array, "..."]
+    ) -> Float[Array, "..."]:
         """
         The function calculates the angular diameter distance to a given redshift.
 
@@ -158,8 +168,11 @@ class BaseCosmology(eqx.Module):
         """
         return self.comoving_distance_to_z(redshift) / (1 + redshift)
 
+    @jaxtyped(typechecker=typechecker)
     @jit
-    def distance_modulus_to_z(self, redshift):
+    def distance_modulus_to_z(
+        self, redshift: Float[Array, "..."]
+    ) -> Float[Array, "..."]:
         """
         The function calculates the distance modulus to a given redshift.
 
@@ -179,14 +192,16 @@ class BaseCosmology(eqx.Module):
         mu = 5.0 * jnp.log10(d_lum * 1e5)
         return mu
 
+    @jaxtyped(typechecker=typechecker)
     @jit
-    def _hubble_time(self, z):
+    def _hubble_time(self, z: Float[Array, "..."]) -> Float[Array, "..."]:
         E0 = self._Ez(z)
         htime = 1e-16 * MPC / YEAR / self.h / E0
         return htime
 
+    @jaxtyped(typechecker=typechecker)
     @jit
-    def lookback_to_z(self, redshift):
+    def lookback_to_z(self, redshift: Float[Array, "..."]) -> Float[Array, "..."]:
         """
         The function calculates the lookback time to a given redshift.
 
@@ -208,8 +223,9 @@ class BaseCosmology(eqx.Module):
         th = self._hubble_time(0.0)
         return th * res
 
+    @jaxtyped(typechecker=typechecker)
     @jit
-    def age_at_z0(self):
+    def age_at_z0(self) -> Float[Array, "..."]:
         """
         The function calculates the age of the universe at redshift 0.
 
@@ -228,14 +244,16 @@ class BaseCosmology(eqx.Module):
         th = self._hubble_time(0.0)
         return th * res
 
+    @jaxtyped(typechecker=typechecker)
     @jit
-    def _age_at_z_kern(self, redshift):
+    def _age_at_z_kern(self, redshift: Float[Array, "..."]) -> Float[Array, "..."]:
         t0 = self.age_at_z0()
         tlook = self.lookback_to_z(redshift)
         return t0 - tlook
 
+    @jaxtyped(typechecker=typechecker)
     @jit
-    def age_at_z(self, redshift):
+    def age_at_z(self, redshift: Float[Array, "..."]) -> Float[Array, "..."]:
         """
         The function calculates the age of the universe at a given redshift.
 
@@ -257,8 +275,9 @@ class BaseCosmology(eqx.Module):
     def _age_at_z_vmap(self):
         return jit(vmap(self._age_at_z_kern))
 
+    @jaxtyped(typechecker=typechecker)
     @jit
-    def angular_scale(self, z) -> jnp.float32:
+    def angular_scale(self, z: float) -> Float[Array, "..."]:
         """
         Angular scale in kpc/arcsec at redshift z.
 
