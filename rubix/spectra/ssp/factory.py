@@ -19,6 +19,12 @@ def get_ssp_template(template: str) -> SSPGrid:
 
     Returns:
         The SSP template as `SSPGrid`.
+
+    Example
+    -------
+    >>> from rubix.spectra.ssp.factory import get_ssp_template
+    >>> ssp = get_ssp_template("FSPS")
+    >>> ssp.age.shape
     """
 
     config = rubix_config["ssp"]["templates"]

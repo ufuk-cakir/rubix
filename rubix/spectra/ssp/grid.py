@@ -74,13 +74,36 @@ class SSPGrid:
         Returns:
             The 2D interpolation function Ìnterp2D`.
 
-        Example
-        --------
+        Example 1
+        ----------
         >>> grid = SSPGrid(...)
         >>> lookup = grid.get_lookup_interpolation()
         >>> metallicity = 0.02
         >>> age = 1e9
         >>> flux = lookup(metallicity, age)
+
+        Example 2
+        ----------
+        >>> import matplotlib.pyplot as plt
+        >>> from rubix.spectra.ssp.templates import BruzualCharlot2003
+        >>> from jax import jit
+
+        >>> ssp = BruzualCharlot2003
+        >>> wave = ssp.wavelength
+
+        >>> age_index = 0
+        >>> met_index = 3
+        >>> target_age = ssp.age[age_index] + 0.5*(ssp.age[age_index+1] - ssp.age[age_index])
+        >>> target_met = ssp.metallicity[met_index] + 0.5*(ssp.metallicity[met_index+1] - ssp.metallicity[met_index])
+
+        >>> lookup = ssp.get_lookup_interpolation()
+        >>> spec_calc = lookup(target_met, target_age)
+        >>> spec_true = ssp.flux[met_index, age_index, :]
+
+        >>> plt.plot(wave, spec_calc, label='calc')
+        >>> plt.plot(wave, spec_true, label='true')
+        >>> plt.legend()
+        >>> plt.yscale('log')
         """
 
         # Bind the SSP grid to the interpolation function
@@ -215,7 +238,46 @@ class SSPGrid:
 class HDF5SSPGrid(SSPGrid):
     """
     Class for SSP models stored in HDF5 format.
-    Mainly used for custom collection of Bruzual & Charlot 2003 models and MILES models .
+    Mainly used for custom collection of Bruzual & Charlot 2003 models and MILES models.
+
+    Example
+    -------
+    >>> config = {
+    ...     "name": "Bruzual & Charlot (2003)",
+    ...     "format": "HDF5",
+    ...     "source": "https://www.bruzual.org/bc03/",
+    ...     "file_name": "BC03lr.h5",
+    ...     "fields": {
+    ...         "age": {
+    ...             "name": "age",
+    ...             "units": "Gyr",
+    ...             "in_log": False
+    ...         },
+    ...         "metallicity": {
+    ...             "name": "metallicity",
+    ...             "units": "",
+    ...             "in_log": False
+    ...         },
+    ...         "wavelength": {
+    ...             "name": "wavelength",
+    ...             "units": "Angstrom",
+    ...             "in_log": False
+    ...         },
+    ...         "flux": {
+    ...             "name": "flux",
+    ...             "units": "Lsun/Angstrom",
+    ...             "in_log": False
+    ...         }
+    ...     }
+    ... }
+
+    >>> from rubix.spectra.ssp.grid import HDF5SSPGrid
+    >>> ssp = HDF5SSPGrid.from_file(config, file_location="../rubix/spectra/ssp/templates")
+
+    >>> ssp.age.shape
+    >>> ssp.metallicity.shape
+    >>> ssp.wavelength.shape
+    >>> ssp.flux.shape
     """
 
     # Do we need this again or is this taken care of by inheriting from SSPGrid?
@@ -267,6 +329,40 @@ class pyPipe3DSSPGrid(SSPGrid):
     """
     Class for all SSP models supported by the pyPipe3D project.
     See http://ifs.astroscu.unam.mx/pyPipe3D/templates/ for more information.
+
+    Example
+    -------
+    >>> config = {
+    ...     "name": "Mastar Charlot & Bruzual (2019)",
+    ...     "format": "pyPipe3D",
+    ...     "source": "https://ifs.astroscu.unam.mx/pyPipe3D/templates/",
+    ...     "file_name": "MaStar_CB19.slog_1_5.fits.gz",
+    ...     "fields": {
+    ...         "age": {
+    ...             "name": "age",
+    ...             "units": "Gyr",
+    ...             "in_log": False
+    ...         },
+    ...         "metallicity": {
+    ...             "name": "metallicity",
+    ...             "units": "",
+    ...             "in_log": False
+    ...         },
+    ...         "wavelength": {
+    ...             "name": "wavelength",
+    ...             "units": "Angstrom",
+    ...             "in_log": False
+    ...         },
+    ...         "flux": {
+    ...             "name": "flux",
+    ...             "units": "Lsun/Angstrom",
+    ...             "in_log": False
+    ...         }
+    ...     }
+    ... }
+
+    >>> from rubix.spectra.ssp.grid import pyPipe3DSSPGrid
+    >>> ssp = pyPipe3DSSPGrid.from_file(config, file_location="../rubix/spectra/ssp/templates")
     """
 
     age: Float[Array, " age_bins"]
