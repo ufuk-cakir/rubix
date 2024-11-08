@@ -68,11 +68,11 @@ def get_galaxy_rotation(config: dict):
                     gamma=gamma,
                 )
 
-            # Update the inputs
-            # rubixdata.stars.coords = coords
-            # rubixdata.stars.velocity = velocities
-            setattr(component, "coords", coords)
-            setattr(component, "velocity", velocities)
+                # Update the inputs
+                # rubixdata.stars.coords = coords
+                # rubixdata.stars.velocity = velocities
+                setattr(component, "coords", coords)
+                setattr(component, "velocity", velocities)
 
         return rubixdata
 
