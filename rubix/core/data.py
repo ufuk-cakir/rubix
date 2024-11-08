@@ -322,10 +322,7 @@ def convert_to_rubix(config: Union[dict, str]):
     if isinstance(config, str):
         config = read_yaml(config)
 
-    # Setup a logger based on the config
-    logger_config = config["logger"] if "logger" in config else None
-
-    logger = get_logger(logger_config)
+    logger = get_logger(config.get("logger", None))
 
     if os.path.exists(os.path.join(config["output_path"], "rubix_galaxy.h5")):
         logger.info("Rubix galaxy file already exists, skipping conversion")
@@ -362,6 +359,7 @@ def reshape_array(arr: jax.Array) -> jax.Array:
     Returns:
         The reshaped array as jnp.ndarray
     """
+
     n_gpus = jax.device_count()
     n_particles = arr.shape[0]
 

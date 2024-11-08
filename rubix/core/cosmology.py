@@ -1,4 +1,5 @@
 from rubix.cosmology import RubixCosmology
+from rubix.logger import get_logger
 
 from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker
@@ -24,6 +25,10 @@ def get_cosmology(config: dict):
     ...     ...
     ... }
     """
+    logger = get_logger(config.get("logger", None))
+
+    logger.info("Getting cosmology...")
+
     if config["cosmology"]["name"].upper() == "PLANCK15":
         from rubix.cosmology import PLANCK15
 
