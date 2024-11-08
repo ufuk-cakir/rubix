@@ -158,7 +158,7 @@ def get_resample_spectrum_pmap(target_wavelength) -> Callable:
 
 @jaxtyped(typechecker=typechecker)
 def get_velocities_doppler_shift_vmap(
-    ssp_wave: jax.Array, velocity_direction: str
+    ssp_wave: Float[Array, "..."], velocity_direction: str
 ) -> Callable:
     """
     The function doppler shifts the wavelength based on the velocity of the stars.
@@ -280,7 +280,7 @@ def get_calculate_datacube(config: dict) -> Callable:
     """
     logger = get_logger(config.get("logger", None))
     telescope = get_telescope(config)
-    num_spaxels = telescope.sbin
+    num_spaxels = int(telescope.sbin)
 
     # Bind the num_spaxels to the function
     calculate_cube_fn = jax.tree_util.Partial(calculate_cube, num_spaxels=num_spaxels)

@@ -12,6 +12,8 @@ from interpax import interp2d
 from jax.tree_util import Partial
 from dataclasses import dataclass, fields
 from typing import List
+from jaxtyping import Array, Float, jaxtyped
+from beartype import beartype as typechecker
 
 SSP_UNITS = rubix_config["ssp"]["units"]
 
@@ -19,7 +21,7 @@ SSP_UNITS = rubix_config["ssp"]["units"]
 @dataclass
 class SSPGrid:
     """
-    Base class for all SSP
+    Base class for all SSP models.
     """
 
     age: Float[Array, " age_bins"]
@@ -36,14 +38,28 @@ class SSPGrid:
         self.flux = jnp.asarray(flux)
         # self.units = SSP_UNITS
 
+    @jaxtyped(typechecker=typechecker)
     def keys(self) -> List[str]:
+        """
+        Returns the keys of the dataclass.
+
+        Args:
+            None
+
+        Returns:
+            List of keys of the dataclass.
+        """
         return [f.name for f in fields(self)]
 
     def __iter__(self):
         yield from (getattr(self, field.name) for field in fields(self))
 
-    def get_lookup_interpolation(self, method="cubic", extrap=0):
-        """Returns a 2D interpolation function for the SSP grid.
+    @jaxtyped(typechecker=typechecker)
+    def get_lookup_interpolation(
+        self, method: str = "cubic", extrap: int = 0
+    ) -> Partial:
+        """
+        Returns a 2D interpolation function for the SSP grid.
 
         The function can be called with metallicity and age as arguments to get the flux at that metallicity and age.
 
@@ -55,12 +71,10 @@ class SSPGrid:
             The value to return for points outside the interpolation domain. Default is 0.
             See https://interpax.readthedocs.io/en/latest/_api/interpax.Interpolator2D.html#interpax.Interpolator2D
 
-        Returns
-        -------
-        Interp2D
-            The 2D interpolation function.
+        Returns:
+            The 2D interpolation function Ìnterp2D`.
 
-        Examples
+        Example
         --------
         >>> grid = SSPGrid(...)
         >>> lookup = grid.get_lookup_interpolation()
@@ -83,13 +97,28 @@ class SSPGrid:
         )
         return interp
 
+    @jaxtyped(typechecker=typechecker)
     @staticmethod
-    def convert_units(data, from_units, to_units):
-        quantity = u.Quantity(data, from_units)
-        return quantity.to(to_units).value
+    def convert_units(
+        data: Float[Array, "..."], from_units: str, to_units: str
+    ) -> Float[Array, "..."]:
+        """
+        Convert the units of the data from `from_units` to `to_units`.
 
+        Args:
+            data (array-like): The data to convert.
+            from_units (str): The units of the data.
+            to_units (str): The units to convert to.
+
+        Returns:
+            The data converted to the new units.
+        """
+        quantity = u.Quantity(data, from_units)
+        return jnp.array(quantity.to(to_units).value, dtype=jnp.float32)
+
+    @jaxtyped(typechecker=typechecker)
     @staticmethod
-    def checkout_SSP_template(config: dict, file_location: str):
+    def checkout_SSP_template(config: dict, file_location: str) -> str:
         """
         Check if the SSP template exists on disk, if not download it
         from the given URL in the configuration dictionary.
@@ -102,10 +131,8 @@ class SSPGrid:
         file_location : str
             Location to save the template file.
 
-        Returns
-        -------
-        file_path : str
-            The path to the file.
+        Returns:
+            The path to the file as str.
         """
 
         _logger = get_logger()
@@ -158,23 +185,18 @@ class SSPGrid:
         else:
             return file_path
 
+    @jaxtyped(typechecker=typechecker)
     @classmethod
-    def from_file(cls, config: dict, file_location: str) -> "SSPGrid":
+    def from_file(cls, config: dict, file_location: str):
         """
         Template function to load a SSP grid from a file.
 
-        Parameters
-        ----------
-        config : dict
-            Configuration dictionary.
+        Args:
+            config (dict): Configuration dictionary.
+            file_location (str): Location of the file.
 
-        file_location : str
-            Location of the file.
-
-        Returns
-        -------
-        SSPGrid
-            The SSP grid in the correct units.
+        Returns:
+            The SSP grid SSPGrid in the correct units.
         """
 
         # Initialize an empty zero length array for each field
@@ -207,20 +229,17 @@ class HDF5SSPGrid(SSPGrid):
     def __init__(self, age, metallicity, wavelength, flux):
         super().__init__(age, metallicity, wavelength, flux)
 
+    @jaxtyped(typechecker=typechecker)
     @classmethod
-    def from_file(cls, config: dict, file_location: str) -> "SSPGrid":
+    def from_file(cls, config: dict, file_location: str) -> SSPGrid:
         """
         Load a SSP grid from a HDF5 file.
 
-        Parameters
-        ----------
-        config : dict
-            Configuration dictionary.
+        Args:
+            config (dict): Configuration dictionary.
 
-        Returns
-        -------
-        SSPGrid
-            The SSP grid in the correct units.
+        Returns:
+            The SSP grid `SSPGrid` in the correct units.
         """
 
         if config.get("format", "").lower() not in ["hdf5", "fsps"]:
@@ -233,6 +252,7 @@ class HDF5SSPGrid(SSPGrid):
             for field_name, field_info in config["fields"].items():
                 data = f[field_info["name"]][:]  # type: ignore
                 data = jnp.power(10, data) if field_info["in_log"] else data  # type: ignore
+                data = jnp.array(data, dtype=jnp.float32)
                 data = cls.convert_units(
                     data, field_info["units"], SSP_UNITS[field_name]
                 )
@@ -259,8 +279,9 @@ class pyPipe3DSSPGrid(SSPGrid):
     def __init__(self, age, metallicity, wavelength, flux):
         super().__init__(age, metallicity, wavelength, flux)
 
+    @jaxtyped(typechecker=typechecker)
     @staticmethod
-    def get_wavelength_from_header(header, wave_axis=None):
+    def get_wavelength_from_header(header, wave_axis=None) -> Array:
         """
         Generates a wavelength array using `header`, a :class:`astropy.io.fits.header.Header`
         instance, at axis `wave_axis`.
@@ -279,12 +300,8 @@ class pyPipe3DSSPGrid(SSPGrid):
             (CRVAL, CDELT, NAXIS, CRPIX).
             Defaults to 1.
 
-        Returns
-        -------
-        array like
-            Wavelengths array.
-
-            wavelengths = CRVAL + CDELT*([0, 1, ..., NAXIS] + 1 - CRPIX)
+        Returns:
+            Wavelengths array: wavelengths = CRVAL + CDELT*([0, 1, ..., NAXIS] + 1 - CRPIX)
         """
         if wave_axis is None:
             wave_axis = 1
@@ -338,8 +355,9 @@ class pyPipe3DSSPGrid(SSPGrid):
     #        print(f'[SSPModels] setting normalization wavelength to {wave_norm} A')
     #    return wave_norm
 
+    @jaxtyped(typechecker=typechecker)
     @staticmethod
-    def get_tZ_models(header, n_models):
+    def get_tZ_models(header, n_models: int) -> Array:
         """
         Reads the values of age, metallicity and mass-to-light at the
         normalization flux from the SSP models FITS file.
@@ -388,20 +406,18 @@ class pyPipe3DSSPGrid(SSPGrid):
                 mtol = mtol.at[i].set(1)
         return jnp.unique(ages), jnp.unique(Zs), mtol
 
+    @jaxtyped(typechecker=typechecker)
     @classmethod
-    def from_file(cls, config: dict, file_location: str) -> "SSPGrid":
+    def from_file(cls, config: dict, file_location: str) -> SSPGrid:
         """
         Load a SSP grid from a fits file in pyPipe3D format.
 
-        Parameters
-        ----------
-        config : dict
-            Configuration dictionary.
+        Args:
+            config (dict): Configuration dictionary.
+            file_location (str): Location of the file.
 
-        Returns
-        -------
-        SSPGrid
-            The SSP grid in the correct units.
+        Returns:
+            The SSP grid SSPGrid in the correct units.
         """
         if config.get("format", "").lower() != "pypipe3d":
             raise ValueError("Configured file format is not fits.")

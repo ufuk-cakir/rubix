@@ -2,6 +2,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath("../"))
+sys.path.insert(0, os.path.abspath("../rubix/rubix/utils.py"))
 
 # Configuration file for the Sphinx documentation builder.
 #
@@ -30,6 +31,8 @@ source_suffix = {
     ".ipynb": "myst-nb",
     ".myst": "myst-nb",
 }
+
+nb_execution_mode = "off"
 
 templates_path = ["_templates"]
 exclude_patterns = []

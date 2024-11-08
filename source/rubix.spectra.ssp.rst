@@ -27,6 +27,7 @@ rubix.spectra.ssp.grid module
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: age, metallicity, wavelength, flux
 
 rubix.spectra.ssp.templates module
 ----------------------------------
