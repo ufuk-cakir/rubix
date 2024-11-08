@@ -10,13 +10,16 @@ from rubix.utils import read_yaml
 import os
 import warnings
 from typing import Optional, Union
+from jaxtyping import Float, Array, jaxtyped
+from beartype import beartype as typechecker
 
 PATH = os.path.dirname(os.path.abspath(__file__))
 TELESCOPE_CONFIG_PATH = os.path.join(PATH, "telescopes.yaml")
 
 
 class TelescopeFactory:
-    def __init__(self, telescopes_config: Optional[Union[dict, str]] = None):
+    @jaxtyped(typechecker=typechecker)
+    def __init__(self, telescopes_config: Optional[Union[dict, str]] = None) -> None:
         if telescopes_config is None:
             warnings.warn(
                 "No telescope config provided, using default stored in {}".format(
@@ -29,7 +32,44 @@ class TelescopeFactory:
         else:
             self.telescopes_config = telescopes_config
 
-    def create_telescope(self, name):
+    @jaxtyped(typechecker=typechecker)
+    def create_telescope(self, name: str) -> BaseTelescope:
+        """
+        Function to create a telescope object from the given configuration.
+
+        Args:
+            name (str): The name of the telescope to create.
+
+        Returns:
+            The telescope object as BaseTelescope.
+
+        Example 1 (Uses the defined telescope configuration)
+        -----------------------------------------------------
+        >>> from rubix.telescope import TelescopeFactory
+        >>> telescope_config = {
+        ...     "MUSE": {
+        ...         "fov": 5,
+        ...         "spatial_res": 0.2,
+        ...         "wave_range": [4700.15, 9351.4],
+        ...         "wave_res": 1.25,
+        ...         "lsf_fwhm": 2.51,
+        ...         "signal_to_noise": None,
+        ...         "wave_centre": 6975.775,
+        ...         "aperture_type": "square",
+        ...         "pixel_type": "square"
+        ...     }
+        ... }
+        >>> factory = TelescopeFactory(telescope_config)
+        >>> telescope = factory.create_telescope("MUSE")
+        >>> print(telescope)
+
+        Example 2 (Uses the default telescope configuration)
+        -----------------------------------------------------
+        >>> from rubix.telescope import TelescopeFactory
+        >>> factory = TelescopeFactory()
+        >>> telescope = factory.create_telescope("MUSE")
+        >>> print(telescope)
+        """
         if name not in self.telescopes_config:
             raise ValueError(f"Telescope {name} not found in config")
         config = self.telescopes_config[name]
