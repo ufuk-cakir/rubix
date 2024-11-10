@@ -1,4 +1,3 @@
-from jaxtyping import Float, Array
 import equinox as eqx
 import jax.numpy as jnp
 from astropy import units as u
@@ -11,7 +10,7 @@ from rubix.logger import get_logger
 from interpax import interp2d
 from jax.tree_util import Partial
 from dataclasses import dataclass, fields
-from typing import List
+from typing import List, Tuple
 from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker
 
@@ -453,7 +452,9 @@ class pyPipe3DSSPGrid(SSPGrid):
 
     @jaxtyped(typechecker=typechecker)
     @staticmethod
-    def get_tZ_models(header, n_models: int) -> Array:
+    def get_tZ_models(
+        header, n_models: int
+    ) -> Tuple[Float[Array, "..."], Float[Array, "..."], Float[Array, "..."]]:
         """
         Reads the values of age, metallicity and mass-to-light at the
         normalization flux from the SSP models FITS file.
