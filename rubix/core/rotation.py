@@ -50,12 +50,17 @@ def get_galaxy_rotation(config: dict):
             if particle_type in config["data"]["args"]["particle_type"]:
                 # Get the component (either stars or gas)
                 component = getattr(rubixdata, particle_type)
+                
 
                 # Get the inputs
                 coords = component.coords
                 velocities = component.velocity
                 masses = component.mass
                 halfmass_radius = rubixdata.galaxy.halfmassrad_stars
+                
+                assert coords is not None, f"Coordinates not found for {particle_type}. "
+                assert velocities is not None, f"Velocities not found for {particle_type}. "
+                assert masses is not None, f"Masses not found for {particle_type}. " 
 
                 # Rotate the galaxy
                 coords, velocities = rotate_galaxy_core(
