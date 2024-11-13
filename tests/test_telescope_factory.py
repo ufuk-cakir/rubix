@@ -26,7 +26,6 @@ def sample_telescope_config():
             "wave_res": 0.5,
             "lsf_fwhm": 0.1,
             "signal_to_noise": 100,
-            "wave_centre": 550,
             "aperture_type": "square",
             "pixel_type": "square",
         }
@@ -51,7 +50,6 @@ def test_telescope_factory_with_file_path(tmpdir):
             "wave_res": 0.5,
             "lsf_fwhm": 0.1,
             "signal_to_noise": 100,
-            "wave_centre": 550,
             "pixel_type": "square",
         }
     }
@@ -70,7 +68,6 @@ def test_telescope_factory_with_file_path(tmpdir):
     assert telescope.wave_res == 0.5
     assert telescope.lsf_fwhm == 0.1
     assert telescope.signal_to_noise == 100
-    assert telescope.wave_centre == 550
     # Check if the aperture region is correctly initialized
     assert np.all(telescope.aperture_region == SQUARE_APERTURE(np.floor(100 / 10)))
 

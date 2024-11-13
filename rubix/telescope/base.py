@@ -31,10 +31,9 @@ class BaseTelescope(eqx.Module):
     wave_range: List[float]  # upper and lower limits
     wave_res: float
     lsf_fwhm: float
-    signal_to_noise: Optional[float]
-    wave_centre: float
-    sbin: np.int64
-    aperture_region: Float[Array, "..."]
+    signal_to_noise: float
+    sbin: int
+    aperture_region: Float[Array, " sbin*sbin"]
     pixel_type: str
     wave_seq: Float[Array, "..."]
     wave_edges: Float[Array, "..."]

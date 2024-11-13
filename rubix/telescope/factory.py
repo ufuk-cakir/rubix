@@ -87,7 +87,6 @@ class TelescopeFactory:
             wave_res=config["wave_res"],
             lsf_fwhm=config["lsf_fwhm"],
             signal_to_noise=config["signal_to_noise"],
-            wave_centre=config["wave_centre"],
             sbin=sbin,
             aperture_region=aperture_region,
             pixel_type=config["pixel_type"],
