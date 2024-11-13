@@ -1,15 +1,17 @@
-from .base import BaseHandler
 from .illustris import IllustrisHandler
+from .nihao import NihaoHandler
+from .base import BaseHandler
 
-__all__ = ["IllustrisHandler", "BaseHandler"]
-
-
-
-def get_input_handler(config: dict, logger = None) -> BaseHandler:
+def get_input_handler(config: dict, logger=None) -> BaseHandler:
     """Creates a handler based on the config"""
-    if config["simulation"]["name"] == "IllustrisTNG":
-        return IllustrisHandler(**config["simulation"]["args"], logger = logger)
+    simulation_name = config["simulation"]["name"]
+    print(f"Debug: Simulation name received = {simulation_name}")
+    
+    if simulation_name == "IllustrisTNG":
+        print("Using IllustrisHandler") #debug
+        return IllustrisHandler(**config["data"]["args"], logger=logger)
+    elif simulation_name == "NIHAO":
+        print("Using NihaoHandler") #debug
+        return NihaoHandler(**config["data"]["args"], logger=logger)
     else:
         raise ValueError(f"Simulation {config['simulation']} is not supported")
-    
-    
