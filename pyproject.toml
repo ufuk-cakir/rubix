@@ -35,6 +35,7 @@ dependencies = [
     "jax[cpu]!=0.4.27",
     "interpax",
     "astroquery",
+    "beartype",
 ]
 [project.optional-dependencies]
 tests = [
