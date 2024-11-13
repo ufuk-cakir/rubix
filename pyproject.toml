@@ -2,10 +2,7 @@
 # process itself. Being able to do this was the original reason to
 # introduce pyproject.toml
 [build-system]
-requires = [
-    "setuptools >=61",
-    "setuptools_scm >=7",
-]
+requires = ["setuptools >=61", "setuptools_scm >=7"]
 build-backend = "setuptools.build_meta"
 
 # This section provides general project metadata that is used across
@@ -15,9 +12,7 @@ build-backend = "setuptools.build_meta"
 name = "rubix"
 description = "Add short description here"
 readme = "README.md"
-maintainers = [
-    { name = "Ufuk Çakır", email = "ufukcakir2001@gmail.com" },
-]
+maintainers = [{ name = "Ufuk Çakır", email = "ufukcakir2001@gmail.com" }]
 dynamic = ["version"]
 requires-python = ">=3.9"
 license = { text = "MIT" }
@@ -33,14 +28,14 @@ dependencies = [
     "astropy",
     "scipy",
     "numpy",
-    "matplotlib", 
-    "pyaml", 
+    "matplotlib",
+    "pyaml",
     "jaxtyping",
     "equinox",
     "jax[cpu]!=0.4.27",
-    "interpax"
+    "interpax",
+    "astroquery",
 ]
-
 [project.optional-dependencies]
 tests = [
     "pytest",
@@ -48,9 +43,8 @@ tests = [
     "pytest-mock",
     "nbval",
     "jax[cpu]!=0.4.27",
-    "pre-commit"
+    "pre-commit",
 ]
-
 docs = [
     "ipykernel",
     "nbsphinx",
@@ -60,14 +54,14 @@ docs = [
     "sphinx_rtd_theme",
 ]
 
+cuda = ["jax[cuda]!=0.4.27"]
+
 
 # The following section contains setuptools-specific configuration
 # options. For a full reference of available options, check the overview
 # at https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html
 [tool.setuptools]
-packages = [
-    "rubix",
-]
+packages = ["rubix"]
 
 # Configure setuptools_scm, which extracts the version number from
 # the version control system. For more information see its documentation:
@@ -79,10 +73,7 @@ write_to = "rubix/_version.py"
 
 # The following is the configuration for the pytest test suite
 [tool.pytest.ini_options]
-testpaths = [
-    "tests",
-    "notebooks",
-]
+testpaths = ["tests", "notebooks"]
 
 [tool.coverage.report]
 # Regexes for lines to exclude from consideration
@@ -96,7 +87,7 @@ exclude_also = [
 
     # Don't complain about abstract methods, they aren't run:
     "@(abc\\.)?abstractmethod",
-    ]
+]
 fail_under = 80
 
 
