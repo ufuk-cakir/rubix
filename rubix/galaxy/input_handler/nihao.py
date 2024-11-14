@@ -1,7 +1,4 @@
 import sys
-# Add project path for proper imports
-#sys.path.insert(0, 'rubix_path')
-
 from .base import BaseHandler
 import pynbody
 import numpy as np
@@ -11,19 +8,23 @@ import astropy.units as u
 from rubix.telescope import TelescopeFactory
 import matplotlib.pyplot as plt
 
-# Define a custom unit for metallicity (Zsun), if not already present
-if not hasattr(u, 'Zsun'):
-    u.Zsun = u.def_unit("Zsun", u.dimensionless_unscaled)
+
+# Function to load the YAML configuration
+def load_config():
+    with open("config/nihao_config.yml", "r") as file:
+        config = yaml.safe_load(file)
+    return config
 
 class NihaoHandler(BaseHandler):
     def __init__(self, path, halo_path=None, logger=None):
         '''Initialize handler with paths to snapshot and halo files.'''
         super().__init__()
-        self.path = path
-        self.halo_path = halo_path
+        self.config = load_config()
+        self.path = path or self.config["data_path"]
+        self.halo_path = halo_path or self.config.get("halo_path")
         self.logger = logger or self._default_logger()
         self.logger.debug(f"NihaoHandler initialized with path: {path} and halo_path: {halo_path}")
-        self.load_data()  # Load data upon initialization
+        self.load_data() 
         
     def _default_logger(self):
         '''Create a default logger if none is provided.'''
@@ -36,33 +37,23 @@ class NihaoHandler(BaseHandler):
         self.sim = pynbody.load(self.path)
         self.sim.physical_units()
         self.logger.debug("Available star attributes in sim.stars: %s", self.sim.stars.loadable_keys())
-
-        # Load halo data if a halo path is provided
-        if self.halo_path:
-            halos = self.sim.halos(filename=self.halo_path)
-            pynbody.analysis.angmom.faceon(halos[1])  # Align along angular momentum
-            self.halo_data = halos[1]
-            self.logger.info("Halos loaded successfully.")
-        else:
-            self.halo_data = None
-            self.logger.warning("No halo file provided or found.")
         
-        # Store essential data for stars, gas, and dark matter in a dictionary
+        # Store data for stars, gas, and dark matter in a dictionary
         self.data = {
             'stars': {
-                'age': SFTtoAge(self.sim.stars['tform']),
-                'mass': self.sim.stars['mass'],
-                'metallicity': self.sim.stars['metals'],
-                'coords': self.sim.stars['pos'],
-                'velocity': self.sim.stars['vel'],
+                'age': SFTtoAge(self.sim.stars[fields["stars"]["age"]]),
+                'mass': self.sim.stars[fields["stars"]["mass"]],
+                'metallicity': self.sim.stars[fields["stars"]["metallicity"]],
+                'coords': self.sim.stars[fields["stars"]["coords"]],
+                'velocity': self.sim.stars[fields["stars"]["velocity"]],
             },
             'gas': {
-                'density': self.sim.gas['rho'],
-                'temperature': self.sim.gas['temp'],
-                'metallicity': self.sim.gas['metals']
+                'density': self.sim.gas[fields["gas"]["density"]],
+                'temperature': self.sim.gas[fields["gas"]["temperature"]],
+                'metallicity': self.sim.gas[fields["gas"]["metallicity"]]
             },
             'dm': {
-                'mass': self.sim.dm['mass']
+                'mass': self.sim.dm[fields["dm"]["mass"]]
             }
         }
         self.logger.info("NIHAO snapshot and halo data loaded successfully.")
@@ -73,23 +64,15 @@ class NihaoHandler(BaseHandler):
 
     def get_halo_data(self):
         '''Return halo data if available.'''
-        if self.halo_data:
-            return {
-                'stars': {
-                    'mass': self.halo_data.s['mass'],
-                    'density': self.halo_data.s['rho']
-                },
-                'gas': {
-                    'density': self.halo_data.g['rho'],
-                    'temperature': self.halo_data.g['temp']
-                },
-                'dm': {
-                    'mass': self.halo_data.d['mass']
-                }
-            }
+        if self.halo_path:
+            halos = self.sim.halos(filename=self.halo_path)
+            pynbody.analysis.angmom.faceon(halos[1])
+            self.halo_data = halos[1]
+            self.logger.info("Halos loaded successfully.")
         else:
-            self.logger.warning("No halo data available.")
-            return None
+            self.logger.warning("No halo file provided or found.")
+            self.halo_data = None
+        return self.halo_data
             
     def _get_center(self):
         # Calculate the mass-weighted center of stellar particles
@@ -100,8 +83,8 @@ class NihaoHandler(BaseHandler):
 
     def get_galaxy_data(self):
         '''Return basic galaxy data including center and redshift.'''
-        redshift = 0.1  # Placeholder value
-        center = self._get_center()  # Compute center from stellar particles
+        redshift = self.config.get("galaxy", {}).get("dist_z", 0.1)  
+        center = self._get_center()  # Calculate center from stellar particles
         halfmassrad_stars = 5.0  # Placeholder for half-mass radius
 
         data = {
@@ -124,26 +107,25 @@ class NihaoHandler(BaseHandler):
         }
 
     def get_units(self):
-        '''Define and return units for all quantities.'''
-        return {
-            'stars': {
-                'mass': u.M_sun,                
-                'age': u.Gyr,                   
-                'metallicity': u.Zsun,          
-                'coords': u.kpc,                
-                'velocity': u.km / u.s          
-            },
-            'gas': {
-                'density': u.M_sun / u.kpc**3,  
-                'temperature': u.K,             
-                'metallicity': u.Zsun           
-            },
-            'dm': {
-                'mass': u.M_sun                 
-            },
-            'galaxy': {
-                'redshift': u.one,              
-                'center': u.kpc,                
-                'halfmassrad_stars': u.kpc      
-            }
+        '''Define and return units for all quantities based on the YAML config.'''
+        units = self.config["units"]
+        
+        # Convert units from strings to astropy.units using a mapping dictionary
+        unit_map = {
+            "Msun": u.M_sun,
+            "Gyr": u.Gyr,
+            "Zsun": u.def_unit("Zsun", u.dimensionless_unscaled),
+            "kpc": u.kpc,
+            "km/s": u.km / u.s,
+            "Msun/kpc^3": u.M_sun / u.kpc**3,
+            "K": u.K
         }
+        
+        # Use unit_map to convert units from YAML config to astropy units
+        parsed_units = {
+            'stars': {key: unit_map[unit] for key, unit in units["stars"].items()},
+            'gas': {key: unit_map[unit] for key, unit in units["gas"].items()},
+            'dm': {key: unit_map[unit] for key, unit in units["dm"].items()}
+        }
+        
+        return parsed_units
