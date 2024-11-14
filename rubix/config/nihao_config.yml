@@ -1,0 +1,33 @@
+# path to the data and halo files
+data_path: "path/to/your/data/file"  # placeholder for the actual path
+halo_path: "path/to/your/halo/file"   # placeholder for the actual path
+
+# fields to be read from the data files
+fields:
+  stars:
+    age: "tform"
+    mass: "mass"
+    metallicity: "metals"
+    coords: "pos"
+    velocity: "vel"
+  gas:
+    density: "rho"
+    temperature: "temp"
+    metallicity: "metals"
+  dm:
+    mass: "mass"
+
+# units for the fields
+units:
+  stars:
+    mass: "Msun"
+    age: "Gyr"
+    metallicity: "Zsun"
+    coords: "kpc"
+    velocity: "km/s"
+  gas:
+    density: "Msun/kpc^3"
+    temperature: "K"
+    metallicity: "Zsun"
+  dm:
+    mass: "Msun"
