@@ -1,5 +1,5 @@
-from typing import List, Optional
-from jaxtyping import Float, Array, jaxtyped
+from typing import List, Optional, Union
+from jaxtyping import Int, Float, Array, jaxtyped
 from beartype import beartype as typechecker
 import numpy as np
 
@@ -26,14 +26,14 @@ class BaseTelescope(eqx.Module):
         wave_edges (jnp.ndarray): The wavelength edges of the telescope.
     """
 
-    fov: float
-    spatial_res: float
+    fov: Union[float, int]
+    spatial_res: Union[float, int]
     wave_range: List[float]  # upper and lower limits
-    wave_res: float
-    lsf_fwhm: float
-    signal_to_noise: float
-    sbin: int
-    aperture_region: Float[Array, " sbin*sbin"]
+    wave_res: Union[float, int]
+    lsf_fwhm: Union[float, int]
+    signal_to_noise: Optional[float]
+    sbin: np.int64
+    aperture_region: Union[Float[Array, "..."], Int[Array, "..."]]
     pixel_type: str
     wave_seq: Float[Array, "..."]
     wave_edges: Float[Array, "..."]

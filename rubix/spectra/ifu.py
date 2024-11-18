@@ -3,6 +3,7 @@ import jax
 from rubix import config
 from jaxtyping import Float, Array
 
+from typing import Union
 from jaxtyping import Array, Float, Int, jaxtyped
 from beartype import beartype as typechecker
 
@@ -10,7 +11,7 @@ from beartype import beartype as typechecker
 @jaxtyped(typechecker=typechecker)
 def convert_luminoisty_to_flux(
     luminosity: Float[Array, "..."],
-    observation_lum_dist: Float[Array, "..."],
+    observation_lum_dist: Union[Float[Array, "..."], float],
     observation_z: float,
     pixel_size: float,
     CONSTANTS=config["constants"],
@@ -121,7 +122,7 @@ def _get_velocity_component_multiple(
 
 @jaxtyped(typechecker=typechecker)
 def get_velocity_component(
-    vec: Float[Array, "3 ..."], direction: str
+    vec: Float[Array, "..."], direction: str
 ) -> Float[Array, "..."]:
     """
     This function returns the velocity component in a given direction.

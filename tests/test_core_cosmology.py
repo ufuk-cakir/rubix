@@ -11,7 +11,10 @@ def test_get_cosmology_planck15():
 
 def test_get_cosmology_custom():
     config = {
-        "cosmology": {"name": "CUSTOM", "args": {"Om0": 1, "w0": 2, "wa": 3, "h": 4}}
+        "cosmology": {
+            "name": "CUSTOM",
+            "args": {"Om0": 1.0, "w0": 2.0, "wa": 3.0, "h": 4.0},
+        }
     }
     cosmology = get_cosmology(config)
     assert isinstance(cosmology, RubixCosmology)

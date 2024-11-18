@@ -1,6 +1,7 @@
 import pytest
 import jax
 import jax.numpy as jnp
+import numpy as np
 from unittest.mock import Mock, patch
 
 from rubix.spectra.ifu import resample_spectrum
@@ -94,14 +95,16 @@ def _get_sample_inputs(subset=None):
     print("Spectra shape: ", spectra.shape)
     print(".............")
 
-    import numpy as np
-
     # Create meshgrid for metallicity and age to cover all combinations
     metallicity_grid, age_grid = np.meshgrid(
         metallicity.flatten(), age.flatten(), indexing="ij"
     )
-    metallicity_grid = reshape_array(metallicity_grid.flatten())
-    age_grid = reshape_array(age_grid.flatten())
+    metallicity_grid = jnp.asarray(metallicity_grid.flatten())  # Convert to jax.Array
+    age_grid = jnp.asarray(age_grid.flatten())  # Convert to jax.Array
+    metallicity_grid = reshape_array(metallicity_grid)
+    age_grid = reshape_array(age_grid)
+    metallicity_grid = jnp.array(metallicity_grid)
+    age_grid = jnp.array(age_grid)
     print("Metallicity grid shape: ", metallicity_grid.shape)
     print("Age grid shape: ", age_grid.shape)
 

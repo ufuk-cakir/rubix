@@ -1,5 +1,4 @@
 import jax.numpy as jnp
-from jaxtyping import Float, Array
 from rubix.telescope.utils import (
     calculate_spatial_bin_edges,
     square_spaxel_assignment,
@@ -11,12 +10,14 @@ from rubix.logger import get_logger
 from .cosmology import get_cosmology
 from typing import Callable
 
+from typing import Union
 from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker
+from unittest.mock import patch, MagicMock
 
 
 @jaxtyped(typechecker=typechecker)
-def get_telescope(config: dict) -> BaseTelescope:
+def get_telescope(config: Union[str, dict]) -> BaseTelescope:
     """
     Get the telescope object based on the configuration.
 
@@ -40,6 +41,8 @@ def get_telescope(config: dict) -> BaseTelescope:
     # add support for custom telescopes
     factory = TelescopeFactory()
     telescope = factory.create_telescope(config["telescope"]["name"])
+    if not isinstance(telescope, BaseTelescope):
+        raise TypeError(f"Expected type BaseTelescope, but got {type(telescope)}")
     return telescope
 
 

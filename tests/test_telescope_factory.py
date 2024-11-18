@@ -43,13 +43,13 @@ def test_telescope_factory_with_file_path(tmpdir):
     # Create a factory instance with a string argument simulating a path to a config file
     dummy_data = {
         "telescope1": {
-            "fov": 100,
+            "fov": 100.0,
             "spatial_res": 10,
             "aperture_type": "square",
-            "wave_range": [400, 700],
+            "wave_range": [400.0, 700.0],
             "wave_res": 0.5,
             "lsf_fwhm": 0.1,
-            "signal_to_noise": 100,
+            "signal_to_noise": 100.0,
             "pixel_type": "square",
         }
     }

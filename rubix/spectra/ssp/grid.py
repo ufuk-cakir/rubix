@@ -10,8 +10,8 @@ from rubix.logger import get_logger
 from interpax import interp2d
 from jax.tree_util import Partial
 from dataclasses import dataclass, fields
-from typing import List, Tuple
-from jaxtyping import Array, Float, jaxtyped
+from typing import List, Tuple, Union
+from jaxtyping import Int, Array, Float, jaxtyped
 from beartype import beartype as typechecker
 
 SSP_UNITS = rubix_config["ssp"]["units"]
@@ -122,7 +122,9 @@ class SSPGrid:
     @jaxtyped(typechecker=typechecker)
     @staticmethod
     def convert_units(
-        data: Float[Array, "..."], from_units: str, to_units: str
+        data: Union[Float[Array, "..."], Int[Array, "..."]],
+        from_units: str,
+        to_units: str,
     ) -> Float[Array, "..."]:
         """
         Convert the units of the data from `from_units` to `to_units`.
