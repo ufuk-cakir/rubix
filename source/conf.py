@@ -2,7 +2,6 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath("../"))
-sys.path.insert(0, os.path.abspath("../rubix/rubix/utils.py"))
 
 # Configuration file for the Sphinx documentation builder.
 #
@@ -49,3 +48,4 @@ html_theme_options = {
 }
 
 html_static_path = ["_static"]
+html_logo = "../build/html/_static/logo_rubix.png"

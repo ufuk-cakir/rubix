@@ -1,3 +1,6 @@
+.. _publications:
+
+
 Publications
 ===================
 List of publications including RUBIX
