@@ -1,16 +1,19 @@
 import jax.numpy as jnp
 import numpy as np
-from jaxtyping import Array, Float
 from rubix.cosmology.base import BaseCosmology
 from typing import Tuple, List
 from jaxtyping import Float, Array, Bool, Int, jaxtyped
 from beartype import beartype as typechecker
+from typing import Union
 
 
 @jaxtyped(typechecker=typechecker)
 def calculate_spatial_bin_edges(
     fov: float, spatial_bins: np.int64, dist_z: float, cosmology: BaseCosmology
-) -> Tuple[Float[Array, " ..."], Float[Array, "..."]]:
+) -> Tuple[
+    Union[Int[Array, "..."], Float[Array, "..."]],
+    Union[float, int, Int[Array, "..."], Float[Array, "..."]],
+]:
     """
     Calculate the bin edges for the spatial bins.
 
@@ -71,7 +74,8 @@ def calculate_wave_edges(
 
 @jaxtyped(typechecker=typechecker)
 def square_spaxel_assignment(
-    coords: Float[Array, "..."], spatial_bin_edges: Float[Array, "..."]
+    coords: Union[Int[Array, "..."], Float[Array, "..."]],
+    spatial_bin_edges: Union[Int[Array, "..."], Float[Array, "..."]],
 ) -> Int[Array, "..."]:
     """
     Bin the particle coordinates into a 2D image with the given bin edges for square pixels.
@@ -148,8 +152,8 @@ def square_spaxel_assignment(
 
 @jaxtyped(typechecker=typechecker)
 def mask_particles_outside_aperture(
-    coords: Float[Array, " * 3"],
-    spatial_bin_edges: Float[Array, "..."],
+    coords: Union[Float[Array, " * 3"], Int[Array, " * 3"]],
+    spatial_bin_edges: Union[Float[Array, "..."], Int[Array, "..."]],
 ) -> Bool[Array, "..."]:
     """
     Mask the particles that are outside the aperture.

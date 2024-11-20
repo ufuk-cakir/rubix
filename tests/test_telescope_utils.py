@@ -6,6 +6,7 @@ from rubix.telescope.utils import (
 import jax
 import jax.numpy as jnp
 from unittest.mock import MagicMock
+import numpy as np
 
 from rubix.cosmology.base import BaseCosmology
 
@@ -79,7 +80,7 @@ def test_mixed_particles():
 
 def test_calculate_spatial_bin_edges():
     fov = 1.0
-    spatial_bins = 10
+    spatial_bins = np.int64(10)
     dist_z = 0.5
 
     # Create a mock cosmology object

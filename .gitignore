@@ -166,3 +166,4 @@ rubix/telescope/filters/data/*
 
 .firebaserc
 firebase.json
+.firebase/*
