@@ -7,6 +7,7 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   rubix.telescope.filters
    rubix.telescope.lsf
    rubix.telescope.psf
    rubix.telescope.noise

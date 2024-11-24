@@ -64,6 +64,7 @@ Notebooks
    notebooks/spaxel_assignment.ipynb
    notebooks/ssp_template.ipynb
    notebooks/psf.ipynb
+   notebooks/filter_curves.ipynb
 
 Code base documentation
 =======================
@@ -76,8 +77,6 @@ Code base documentation
    rubix.cosmology
    rubix.galaxy
    rubix.pipeline
-
    rubix.spectra
    rubix.telescope
-
    rubix.utils

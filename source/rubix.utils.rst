@@ -1,7 +1,13 @@
-utils
-============
+rubix.utils package
+===================
 
-.. automodule:: utils
+Submodules
+----------
+
+rubix.utils.utils module
+------------------------
+
+.. automodule:: rubix.utils.utils
    :members:
    :undoc-members:
    :show-inheritance:
