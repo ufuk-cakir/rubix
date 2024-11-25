@@ -33,12 +33,13 @@ dependencies = [
     "astropy",
     "scipy",
     "numpy",
-    "matplotlib", 
-    "pyaml", 
+    "matplotlib",
+    "pyaml",
     "jaxtyping",
     "equinox",
     "jax[cpu]!=0.4.27",
-    "interpax"
+    "interpax",
+    "pynbody"
 ]
 
 [project.optional-dependencies]
