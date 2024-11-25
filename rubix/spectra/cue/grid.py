@@ -1,6 +1,7 @@
 import jax.numpy as jnp
 import numpy as np
 from jax import vmap
+import jax
 from rubix.spectra.cue.cue.src.cue.line import predict as line_predict
 from rubix.spectra.cue.cue.src.cue.continuum import predict as cont_predict
 
@@ -87,8 +88,32 @@ class CueGasLookup:
         logger.warning(
             "Calculating emission lines assumes that we trust the outcome of the Cue model (Li et al. 2024)."
         )
-        self.lines = line_predict(theta=theta).nn_predict()
-        return self.lines
+        # self.lines = line_predict(theta=theta_np).nn_predict()
+        # return self.lines
+
+        # theta_np = jax.block_until_ready(theta_np)
+        # theta_np = np.array(theta)
+
+        # theta_np = np.array(jax.device_get(theta))
+
+        # lines = line_predict(theta=theta_np).nn_predict()
+        # lines_jax = jnp.array(lines)
+        # return lines_jax
+
+        # Ensure theta is detached (redundant if already detached in get_theta)
+        if isinstance(theta, jnp.ndarray):
+            theta_np = np.array(jax.device_get(theta))  # Detach and convert to NumPy
+        elif isinstance(theta, np.ndarray):
+            theta_np = theta  # Already NumPy
+        else:
+            raise TypeError("Expected theta to be a NumPy or JAX array.")
+
+        # Call the non-JAX-compatible function
+        lines = line_predict(theta=theta_np).nn_predict()
+
+        # Convert result back to JAX array if needed
+        lines_jax = jnp.array(lines)
+        return lines_jax
 
     def calculate_continuum(self, theta):
         """
@@ -190,7 +215,7 @@ class CueGasLookup:
             final_log_co,
         ]
         theta = jnp.transpose(jnp.array(theta))
-        return theta
+        return np.array(jax.device_get(theta))
 
     def get_wavelengthrange(self, steps=1000):
         """
