@@ -2,8 +2,8 @@ import jax.numpy as jnp
 import numpy as np
 from jax import vmap
 import jax
-from rubix.spectra.cue.cue.src.cue.line import predict as line_predict
-from rubix.spectra.cue.cue.src.cue.continuum import predict as cont_predict
+from cue.line import predict as line_predict
+from cue.continuum import predict as cont_predict
 
 # from cue.line import predict as line_predict
 # from cue.continuum import predict as cont_predict
@@ -101,19 +101,20 @@ class CueGasLookup:
         # return lines_jax
 
         # Ensure theta is detached (redundant if already detached in get_theta)
-        if isinstance(theta, jnp.ndarray):
-            theta_np = np.array(jax.device_get(theta))  # Detach and convert to NumPy
-        elif isinstance(theta, np.ndarray):
-            theta_np = theta  # Already NumPy
-        else:
-            raise TypeError("Expected theta to be a NumPy or JAX array.")
+        # if isinstance(theta, jnp.ndarray):
+        #    theta_np = np.array(jax.device_get(theta))  # Detach and convert to NumPy
+        # elif isinstance(theta, np.ndarray):
+        #    theta_np = theta  # Already NumPy
+        # else:
+        #    raise TypeError("Expected theta to be a NumPy or JAX array.")
 
         # Call the non-JAX-compatible function
-        lines = line_predict(theta=theta_np).nn_predict()
+        wavelength, nn_spectra = line_predict(theta=theta).nn_predict()
 
         # Convert result back to JAX array if needed
-        lines_jax = jnp.array(lines)
-        return lines_jax
+        wave_line_jax = jnp.array(wavelength)
+        lines_jax = np.array(nn_spectra)
+        return wave_line_jax, lines_jax
 
     def calculate_continuum(self, theta):
         """
@@ -144,8 +145,12 @@ class CueGasLookup:
         """
         logger = get_logger(self.config.get("logger", None))
         logger.info("Calculating continuum")
-        self.continuum = cont_predict(theta=theta).nn_predict()
-        return self.continuum
+        wavelength_cont, continuum = cont_predict(theta=theta).nn_predict()
+
+        # Convert result back to JAX array if needed
+        wave_cont_jax = jnp.array(wavelength_cont)
+        continuum_jax = np.array(continuum)
+        return wave_cont_jax, continuum_jax
 
     def get_theta(self, rubixdata):
         """
@@ -215,7 +220,7 @@ class CueGasLookup:
             final_log_co,
         ]
         theta = jnp.transpose(jnp.array(theta))
-        return np.array(jax.device_get(theta))
+        return theta
 
     def get_wavelengthrange(self, steps=1000):
         """
@@ -250,8 +255,9 @@ class CueGasLookup:
         # for i in range(theta.shape[0]):
         #    continuum_i = self.calculate_continuum(theta[i, :].reshape(1, -1))
         #    continuum.append(continuum_i)
-        continuum = self.calculate_continuum(theta)
+        wave_cont, continuum = self.calculate_continuum(theta)
         rubixdata.gas.continuum = continuum
+        rubixdata.gas.wave_cont = wave_cont
         # rubixdata.gas.continuum[0] is the wavelength
         # rubixdata.gas.continuum[1][i] is the luminosity for the ith particle
         return rubixdata
@@ -275,8 +281,8 @@ class CueGasLookup:
 
         new_wavelength = self.get_wavelengthrange()
         rubixdata = self.get_continuum(rubixdata)
-        continuum = rubixdata.gas.continuum[1]
-        original_wavelength = rubixdata.gas.continuum[0]
+        continuum = rubixdata.gas.continuum
+        original_wavelength = rubixdata.gas.wave_cont
 
         # resampled_continuum = []
         # for i in range(len(rubixdata.gas.mass)):
@@ -292,7 +298,8 @@ class CueGasLookup:
 
         # Vectorize the interpolation function
         resampled_continuum = vmap(interp_fn)(continuum)
-        rubixdata.gas.continuum = [new_wavelength, resampled_continuum]
+        rubixdata.gas.continuum = resampled_continuum
+        rubixdata.gas.wave_cont = new_wavelength
 
         return rubixdata
 
@@ -309,16 +316,17 @@ class CueGasLookup:
         rubixdata (RubixData): The RubixData object with the gas emission lines added to rubixdata.gas.emission_peaks.
         """
         theta = self.get_theta(rubixdata)
-        emission_peaks = self.calculate_lines(theta)
+        wave_lines, emission_peaks = self.calculate_lines(theta)
         rubixdata.gas.emission_peaks = emission_peaks
 
-        emission_peaks_modify = rubixdata.gas.emission_peaks[1]
+        emission_peaks_modify = rubixdata.gas.emission_peaks
         # Replace inf values with zero
         emission_peaks_cleaned = jnp.nan_to_num(
             emission_peaks_modify, posinf=0.0, neginf=0.0
         )
         # Update the original array
-        rubixdata.gas.emission_peaks = [emission_peaks[0], emission_peaks_cleaned]
+        rubixdata.gas.emission_peaks = emission_peaks_cleaned
+        rubixdata.gas.wave_lines = wave_lines
 
         return rubixdata
 
@@ -347,7 +355,7 @@ class CueGasLookup:
 
         rubixdata = self.get_emission_peaks(rubixdata)
         rubixdata = self.illustris_gas_temp(rubixdata)
-        wavelengths = rubixdata.gas.emission_peaks[0]
+        wavelengths = rubixdata.gas.wave_lines
 
         dispersionfactor = np.sqrt(
             (8 * k_B * rubixdata.gas.temperature * np.log(2)) / (m_p * c**2)
@@ -389,7 +397,7 @@ class CueGasLookup:
         logger.info("Calculating gas emission lines")
         # get wavelengths of lookup and wavelengthrange of telescope
         rubixdata = self.get_emission_peaks(rubixdata)
-        wavelengths = rubixdata.gas.emission_peaks[0]
+        wavelengths = rubixdata.gas.wave_lines
         # wave_start = get_telescope(self.config).wave_range[0]
         # wave_end = get_telescope(self.config).wave_range[1]
         wavelengthrange = self.get_wavelengthrange()
@@ -418,7 +426,7 @@ class CueGasLookup:
 
         # Compute the spectra for all particles
         spectra_all = vmap_spectrum(
-            rubixdata.gas.emission_peaks[1], rubixdata.gas.dispersionfactor
+            rubixdata.gas.emission_peaks, rubixdata.gas.dispersionfactor
         )
 
         # Store the spectra and wavelength range in rubixdata
@@ -443,7 +451,7 @@ class CueGasLookup:
         rubixdata = self.get_emission_lines(rubixdata)
         rubixdata = self.get_resample_continuum(rubixdata)
 
-        continuum = rubixdata.gas.continuum[1]
+        continuum = rubixdata.gas.continuum
         emission_lines = rubixdata.gas.emission_spectra
 
         gas_emission = continuum + emission_lines
