@@ -116,6 +116,10 @@ class CueGasLookup:
         # Convert result back to JAX array if needed
         wave_line_jax = jnp.array(wavelength)
         lines_jax = jnp.array(nn_spectra)
+        logger.debug(
+            f"wave_line_jax: {wave_line_jax.shape}, lines_jax: {lines_jax.shape}"
+        )
+        logger.debug(f"wave_line_jax: {wave_line_jax}, lines_jax: {lines_jax}")
         return wave_line_jax, lines_jax
 
     def calculate_continuum(self, theta):
@@ -152,6 +156,10 @@ class CueGasLookup:
         # Convert result back to JAX array if needed
         wave_cont_jax = jnp.array(wavelength_cont)
         continuum_jax = jnp.array(continuum)
+        logger.debug(
+            f"wave_cont_jax: {wave_cont_jax.shape}, continuum_jax: {continuum_jax.shape}"
+        )
+        logger.debug(f"wave_cont_jax: {wave_cont_jax}, continuum_jax: {continuum_jax}")
         return wave_cont_jax, continuum_jax
 
     def get_theta(self, rubixdata):
@@ -222,6 +230,8 @@ class CueGasLookup:
             final_log_co,
         ]
         theta = jnp.transpose(jnp.array(theta))
+        logger.debug(f"theta: {theta.shape}")
+        logger.debug(f"theta: {theta}")
         return theta
 
     def get_wavelengthrange(self, steps=1000):
@@ -252,6 +262,7 @@ class CueGasLookup:
         continuum[0] is the wavelength in Angstrom
         continuum[1] is the luminosity in erg/s
         """
+        logger = get_logger(self.config.get("logger", None))
         theta = self.get_theta(rubixdata)
         # continuum = []
         # for i in range(theta.shape[0]):
@@ -262,6 +273,8 @@ class CueGasLookup:
         rubixdata.gas.wave_cont = wave_cont
         # rubixdata.gas.continuum[0] is the wavelength
         # rubixdata.gas.continuum[1][i] is the luminosity for the ith particle
+        logger.debug(f"wave_cont: {wave_cont.shape}, continuum: {continuum.shape}")
+        logger.debug(f"wave_cont: {wave_cont}, continuum: {continuum}")
         return rubixdata
 
     def get_continuum_tf(self, rubixdata):
@@ -277,6 +290,7 @@ class CueGasLookup:
         continuum[0] is the wavelength in Angstrom
         continuum[1] is the luminosity in erg/s
         """
+        logger = get_logger(self.config.get("logger", None))
         theta = self.get_theta(rubixdata)
         theta_numpy = jax.device_get(theta)
         if type(theta_numpy) != np.ndarray:
@@ -289,7 +303,9 @@ class CueGasLookup:
 
         # rubixdata.gas.continuum[0] is the wavelength
         # rubixdata.gas.continuum[1][i] is the luminosity for the ith particle
-        return wave_cont, continuum
+        logger.debug(f"wave_cont: {wave_cont.shape}, continuum: {continuum.shape}")
+        logger.debug(f"wave_cont: {wave_cont}, continuum: {continuum}")
+        return np.array(wave_cont), np.array(continuum)
 
     def get_resample_continuum(self, rubixdata):
         """
@@ -307,6 +323,7 @@ class CueGasLookup:
         Returns:
         rubixdata.gas.continuum (jnp.ndarray): The resampled wavelength and spectrum array.
         """
+        logger = get_logger(self.config.get("logger", None))
 
         new_wavelength = self.get_wavelengthrange()
 
@@ -318,10 +335,25 @@ class CueGasLookup:
             jax.ShapeDtypeStruct(shape=(1841,), dtype=jnp.float32),
             jax.ShapeDtypeStruct(shape=(num_mass_elements, 1841), dtype=jnp.float32),
         ]
-        cue_call_cont = io_callback(
+        cue_call_cont = jax.pure_callback(
             self.get_continuum_tf, result_shape_dtypes, rubixdata
         )
+        cue_call_cont = jax.block_until_ready(cue_call_cont)
         original_wavelength, continuum = cue_call_cont
+        # original_wavelength = jax.block_until_ready(original_wavelength)
+        # continuum = jax.block_until_ready(continuum)
+        # original_wavelength_numpy = jax.device_get(original_wavelength)
+        # original_wavelength_numpy = np.array(original_wavelength_numpy)
+        # if type(original_wavelength) != np.ndarray:
+        #    raise TypeError("Expected original_wavelength to be a NumPy array.")
+        # continuum_numpy = jax.device_get(continuum)
+        # continuum_numpy = np.array(continuum_numpy)
+        # if type(continuum) != np.ndarray:
+        #    raise TypeError("Expected continuum to be a NumPy array.")
+        # original_wavelength = np.array(original_wavelength)
+        # continuum = np.array(continuum)
+        # original_wavelength = jax.device_put(original_wavelength)
+        # continuum = jax.device_put(continuum)
         # print("original_wavelength", original_wavelength.shape)
         # print("continuum", continuum.shape)
         # resampled_continuum = []
@@ -351,7 +383,12 @@ class CueGasLookup:
 
         rubixdata.gas.continuum = resampled_continuum
         rubixdata.gas.wave_cont = new_wavelength
-
+        logger.debug(
+            f"new_wavelength: {new_wavelength.shape}, resampled_continuum: {resampled_continuum.shape}"
+        )
+        logger.debug(
+            f"new_wavelength: {new_wavelength}, resampled_continuum: {resampled_continuum}"
+        )
         return rubixdata
 
         # def get_emission_peaks(self, rubixdata):
@@ -393,6 +430,8 @@ class CueGasLookup:
         Returns:
         rubixdata (RubixData): The RubixData object with the gas emission lines added to rubixdata.gas.emission_peaks.
         """
+        logger = get_logger(self.config.get("logger", None))
+
         theta = self.get_theta(rubixdata)
         theta_numpy = jax.device_get(theta)
         if type(theta_numpy) != np.ndarray:
@@ -403,7 +442,11 @@ class CueGasLookup:
         emission_peaks_cleaned = jnp.nan_to_num(emission_peaks, posinf=0.0, neginf=0.0)
         # Update the original array
 
-        return wave_lines, emission_peaks_cleaned
+        logger.debug(
+            f"wave_lines: {wave_lines.shape}, emission_peaks: {emission_peaks.shape}"
+        )
+        logger.debug(f"wave_lines: {wave_lines}, emission_peaks: {emission_peaks}")
+        return np.array(wave_lines), np.array(emission_peaks_cleaned)
 
     def dispersionfactor(self, rubixdata):
         """
@@ -440,6 +483,8 @@ class CueGasLookup:
 
         dispersion = dispersionfactor * wavelengths
         rubixdata.gas.dispersionfactor = dispersion
+        logger.debug(f"dispersionfactor: {dispersionfactor.shape}")
+        logger.debug(f"dispersionfactor: {dispersionfactor}")
         return rubixdata
 
     def gaussian(self, x, a, b, c):
@@ -482,10 +527,25 @@ class CueGasLookup:
             jax.ShapeDtypeStruct(shape=(number_mass_elements, 138), dtype=jnp.float32),
         ]
 
-        cue_call_lines = io_callback(
+        cue_call_lines = jax.pure_callback(
             self.get_emission_peaks_tf, result_shape_dtypes_lines, rubixdata
         )
+        cue_call_lines = jax.block_until_ready(cue_call_lines)
         wavelengths, emission_peaks = cue_call_lines
+        # wavelengths = jax.block_until_ready(wavelengths)
+        # emission_peaks = jax.block_until_ready(emission_peaks)
+        # wavelengths_numpy = jax.device_get(wavelengths)
+        # wavelengths_numpy = np.array(wavelengths_numpy)
+        # if type(wavelengths) != np.ndarray:
+        #    raise TypeError("Expected wavelengths to be a NumPy array.")
+        # emission_peaks_numpy = jax.device_get(emission_peaks)
+        # emission_peaks_numpy = np.array(emission_peaks_numpy)
+        # if type(emission_peaks) != np.ndarray:
+        #    raise TypeError("Expected emission_peaks to be a NumPy array.")
+        # wavelengths = np.array(wavelengths)
+        # emission_peaks = np.array(emission_peaks)
+        # wavelengths = jax.device_put(wavelengths)
+        # emission_peaks = jax.device_put(emission_peaks)
         print("wavelengths", wavelengths.shape)
         print("emission_peaks", emission_peaks.shape)
 
@@ -534,7 +594,10 @@ class CueGasLookup:
         # Store the spectra and wavelength range in rubixdata
         rubixdata.gas.emission_spectra = spectra_all
         rubixdata.gas.wavelengthrange = wavelengthrange
-
+        logger.debug(
+            f"wavelengthrange: {wavelengthrange.shape}, spectra_all: {spectra_all.shape}"
+        )
+        logger.debug(f"wavelengthrange: {wavelengthrange}, spectra_all: {spectra_all}")
         return rubixdata
 
     def get_gas_emission(self, rubixdata):
@@ -564,6 +627,11 @@ class CueGasLookup:
 
         rubixdata.gas.spectra = gas_emission_cleaned
 
+        logger.debug(
+            f"continuum: {continuum.shape}, emission_lines: {emission_lines.shape}"
+        )
+        logger.debug(f"gas_emission: {gas_emission.shape}")
+        logger.debug(f"gas_emission_cleaned: {gas_emission_cleaned.shape}")
         return rubixdata
 
     def get_gas_emission_flux(self, rubixdata):
@@ -591,5 +659,8 @@ class CueGasLookup:
         flux = luminosity * self.factor
 
         rubixdata.gas.spectra = flux
+
+        logger.debug(f"luminosity: {luminosity.shape}, flux: {flux.shape}")
+        logger.debug(f"luminosity: {luminosity}, flux: {flux}")
 
         return rubixdata
