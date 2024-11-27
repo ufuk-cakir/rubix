@@ -12,6 +12,7 @@ from rubix.spectra.ifu import convert_luminoisty_to_flux_gas
 from rubix import config as rubix_config
 from rubix.logger import get_logger
 from rubix.cosmology.base import BaseCosmology
+from jax.experimental import io_callback
 
 
 class CueGasLookup:
@@ -36,6 +37,7 @@ class CueGasLookup:
         """
         logger = get_logger(self.config.get("logger", None))
         logger.info("Calculating gas temperature")
+
         # Convert internal energy
         internal_energy_u = rubixdata.gas.internal_energy
         # Electron abundance
@@ -113,7 +115,7 @@ class CueGasLookup:
 
         # Convert result back to JAX array if needed
         wave_line_jax = jnp.array(wavelength)
-        lines_jax = np.array(nn_spectra)
+        lines_jax = jnp.array(nn_spectra)
         return wave_line_jax, lines_jax
 
     def calculate_continuum(self, theta):
@@ -149,7 +151,7 @@ class CueGasLookup:
 
         # Convert result back to JAX array if needed
         wave_cont_jax = jnp.array(wavelength_cont)
-        continuum_jax = np.array(continuum)
+        continuum_jax = jnp.array(continuum)
         return wave_cont_jax, continuum_jax
 
     def get_theta(self, rubixdata):
@@ -262,6 +264,33 @@ class CueGasLookup:
         # rubixdata.gas.continuum[1][i] is the luminosity for the ith particle
         return rubixdata
 
+    def get_continuum_tf(self, rubixdata):
+        """
+        Returns the continuum of the gas in the galaxy according to the cue lookup.
+        The continuum is calculated using the provided theta parameters.
+
+        Parameters:
+        rubixdata (RubixData): The RubixData object containing the gas data.
+
+        Returns:
+        rubixdata (RubixData): The RubixData object with the gas continuum added to rubixdata.gas.continuum.
+        continuum[0] is the wavelength in Angstrom
+        continuum[1] is the luminosity in erg/s
+        """
+        theta = self.get_theta(rubixdata)
+        theta_numpy = jax.device_get(theta)
+        if type(theta_numpy) != np.ndarray:
+            raise TypeError("Expected theta to be a NumPy array.")
+        # continuum = []
+        # for i in range(theta.shape[0]):
+        #    continuum_i = self.calculate_continuum(theta[i, :].reshape(1, -1))
+        #    continuum.append(continuum_i)
+        wave_cont, continuum = self.calculate_continuum(theta)
+
+        # rubixdata.gas.continuum[0] is the wavelength
+        # rubixdata.gas.continuum[1][i] is the luminosity for the ith particle
+        return wave_cont, continuum
+
     def get_resample_continuum(self, rubixdata):
         """
         Resamples the spectrum of the gas continuum to the new wavelength range using interpolation.
@@ -280,10 +309,21 @@ class CueGasLookup:
         """
 
         new_wavelength = self.get_wavelengthrange()
-        rubixdata = self.get_continuum(rubixdata)
-        continuum = rubixdata.gas.continuum
-        original_wavelength = rubixdata.gas.wave_cont
 
+        # rubixdata = self.get_continuum_tf(rubixdata)
+        num_mass_elements = len(rubixdata.gas.mass)
+
+        # Define the expected shapes and data types
+        result_shape_dtypes = [
+            jax.ShapeDtypeStruct(shape=(1841,), dtype=jnp.float32),
+            jax.ShapeDtypeStruct(shape=(num_mass_elements, 1841), dtype=jnp.float32),
+        ]
+        cue_call_cont = io_callback(
+            self.get_continuum_tf, result_shape_dtypes, rubixdata
+        )
+        original_wavelength, continuum = cue_call_cont
+        # print("original_wavelength", original_wavelength.shape)
+        # print("continuum", continuum.shape)
         # resampled_continuum = []
         # for i in range(len(rubixdata.gas.mass)):
         #    resampled_continuum_i = jnp.interp(
@@ -294,16 +334,54 @@ class CueGasLookup:
 
         # Define the interpolation function
         def interp_fn(continuum_i):
+            if original_wavelength.shape != continuum_i.shape:
+                raise ValueError(
+                    f"Shapes do not match: original_wavelength {original_wavelength.shape}, continuum_i {continuum_i.shape}"
+                )
             return jnp.interp(new_wavelength, original_wavelength, continuum_i)
 
-        # Vectorize the interpolation function
+        # Transpose `continuum` to align dimensions properly for interpolation
+        # continuum_transposed = continuum.T  # Shape becomes (n_particles, 1841)
+
+        # Vectorize the interpolation function over axis 0
         resampled_continuum = vmap(interp_fn)(continuum)
+
+        # Transpose the result back if needed
+        # resampled_continuum = resampled_continuum.T  # Shape becomes (1841, n_particles)
+
         rubixdata.gas.continuum = resampled_continuum
         rubixdata.gas.wave_cont = new_wavelength
 
         return rubixdata
 
-    def get_emission_peaks(self, rubixdata):
+        # def get_emission_peaks(self, rubixdata):
+        """
+        Returns the wavelength and the luminosity (erg/s) for 138 emission lines for each gas cell.
+        The emission lines are calculated using the provided theta parameters.
+        As lookup table we use the Cue model (Li et al. 2024).
+
+        Parameters:
+        rubixdata (RubixData): The RubixData object containing the gas data.
+
+        Returns:
+        rubixdata (RubixData): The RubixData object with the gas emission lines added to rubixdata.gas.emission_peaks.
+        """
+        # theta = self.get_theta(rubixdata)
+        # wave_lines, emission_peaks = self.calculate_lines(theta)
+        # rubixdata.gas.emission_peaks = emission_peaks
+
+        # emission_peaks_modify = rubixdata.gas.emission_peaks
+        # Replace inf values with zero
+        # emission_peaks_cleaned = jnp.nan_to_num(
+        #    emission_peaks_modify, posinf=0.0, neginf=0.0
+        # )
+        # Update the original array
+        # rubixdata.gas.emission_peaks = emission_peaks_cleaned
+        # rubixdata.gas.wave_lines = wave_lines
+
+        # return rubixdata
+
+    def get_emission_peaks_tf(self, rubixdata):
         """
         Returns the wavelength and the luminosity (erg/s) for 138 emission lines for each gas cell.
         The emission lines are calculated using the provided theta parameters.
@@ -316,19 +394,16 @@ class CueGasLookup:
         rubixdata (RubixData): The RubixData object with the gas emission lines added to rubixdata.gas.emission_peaks.
         """
         theta = self.get_theta(rubixdata)
+        theta_numpy = jax.device_get(theta)
+        if type(theta_numpy) != np.ndarray:
+            raise TypeError("Expected theta to be a NumPy array.")
         wave_lines, emission_peaks = self.calculate_lines(theta)
-        rubixdata.gas.emission_peaks = emission_peaks
 
-        emission_peaks_modify = rubixdata.gas.emission_peaks
         # Replace inf values with zero
-        emission_peaks_cleaned = jnp.nan_to_num(
-            emission_peaks_modify, posinf=0.0, neginf=0.0
-        )
+        emission_peaks_cleaned = jnp.nan_to_num(emission_peaks, posinf=0.0, neginf=0.0)
         # Update the original array
-        rubixdata.gas.emission_peaks = emission_peaks_cleaned
-        rubixdata.gas.wave_lines = wave_lines
 
-        return rubixdata
+        return wave_lines, emission_peaks_cleaned
 
     def dispersionfactor(self, rubixdata):
         """
@@ -353,11 +428,11 @@ class CueGasLookup:
         c = 2.99792458 * 10**10  # cm s-1
         m_p = 1.6726e-24  # g
 
-        rubixdata = self.get_emission_peaks(rubixdata)
+        # rubixdata = self.get_emission_peaks(rubixdata)
         rubixdata = self.illustris_gas_temp(rubixdata)
         wavelengths = rubixdata.gas.wave_lines
 
-        dispersionfactor = np.sqrt(
+        dispersionfactor = jnp.sqrt(
             (8 * k_B * rubixdata.gas.temperature * np.log(2)) / (m_p * c**2)
         )
         # dispersionfactor = jnp.ones(len(rubixdata.gas.mass))*10
@@ -396,16 +471,43 @@ class CueGasLookup:
         logger = get_logger(self.config.get("logger", None))
         logger.info("Calculating gas emission lines")
         # get wavelengths of lookup and wavelengthrange of telescope
-        rubixdata = self.get_emission_peaks(rubixdata)
-        wavelengths = rubixdata.gas.wave_lines
+
+        # rubixdata = self.get_emission_peaks(rubixdata)
+        # wavelengths = rubixdata.gas.wave_lines
+
+        number_mass_elements = len(rubixdata.gas.mass)
+
+        result_shape_dtypes_lines = [
+            jax.ShapeDtypeStruct(shape=(138,), dtype=jnp.float32),
+            jax.ShapeDtypeStruct(shape=(number_mass_elements, 138), dtype=jnp.float32),
+        ]
+
+        cue_call_lines = io_callback(
+            self.get_emission_peaks_tf, result_shape_dtypes_lines, rubixdata
+        )
+        wavelengths, emission_peaks = cue_call_lines
+        print("wavelengths", wavelengths.shape)
+        print("emission_peaks", emission_peaks.shape)
+
+        rubixdata.gas.wave_lines = wavelengths
+        rubixdata.gas.emission_peaks = emission_peaks
+        """
+        result_shape_dtypes = [
+        jax.ShapeDtypeStruct(shape=(1841,), dtype=jnp.float32),
+        jax.ShapeDtypeStruct(shape=(num_mass_elements, 1841), dtype=jnp.float32)
+]
+        cue_call_cont = io_callback(self.get_continuum_tf, result_shape_dtypes, rubixdata)
+        original_wavelength, continuum = cue_call_cont
+        """
+
+        # rubixdata = self.get_emission_peaks(rubixdata)
+        # wavelengths = rubixdata.gas.wave_lines
         # wave_start = get_telescope(self.config).wave_range[0]
         # wave_end = get_telescope(self.config).wave_range[1]
         wavelengthrange = self.get_wavelengthrange()
         # update rubixdata with temperature, dispersionfactor and luminosity
         rubixdata = self.illustris_gas_temp(rubixdata)
         rubixdata = self.dispersionfactor(rubixdata)
-
-        rubixdata = self.get_emission_peaks(rubixdata)
 
         spectra_all = []
 
