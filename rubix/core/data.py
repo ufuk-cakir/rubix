@@ -85,6 +85,14 @@ class GasData:
     pixel_assignment: Optional[jnp.ndarray] = None
     spatial_bin_edges: Optional[jnp.ndarray] = None
     mask: Optional[jnp.ndarray] = None
+    temperature: Optional[jnp.ndarray] = None
+    dispersionfactor: Optional[jnp.ndarray] = None
+    wave_cont: Optional[jnp.ndarray] = None
+    continuum: Optional[jnp.ndarray] = None
+    wave_lines: Optional[jnp.ndarray] = None
+    emission_peaks: Optional[jnp.ndarray] = None
+    wavelengthrange: Optional[jnp.ndarray] = None
+    emission_spectra: Optional[jnp.ndarray] = None
     spectra: Optional[jnp.ndarray] = None
     datacube: Optional[jnp.ndarray] = None
 
