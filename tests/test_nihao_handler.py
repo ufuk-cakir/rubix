@@ -50,11 +50,9 @@ def mock_config():
 
 @pytest.fixture
 def handler_with_mock_data(mock_simulation, mock_config):
-    """Fixture to initialize the NihaoHandler with mocked data"""
-    with patch('pynbody.load', return_value=mock_simulation), \
-         patch('rubix.galaxy.input_handler.nihao.load_config', return_value=mock_config):
-        handler = NihaoHandler(path="mock_path", halo_path="mock_halo_path")
-        handler.load_data()
+    """Fixture to initialize the NihaoHandler with mocked data."""
+    with patch('pynbody.load', return_value=mock_simulation):
+        handler = NihaoHandler(path="mock_path", halo_path="mock_halo_path", config=mock_config) #add config=mock_config
         return handler
 
 
