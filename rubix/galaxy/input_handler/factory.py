@@ -8,10 +8,10 @@ def get_input_handler(config: dict, logger=None) -> BaseHandler:
     print(f"Debug: Simulation name received = {simulation_name}")
     
     if simulation_name == "IllustrisTNG":
-        print("Using IllustrisHandler") #debug
-        return IllustrisHandler(**config["data"]["args"], logger=logger)
+        print("Using IllustrisHandler")  # debug
+        return IllustrisHandler(**config["simulation"]["args"], logger=logger)
     elif simulation_name == "NIHAO":
-        print("Using NihaoHandler") #debug
-        return NihaoHandler(**config["data"]["args"], logger=logger)
+        print("Using NihaoHandler")  # debug
+        return NihaoHandler(**config["simulation"]["args"], logger=logger)
     else:
         raise ValueError(f"Simulation {config['simulation']} is not supported")
