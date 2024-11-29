@@ -12,7 +12,8 @@ from rubix.spectra.ifu import convert_luminoisty_to_flux_gas
 from rubix import config as rubix_config
 from rubix.logger import get_logger
 from rubix.cosmology.base import BaseCosmology
-from jax.experimental import io_callback
+from jax.experimental import jax2tf
+import tensorflow as tf
 
 
 class CueGasLookup:
@@ -200,6 +201,12 @@ class CueGasLookup:
         wavelengthrange = jnp.linspace(wave_start, wave_end, steps)
         return wavelengthrange
 
+    @tf.function
+    def continuum_tf(self, theta):
+        print(f"theta nefore passed to tf function: {theta}")
+        print(f"theta shape before passed to tf function: {theta.shape}")
+        return cont_predict(theta=theta).nn_predict()
+
     def calculate_continuum(self, theta):
         """
         Calculate the gas continuum using the provided theta parameters.
@@ -229,7 +236,8 @@ class CueGasLookup:
         """
         logger = get_logger(self.config.get("logger", None))
         logger.info("Calculating continuum")
-        wavelength_cont, continuum = cont_predict(theta=theta).nn_predict()
+        wavelength_cont, continuum = jax2tf.call_tf(cont_predict)(theta)
+        # wavelength_cont, continuum = cont_predict(theta).nn_predict()
 
         # Convert result back to JAX array if needed
         wave_cont_jax = jnp.array(wavelength_cont)
@@ -261,21 +269,25 @@ class CueGasLookup:
         new_wavelength = self.get_wavelengthrange()
 
         # rubixdata = self.get_continuum_tf(rubixdata)
-        num_mass_elements = len(rubixdata.gas.mass)
+        # num_mass_elements = len(rubixdata.gas.mass)
 
         # Define the expected shapes and data types
-        result_shape_dtypes = [
-            jax.ShapeDtypeStruct(shape=(1841,), dtype=jnp.float32),
-            jax.ShapeDtypeStruct(shape=(num_mass_elements, 1841), dtype=jnp.float32),
-        ]
+        # result_shape_dtypes = [
+        #    jax.ShapeDtypeStruct(shape=(1841,), dtype=jnp.float32),
+        #    jax.ShapeDtypeStruct(shape=(num_mass_elements, 1841), dtype=jnp.float32),
+        # ]
 
         theta = self.get_theta(rubixdata)
-        theta = jax.device_get(theta)
-        cue_call_cont = jax.pure_callback(
-            self.calculate_continuum, result_shape_dtypes, theta
-        )
+        # theta_tf = tf.convert_to_tensor(theta)
+        # logger.debug(f"theta after converting to tensorflow")
+        # logger.debug(f"theta: {theta_tf.shape}")
+        # logger.debug(f"theta: {theta_tf}")
+        # theta = jax.device_get(theta)
+        # cue_call_cont = jax.pure_callback(
+        # self.calculate_continuum, result_shape_dtypes, theta
+        # )
         # cue_call_cont = jax.block_until_ready(cue_call_cont)
-        original_wavelength, continuum = cue_call_cont
+        original_wavelength, continuum = self.calculate_continuum(theta)
         # original_wavelength = jax.device_get(original_wavelength)
         # continuum = jax.device_get(continuum)
 
@@ -305,6 +317,12 @@ class CueGasLookup:
             f"new_wavelength: {new_wavelength}, resampled_continuum: {resampled_continuum}"
         )
         return rubixdata
+
+    @tf.function
+    def lines_tf(self, theta):
+        print(f"theta nefore passed to tf function: {theta}")
+        print(f"theta shape before passed to tf function: {theta.shape}")
+        return line_predict(theta=theta).nn_predict()
 
     def calculate_lines(self, theta):
         """
@@ -337,10 +355,13 @@ class CueGasLookup:
         logger.warning(
             "Calculating emission lines assumes that we trust the outcome of the Cue model (Li et al. 2024)."
         )
-        theta = np.array(theta)
+        # theta = np.array(theta)
 
         # Call the non-JAX-compatible function
-        wavelength, nn_spectra = line_predict(theta=theta).nn_predict()
+        print(f"theta nefore passed to tf function: {theta}")
+        print(f"theta shape before passed to tf function: {theta.shape}")
+        wavelength, nn_spectra = jax2tf.call_tf(line_predict)(theta)
+        # wavelength, nn_spectra = line_predict(theta).nn_predict()
 
         # Convert result back to JAX array if needed
         wave_line_jax = jnp.array(wavelength)
@@ -371,25 +392,26 @@ class CueGasLookup:
         # rubixdata = self.get_emission_peaks(rubixdata)
         # wavelengths = rubixdata.gas.wave_lines
 
-        number_mass_elements = len(rubixdata.gas.mass)
+        # number_mass_elements = len(rubixdata.gas.mass)
 
-        result_shape_dtypes_lines = [
-            jax.ShapeDtypeStruct(shape=(138,), dtype=jnp.float32),
-            jax.ShapeDtypeStruct(shape=(number_mass_elements, 138), dtype=jnp.float32),
-        ]
+        # result_shape_dtypes_lines = [
+        #    jax.ShapeDtypeStruct(shape=(138,), dtype=jnp.float32),
+        #    jax.ShapeDtypeStruct(shape=(number_mass_elements, 138), dtype=jnp.float32),
+        # ]
 
         theta = self.get_theta(rubixdata)
+        # theta_tf = tf.convert_to_tensor(theta)
         # theta_numpy = np.array(theta)
         # if type(theta_numpy) != np.ndarray:
         #    raise TypeError("Expected theta to be a NumPy array.")
         # theta = jax.device_get(theta)
-        cue_call_lines = jax.pure_callback(
-            self.calculate_lines, result_shape_dtypes_lines, theta
-        )
+        # cue_call_lines = jax.pure_callback(
+        #    self.calculate_lines, result_shape_dtypes_lines, theta
+        # )
         # cue_call_lines = self.calculate_lines(theta)
-        logger.debug(f"cue_call_lines: {cue_call_lines}")
+        # logger.debug(f"cue_call_lines: {cue_call_lines}")
         # cue_call_lines = jax.block_until_ready(cue_call_lines)
-        wavelengths, emission_peaks = cue_call_lines
+        wavelengths, emission_peaks = self.calculate_lines(theta)
         # wavelengths = jax.device_get(wavelengths)
         # emission_peaks = jax.device_get(emission_peaks)
         logger.debug(f"wavelengths after jax.device_get: {wavelengths}")
