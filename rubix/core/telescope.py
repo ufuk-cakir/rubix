@@ -58,10 +58,10 @@ def get_spaxel_assignment(config: dict) -> Callable:
             )
             rubixdata.gas.pixel_assignment = pixel_assignment
             rubixdata.gas.spatial_bin_edges = spatial_bin_edges
-            #pixel_assignment_jax = jnp.array(pixel_assignment)
-            #setattr(rubixdata.gas, "pixel_assignment", pixel_assignment_jax)
-            #spatial_bin_edges_jax = jnp.array(spatial_bin_edges)
-            #setattr(rubixdata.gas, "spatial_bin_edges", spatial_bin_edges_jax)
+            # pixel_assignment_jax = jnp.array(pixel_assignment)
+            # setattr(rubixdata.gas, "pixel_assignment", pixel_assignment_jax)
+            # spatial_bin_edges_jax = jnp.array(spatial_bin_edges)
+            # setattr(rubixdata.gas, "spatial_bin_edges", spatial_bin_edges_jax)
 
         return rubixdata
 
@@ -97,7 +97,6 @@ def get_filter_particles(config: dict):
             setattr(rubixdata.stars, "mask", mask_jax)
             # rubixdata.stars.mask = mask
 
-        """
         if "gas" in config["data"]["args"]["particle_type"]:
             mask = mask_particles_outside_aperture(
                 rubixdata.gas.coords, spatial_bin_edges
