@@ -8,6 +8,7 @@ from rubix.telescope.utils import (
 from rubix.telescope.base import BaseTelescope
 from rubix.telescope.factory import TelescopeFactory
 from .cosmology import get_cosmology
+from .data import RubixData
 from typing import Callable
 
 
@@ -44,7 +45,7 @@ def get_spaxel_assignment(config: dict) -> Callable:
         raise ValueError(f"Pixel type {telescope.pixel_type} not supported")
     spatial_bin_edges = get_spatial_bin_edges(config)
 
-    def spaxel_assignment(rubixdata: object) -> object:
+    def spaxel_assignment(rubixdata: RubixData) -> RubixData:
         for particle_name in ["stars", "gas"]:
             particle = getattr(rubixdata, particle_name)
             if particle.coords is not None:
@@ -63,7 +64,7 @@ def get_filter_particles(config: dict):
     """Get the function to filter particles outside the aperture."""
     spatial_bin_edges = get_spatial_bin_edges(config)
 
-    def filter_particles(rubixdata: object) -> object:
+    def filter_particles(rubixdata: RubixData) -> RubixData:
         if "stars" in config["data"]["args"]["particle_type"]:
             # if rubixdata.stars.coords is not None:
             mask = mask_particles_outside_aperture(

@@ -251,7 +251,7 @@ def reshape_array(
     return reshaped_arr
 
 
-def prepare_input(config: Union[dict, str]) -> object:
+def prepare_input(config: Union[dict, str]) -> RubixData:
     # print(config)
 
     logger_config = config["logger"] if "logger" in config else None  # type:ignore
@@ -328,7 +328,7 @@ def prepare_input(config: Union[dict, str]) -> object:
     return rubixdata
 
 
-def get_rubix_data(config: Union[dict, str]) -> object:
+def get_rubix_data(config: Union[dict, str]) -> RubixData:
     """Returns the Rubix data
 
     First converts the data to Rubix format and then prepares the input data.
@@ -339,7 +339,7 @@ def get_rubix_data(config: Union[dict, str]) -> object:
     return prepare_input(config)
 
 
-def process_attributes(obj: object, logger: Callable) -> None:
+def process_attributes(obj: RubixData, logger: Callable) -> None:
     """
     Process the attributes of the given object and reshape them if they are arrays.
     """
@@ -362,7 +362,7 @@ def get_reshape_data(config: Union[dict, str]) -> Callable:
     logger_config = config["logger"] if "logger" in config else None
     logger = get_logger(logger_config)
 
-    def reshape_data(rubixdata: object) -> object:
+    def reshape_data(rubixdata: RubixData) -> RubixData:
         # Check if input_data has 'stars' and 'gas' attributes and process them separately
         if rubixdata.stars.coords is not None:
             process_attributes(rubixdata.stars, logger)

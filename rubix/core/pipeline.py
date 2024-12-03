@@ -3,7 +3,6 @@ from typing import Union
 
 import jax
 import jax.numpy as jnp
-import sys
 
 from rubix.logger import get_logger
 from rubix.pipeline import linear_pipeline as pipeline
