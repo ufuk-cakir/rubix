@@ -201,11 +201,9 @@ class CueGasLookup:
         wavelengthrange = jnp.linspace(wave_start, wave_end, steps)
         return wavelengthrange
 
-    @tf.function
-    def continuum_tf(self, theta):
-        print(f"theta nefore passed to tf function: {theta}")
-        print(f"theta shape before passed to tf function: {theta.shape}")
-        return cont_predict(theta=theta).nn_predict()
+    # @tf.function
+    def continuum_tf(self, particlenumber, theta):
+        return cont_predict(particlenumber, theta=theta).nn_predict()
 
     def calculate_continuum(self, theta):
         """
@@ -236,7 +234,9 @@ class CueGasLookup:
         """
         logger = get_logger(self.config.get("logger", None))
         logger.info("Calculating continuum")
-        wavelength_cont, continuum = jax2tf.call_tf(cont_predict)(theta)
+        config = {"particlenumber": 1}
+        wavelength_cont, continuum = jax2tf.call_tf(self.continuum_tf)(1000, theta)
+        # wavelength_cont, continuum = jax2tf.call_tf(cont_predict)(theta)
         # wavelength_cont, continuum = cont_predict(theta).nn_predict()
 
         # Convert result back to JAX array if needed
@@ -318,11 +318,9 @@ class CueGasLookup:
         )
         return rubixdata
 
-    @tf.function
-    def lines_tf(self, theta):
-        print(f"theta nefore passed to tf function: {theta}")
-        print(f"theta shape before passed to tf function: {theta.shape}")
-        return line_predict(theta=theta).nn_predict()
+    # @tf.function
+    def lines_tf(self, particlenumber, theta):
+        return line_predict(particlenumber, theta=theta).nn_predict()
 
     def calculate_lines(self, theta):
         """
@@ -358,10 +356,11 @@ class CueGasLookup:
         # theta = np.array(theta)
 
         # Call the non-JAX-compatible function
-        print(f"theta nefore passed to tf function: {theta}")
-        print(f"theta shape before passed to tf function: {theta.shape}")
-        wavelength, nn_spectra = jax2tf.call_tf(line_predict)(theta)
+        # print(f"theta nefore passed to tf function: {theta}")
+        # print(f"theta shape before passed to tf function: {theta.shape}")
+        # wavelength, nn_spectra = jax2tf.call_tf(line_predict)(theta)
         # wavelength, nn_spectra = line_predict(theta).nn_predict()
+        wavelength, nn_spectra = jax2tf.call_tf(self.lines_tf)(1000, theta)
 
         # Convert result back to JAX array if needed
         wave_line_jax = jnp.array(wavelength)
