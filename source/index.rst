@@ -47,6 +47,7 @@ If you use the code in your research, please cite the following paper: :ref:`pub
    versions
    publications
    license
+   acknowledgments
 
 Notebooks
 ===================
