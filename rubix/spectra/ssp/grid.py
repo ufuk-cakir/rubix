@@ -47,8 +47,7 @@ class SSPGrid:
         Args:
             None
 
-        Returns
-        -------
+        Returns:
             List of keys of the dataclass.
         """
         return [f.name for f in fields(self)]
@@ -73,8 +72,7 @@ class SSPGrid:
             The value to return for points outside the interpolation domain. Default is 0.
             See https://interpax.readthedocs.io/en/latest/_api/interpax.Interpolator2D.html#interpax.Interpolator2D
 
-        Returns
-        -------
+        Returns:
             The 2D interpolation function `Interp2D`.
 
         Example 1
@@ -140,8 +138,7 @@ class SSPGrid:
             from_units (str): The units of the data.
             to_units (str): The units to convert to.
 
-        Returns
-        -------
+        Returns:
             The data converted to the new units.
         """
         quantity = u.Quantity(data, from_units)
@@ -162,8 +159,7 @@ class SSPGrid:
         file_location : str
             Location to save the template file.
 
-        Returns
-        -------
+        Returns:
             The path to the file as str.
         """
 
@@ -225,12 +221,10 @@ class SSPGrid:
 
         Parameters
         ----------
-        Args:
             config (dict): Configuration dictionary.
             file_location (str): Location of the file.
 
-        Returns
-        -------
+        Returns:
             The SSP grid SSPGrid in the correct units.
         """
 
@@ -311,11 +305,10 @@ class HDF5SSPGrid(SSPGrid):
 
         Parameters
         ----------
-        Args:
             config (dict): Configuration dictionary.
+            file_location (str): Location of the file.
 
-        Returns
-        -------
+        Returns:
             The SSP grid `SSPGrid` in the correct units.
         """
 
@@ -411,8 +404,7 @@ class pyPipe3DSSPGrid(SSPGrid):
             (CRVAL, CDELT, NAXIS, CRPIX).
             Defaults to 1.
 
-        Returns
-        -------
+        Returns:
             Wavelengths array: wavelengths = CRVAL + CDELT*([0, 1, ..., NAXIS] + 1 - CRPIX)
         """
         if wave_axis is None:
@@ -484,8 +476,7 @@ class pyPipe3DSSPGrid(SSPGrid):
             FITS header with spectral data.
         n_models : int, number of models in the SSP grid.
 
-        Returns
-        -------
+        Returns:
         array like
             Ages, in Gyr, in the sequence as they appear in FITS data.
 
@@ -528,12 +519,10 @@ class pyPipe3DSSPGrid(SSPGrid):
 
         Parameters
         ----------
-        Args:
             config (dict): Configuration dictionary.
             file_location (str): Location of the file.
 
-        Returns
-        -------
+        Returns:
             The SSP grid SSPGrid in the correct units.
         """
         if config.get("format", "").lower() != "pypipe3d":
