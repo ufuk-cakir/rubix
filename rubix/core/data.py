@@ -1,6 +1,6 @@
 import os
-from typing import Callable, Tuple, Union, Optional
-from dataclasses import dataclass, field, make_dataclass
+from typing import Callable, Union, Optional
+from dataclasses import dataclass
 from functools import partial
 
 import jax
@@ -12,7 +12,6 @@ from rubix.galaxy import IllustrisAPI, get_input_handler
 from rubix.galaxy.alignment import center_particles
 from rubix.logger import get_logger
 from rubix.utils import load_galaxy_data, read_yaml
-from rubix import config as rubix_config
 
 
 # Registering the dataclass with JAX for automatic tree traversal
@@ -31,6 +30,7 @@ class Galaxy:
     @classmethod
     def tree_unflatten(cls, aux_data, children):
         return cls(*children)
+
 
 @partial(jax.tree_util.register_pytree_node_class)
 @dataclass
@@ -66,6 +66,7 @@ class StarsData:
     @classmethod
     def tree_unflatten(cls, aux_data, children):
         return cls(*children)
+
 
 @partial(jax.tree_util.register_pytree_node_class)
 @dataclass
@@ -108,6 +109,7 @@ class GasData:
     def tree_unflatten(cls, aux_data, children):
         return cls(*children)
 
+
 @partial(jax.tree_util.register_pytree_node_class)
 @dataclass
 class RubixData:
@@ -123,7 +125,6 @@ class RubixData:
     @classmethod
     def tree_unflatten(cls, aux_data, children):
         return cls(*children)
-
 
 
 def convert_to_rubix(config: Union[dict, str]):
@@ -348,4 +349,5 @@ def get_reshape_data(config: Union[dict, str]) -> Callable:
                 setattr(rubixdata.gas, key, reshaped_value)
 
         return rubixdata
+
     return reshape_data

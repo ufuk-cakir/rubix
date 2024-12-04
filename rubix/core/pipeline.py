@@ -1,13 +1,11 @@
 import time
 from typing import Union
 
-import jax
-import jax.numpy as jnp
+from jax import block_until_ready
 import sys
 
 from rubix.logger import get_logger
 from rubix.pipeline import linear_pipeline as pipeline
-from rubix.pipeline import transformer as transformer
 from rubix.utils import get_config, get_pipeline_config
 
 from .data import get_reshape_data, get_rubix_data
@@ -176,7 +174,7 @@ class RubixPipeline:
         self.logger.info("Running the pipeline on the input data...")
         output = self.func(self.data)
 
-        jax.block_until_ready(output)
+        block_until_ready(output)
         time_end = time.time()
 
         self.logger.info(
