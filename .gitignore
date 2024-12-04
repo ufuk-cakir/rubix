@@ -150,6 +150,7 @@ cython_debug/
 
 
 *.hdf5
+*.DS_Store
 rubix/version.py
 notebooks/*.h5
 notebooks/output
@@ -162,3 +163,6 @@ rubix/spectra/ssp/templates/*fits.gz
 rubix/spectra/cue/cue/*
 
 rubix/telescope/filters/data/*
+
+.firebaserc
+firebase.json

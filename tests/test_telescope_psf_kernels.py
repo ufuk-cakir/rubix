@@ -1,5 +1,4 @@
 import jax.numpy as jnp
-import pytest
 from rubix.telescope.psf.kernels import gaussian_kernel_2d
 
 

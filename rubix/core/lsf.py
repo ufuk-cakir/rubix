@@ -1,7 +1,6 @@
 from rubix.telescope.lsf.lsf import apply_lsf
 from .telescope import get_telescope
-from typing import Callable, Dict
-import jax.numpy as jnp
+from typing import Callable
 from rubix.logger import get_logger
 
 
@@ -22,12 +21,14 @@ def get_convolve_lsf(config: dict) -> Callable:
     wave_resolution = telescope.wave_res  # Wave Relolution of the telescope
 
     # Define the function to convolve the datacube with the PSF kernel
-    def convolve_lsf(input: Dict[str, jnp.ndarray]) -> Dict[str, jnp.ndarray]:
+    def convolve_lsf(rubixdata: object) -> object:
         """Convolve the input datacube with the LSF."""
         logger.info("Convolving with LSF...")
-        input["datacube"] = apply_lsf(
-            datacube=input["datacube"], lsf_sigma=sigma, wave_resolution=wave_resolution
+        rubixdata.stars.datacube = apply_lsf(
+            datacube=rubixdata.stars.datacube,
+            lsf_sigma=sigma,
+            wave_resolution=wave_resolution,
         )
-        return input
+        return rubixdata
 
     return convolve_lsf
