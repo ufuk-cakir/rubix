@@ -2,6 +2,8 @@ import time
 from typing import Union
 
 import jax
+import jax.numpy as jnp
+import sys
 
 from rubix.logger import get_logger
 from rubix.pipeline import linear_pipeline as pipeline
@@ -22,33 +24,24 @@ from .psf import get_convolve_psf
 from .lsf import get_convolve_lsf
 from .noise import get_apply_noise
 
+from jaxtyping import Array, Float, jaxtyped
+from beartype import beartype as typechecker
+
+
 class RubixPipeline:
     """
     RubixPipeline is responsible for setting up and running the data processing pipeline.
 
-    Parameters
-    ----------
-    user_config : dict or str
-        User configuration for the pipeline.
+    Args:
+        user_config (dict or str): Parsed user configuration for the pipeline.
+        pipeline_config (dict): Configuration for the pipeline.
+        logger(Logger) : Logger instance for logging messages.
+        ssp(object) : Stellar population synthesis model.
+        telescope(object) : Telescope configuration.
+        data (dict): Dictionary containing particle data.
+        func (callable): Compiled pipeline function to process data.
 
-    Attributes
-    ----------
-    user_config : dict
-        Parsed user configuration.
-    pipeline_config : dict
-        Configuration for the pipeline.
-    logger : Logger
-        Logger instance for logging messages.
-    ssp : object
-        Stellar population synthesis model.
-    telescope : object
-        Telescope configuration.
-    data : dict
-        Dictionary containing particle data.
-    func : callable
-        Compiled pipeline function to process data.
-
-    Examples
+    Example
     --------
     >>> from rubix.core.pipeline import RubixPipeline
     >>> config = "path/to/config.yml"
@@ -67,50 +60,44 @@ class RubixPipeline:
         self.data = self._prepare_data()
         self.func = None
 
-    def _prepare_data(self) -> dict:
+    def _prepare_data(self):
         """
         Prepares and loads the data for the pipeline.
 
-        Returns
-        -------
-        dict
+        Returns:
             Dictionary containing particle data with keys:
             'n_particles', 'coords', 'velocities', 'metallicity', 'mass', and 'age'.
         """
         # Get the data
         self.logger.info("Getting rubix data...")
-        coords, velocities, metallicity, mass, age, halfmassrad_stars = get_rubix_data(
-            self.user_config
+        rubixdata = get_rubix_data(self.user_config)
+        star_count = (
+            len(rubixdata.stars.coords) if rubixdata.stars.coords is not None else 0
         )
-        self.logger.info(f"Data loaded with {len(coords)} particles.")
+        gas_count = len(rubixdata.gas.coords) if rubixdata.gas.coords is not None else 0
+        self.logger.info(
+            f"Data loaded with {star_count} star particles and {gas_count} gas particles."
+        )
+        self.logger.info(f"Data loaded with {sys.getsizeof(rubixdata)} properties.")
         # Setup the data dictionary
         # TODO: This is a temporary solution, we need to figure out a better way to handle the data
         # This works, because JAX can trace through the data dictionary
         # Other option may be named tuples or data classes to have fixed keys
-        data = {
-            "n_particles": len(coords),
-            "coords": coords,
-            "velocities": velocities,
-            "metallicity": metallicity,
-            "mass": mass,
-            "age": age,
-            "halfmassrad_stars": halfmassrad_stars,
-        }
 
-        self.logger.debug(
-            "Data Shape: %s",
-            {k: v.shape for k, v in data.items() if hasattr(v, "shape")},
-        )
+        self.logger.debug("Data: %s", rubixdata)
+        # self.logger.debug(
+        #    "Data Shape: %s",
+        #    {k: v.shape for k, v in rubixdata.items() if hasattr(v, "shape")},
+        # )
 
-        return data
+        return rubixdata
 
+    @jaxtyped(typechecker=typechecker)
     def _get_pipeline_functions(self) -> list:
         """
         Sets up the pipeline functions.
 
-        Returns
-        -------
-        list
+        Returns:
             List of functions to be used in the pipeline.
         """
         self.logger.info("Setting up the pipeline...")
@@ -148,7 +135,7 @@ class RubixPipeline:
         return functions
 
     # TODO: currently returns dict, but later should return only the IFU cube
-    def run(self) -> dict:
+    def run(self):
         """
         Runs the data processing pipeline.
 
@@ -186,4 +173,7 @@ class RubixPipeline:
 
     # TODO: implement gradient calculation
     def gradient(self):
+        """
+        This function will calculate the gradient of the pipeline, but is yet not implemented.
+        """
         raise NotImplementedError("Gradient calculation is not implemented yet")

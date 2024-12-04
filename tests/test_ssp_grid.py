@@ -13,10 +13,10 @@ from rubix.spectra.ssp.grid import HDF5SSPGrid, SSPGrid, pyPipe3DSSPGrid
 
 
 def test_convert_units():
-    data = [1, 2, 3]
+    data = jnp.array([1.0, 2.0, 3.0])
     from_units = "Gyr"
     to_units = "Myr"
-    expected_result = [1000, 2000, 3000]
+    expected_result = jnp.array([1000.0, 2000.0, 3000.0])
 
     result = SSPGrid.convert_units(data, from_units, to_units)
     assert np.allclose(result, expected_result)
@@ -111,6 +111,13 @@ def test_keys():
             [[13.0, 14.0, 15.0], [16.0, 17.0, 18.0]],
         ]
     )
+    flux = jnp.array(
+        [
+            [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],
+            [[7.0, 8.0, 9.0], [10.0, 11.0, 12.0]],
+            [[13.0, 14.0, 15.0], [16.0, 17.0, 18.0]],
+        ]
+    )
     grid = SSPGrid(age, metallicity, wavelength, flux)
     expected_keys = ["age", "metallicity", "wavelength", "flux"]
     assert grid.keys() == expected_keys
@@ -149,6 +156,8 @@ def test_get_wavelength_from_header_no_cdelt(ssp_grid):
     wavelength = ssp_grid.get_wavelength_from_header(header)
     assert np.allclose(wavelength, [4000, 4001, 4002])
 
+
+# def test_get_normalization_wavelength(ssp_grid):
 
 # def test_get_normalization_wavelength(ssp_grid):
 #    header = fits.Header()
@@ -222,55 +231,72 @@ def test_from_pyPipe3D():
         patch("os.path.exists") as mock_exists,
         patch("rubix.spectra.ssp.grid.fits.open") as mock_file,
     ):
-        mock_exists.return_value = True
+        with (
+            patch("os.path.exists") as mock_exists,
+            patch("rubix.spectra.ssp.grid.fits.open") as mock_file,
+        ):
+            mock_exists.return_value = True
 
-        mock_instance = MagicMock()
-        mock_file.return_value = mock_instance
-        mock_instance.__enter__.return_value = mock_instance
-        mock_instance[0].header = {
-            "CRVAL1": 4000,
-            "CDELT1": 1000,
-            "NAXIS1": 4,
-            "CRPIX1": 1,
-            "WAVENORM": 5000,
-            "NAME0": "spec_ssp_1.0_z01.spec",
-            "NAME1": "spec_ssp_2.0_z01.spec",
-            "NAME2": "spec_ssp_3.0_z01.spec",
-            "NAME3": "spec_ssp_1.0_z02.spec",
-            "NAME4": "spec_ssp_2.0_z02.spec",
-            "NAME5": "spec_ssp_3.0_z02.spec",
-            "NORM0": 1.0,
-            "NORM1": 1.0,
-            "NORM2": 1.0,
-            "NORM3": 1.0,
-            "NORM4": 1.0,
-            "NORM5": 1.0,
-            "NAXIS2": 6,
-        }
-        mock_instance[0].data = [
-            [0.5, 1.0, 1.5, 2.0],
-            [0.5, 1.0, 1.5, 2.0],
-            [0.5, 1.0, 1.5, 2.0],
-            [0.5, 1.0, 1.5, 2.0],
-            [0.5, 1.0, 1.5, 2.0],
-            [0.5, 1.0, 1.5, 2.0],
-        ]
+            mock_instance = MagicMock()
+            mock_file.return_value = mock_instance
+            mock_instance.__enter__.return_value = mock_instance
+            mock_instance[0].header = {
+                "CRVAL1": 4000,
+                "CDELT1": 1000,
+                "NAXIS1": 4,
+                "CRPIX1": 1,
+                "WAVENORM": 5000,
+                "NAME0": "spec_ssp_1.0_z01.spec",
+                "NAME1": "spec_ssp_2.0_z01.spec",
+                "NAME2": "spec_ssp_3.0_z01.spec",
+                "NAME3": "spec_ssp_1.0_z02.spec",
+                "NAME4": "spec_ssp_2.0_z02.spec",
+                "NAME5": "spec_ssp_3.0_z02.spec",
+                "NORM0": 1.0,
+                "NORM1": 1.0,
+                "NORM2": 1.0,
+                "NORM3": 1.0,
+                "NORM4": 1.0,
+                "NORM5": 1.0,
+                "NAXIS2": 6,
+                "NAXIS2": 6,
+            }
+            mock_instance[0].data = jnp.array(
+                [
+                    [0.5, 1.0, 1.5, 2.0],
+                    [0.5, 1.0, 1.5, 2.0],
+                    [0.5, 1.0, 1.5, 2.0],
+                    [0.5, 1.0, 1.5, 2.0],
+                    [0.5, 1.0, 1.5, 2.0],
+                    [0.5, 1.0, 1.5, 2.0],
+                ],
+                dtype=jnp.float32,
+            )
 
-        result = pyPipe3DSSPGrid.from_file(config, file_location)
+            result = pyPipe3DSSPGrid.from_file(config, file_location)
 
-        assert isinstance(result, pyPipe3DSSPGrid)
-        assert np.allclose(result.age, [1, 2, 3])
+            assert isinstance(result, pyPipe3DSSPGrid)
+            assert np.allclose(result.age, jnp.array([1.0, 2.0, 3.0]))
 
-        assert np.allclose(result.metallicity, [0.01, 0.02])
-        assert np.allclose(result.wavelength, [4000, 5000, 6000, 7000])
-        assert np.allclose(
-            result.flux,
-            [
-                [[0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0]],
-                [[0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0]],
-            ],
-        )
-        assert result.flux.shape == (2, 3, 4)
+            assert np.allclose(result.metallicity, jnp.array([0.01, 0.02]))
+            assert np.allclose(
+                result.wavelength, jnp.array([4000.0, 5000.0, 6000.0, 7000.0])
+            )
+            assert np.allclose(
+                result.flux,
+                [
+                    [[0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0]],
+                    [[0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0]],
+                ],
+            )
+            assert np.allclose(
+                result.flux,
+                [
+                    [[0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0]],
+                    [[0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0]],
+                ],
+            )
+            assert result.flux.shape == (2, 3, 4)
 
 
 def test_from_pyPipe3D_wrong_field_name():
@@ -344,6 +370,7 @@ def test_checkout_SSP_template():
     config = {
         "file_name": "ssp_template.fits",
         "source": "http://example.com",
+        "source": "http://example.com",
     }
     file_location = "/path/to/save"
 
@@ -393,6 +420,9 @@ def test_checkout_SSP_template_HDF5SSPGrid():
         )
         mock_get.assert_called_once_with(config["source"] + "/" + config["file_name"])
         mock_open.assert_called_once_with(file_path, "wb")
+        mock_open.return_value.__enter__.return_value.write.assert_called_once_with(
+            b"mock file content"
+        )
         mock_open.return_value.__enter__.return_value.write.assert_called_once_with(
             b"mock file content"
         )
@@ -459,6 +489,7 @@ def test_checkout_SSP_template_file_download_error_HDF5SSPGrid():
     config = {
         "format": "hdf5",
         "file_name": "test.hdf5",
+        "source": "http://example.com/",  # This URL will raise an exception when accessed
         "source": "http://example.com/",  # This URL will raise an exception when accessed
         "fields": {
             "age": {"name": "age", "in_log": False, "units": "Gyr"},

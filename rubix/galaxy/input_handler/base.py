@@ -17,6 +17,21 @@ def create_rubix_galaxy(
     config: dict,
     logger: logging.Logger,
 ):
+    """
+    Create a Rubix file with the given data.
+
+    Args:
+        file_path (str): Path to save the Rubix file.
+        particle_data (dict): Dictionary containing the particle data.
+        galaxy_data (dict): Dictionary containing the galaxy data.
+        simulation_metadata (dict): Dictionary containing the simulation metadata.
+        units (dict): Dictionary containing the units.
+        config (dict): Dictionary containing the configuration.
+        logger (logging.Logger): Logger object to log messages.
+
+    Returns:
+        None
+    """
     logger.debug("Creating Rubix file at path: %s", file_path)
 
     with h5py.File(file_path, "w") as f:
@@ -55,6 +70,14 @@ def create_rubix_galaxy(
 
 
 class BaseHandler(ABC):
+    """
+    Base class for handling input data and converting it to Rubix format.
+
+    Args:
+        config (dict): Configuration for the BaseHandler.
+        _logger (logging.Logger): Logger object to log messages.
+    """
+
     def __init__(self, logger_config=None):
         """Initializes the BaseHandler class"""
         self.config = config["BaseHandler"]
@@ -77,6 +100,12 @@ class BaseHandler(ABC):
         """Returns the units in the required format"""
 
     def to_rubix(self, output_path: str):
+        """
+        Converts the input data to Rubix format and saves it to the output path.
+
+        Args:
+            output_path (str): Path to save the Rubix file.
+        """
         self._logger.debug("Converting to Rubix format..")
 
         os.makedirs(output_path, exist_ok=True)
@@ -129,6 +158,7 @@ class BaseHandler(ABC):
             if field not in units["galaxy"]:
                 raise ValueError(f"Units for {field} not found in units")
 
+    """
     def _check_particle_data(self, particle_data, units):
         # Check if all required fields are present
         for key in self.config["particles"]:
@@ -145,3 +175,36 @@ class BaseHandler(ABC):
             for field in particle_data[key]:
                 if field not in units[key]:
                     raise ValueError(f"Units for {field} not found in units")
+    """
+
+    def _check_particle_data(self, particle_data, units):
+        # Get the list of expected particle types from the configuration
+        expected_particle_types = list(self.config["particles"].keys())
+
+        # Find the particle types that are actually present in the particle data
+        present_particle_types = [
+            key for key in expected_particle_types if key in particle_data
+        ]
+
+        # If none of the expected particle types are present, raise a ValueError
+        if not present_particle_types:
+            raise ValueError(
+                f"None of the expected particle types {expected_particle_types} are present in particle data"
+            )
+
+        # For each particle type that is present, check that all required fields are present
+        for particle_type in present_particle_types:
+            required_fields = self.config["particles"][particle_type]
+            for field in required_fields:
+                if field not in particle_data[particle_type]:
+                    raise ValueError(
+                        f"Missing field {field} in particle data for particle type {particle_type}"
+                    )
+
+            # Now check if units are specified for all fields in particle_data[particle_type]
+            particle_units = units.get(particle_type, {})
+            for field in particle_data[particle_type]:
+                if field not in particle_units:
+                    raise ValueError(
+                        f"Units for {field} not found in units for particle type {particle_type}"
+                    )
