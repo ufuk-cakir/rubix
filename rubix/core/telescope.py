@@ -1,5 +1,7 @@
 import jax.numpy as jnp
+import jax
 from jaxtyping import Float, Array
+import equinox as eqx
 from rubix.telescope.utils import (
     calculate_spatial_bin_edges,
     square_spaxel_assignment,
@@ -9,7 +11,7 @@ from rubix.telescope.base import BaseTelescope
 from rubix.telescope.factory import TelescopeFactory
 from .cosmology import get_cosmology
 from .data import RubixData
-from typing import Callable
+from typing import Callable, List
 
 
 def get_telescope(config: dict) -> BaseTelescope:
@@ -46,14 +48,17 @@ def get_spaxel_assignment(config: dict) -> Callable:
     spatial_bin_edges = get_spatial_bin_edges(config)
 
     def spaxel_assignment(rubixdata: RubixData) -> RubixData:
-        for particle_name in ["stars", "gas"]:
-            particle = getattr(rubixdata, particle_name)
+        def assign_particle(particle):
             if particle.coords is not None:
                 pixel_assignment = square_spaxel_assignment(
                     particle.coords, spatial_bin_edges
                 )
                 particle.pixel_assignment = pixel_assignment
                 particle.spatial_bin_edges = spatial_bin_edges
+            return particle
+
+        rubixdata.stars = assign_particle(rubixdata.stars)
+        rubixdata.gas = assign_particle(rubixdata.gas)
 
         return rubixdata
 
