@@ -19,6 +19,9 @@ from rubix.utils import SFTtoAge
 
 
 def create_mock_hdf5(mock_data):
+    from unittest.mock import MagicMock
+    import numpy as np
+
     def create_mock_data():
         conversion_factors = {"a_scaling": 0.0, "h_scaling": 0.0, "to_cgs": 0}
         stars_dataset = MagicMock()
@@ -26,11 +29,16 @@ def create_mock_hdf5(mock_data):
         stars_dataset.__getitem__.return_value = mock_data
         return stars_dataset
 
-    coordindates = create_mock_data()
+    coordinates = create_mock_data()
     masses = create_mock_data()
     metallicity = create_mock_data()
     age = create_mock_data()
     velocity = create_mock_data()
+
+    density = create_mock_data()
+    sfr = create_mock_data()
+    internal_energy = create_mock_data()
+    electron_abundance = create_mock_data()
 
     header_mock = MagicMock()
     header_mock.keys.return_value = ["Time", "HubbleParam"]
@@ -43,15 +51,25 @@ def create_mock_hdf5(mock_data):
         "CutoutID": "MockCutoutID",
         "CutoutRequest": "MockRequest",
     }
-    # Coordinates', 'Masses', 'GFM_Metallicity', 'Velocities', 'GFM_StellarFormationTime'
+
     data = {
         "Header": header_mock,
         "PartType4": {
             "GFM_InitialMass": masses,
-            "Coordinates": coordindates,
+            "Coordinates": coordinates,
             "GFM_Metallicity": metallicity,
             "GFM_StellarFormationTime": age,
             "Velocities": velocity,
+        },
+        "PartType0": {
+            "Coordinates": coordinates,
+            "Masses": masses,
+            "Density": density,
+            "GFM_Metallicity": metallicity,
+            "StarFormationRate": sfr,
+            "InternalEnergy": internal_energy,
+            "Velocities": velocity,
+            "ElectronAbundance": electron_abundance,
         },
         "SubhaloData": {
             "pos_x": np.array(1.0),
@@ -60,6 +78,7 @@ def create_mock_hdf5(mock_data):
             "halfmassrad_stars": np.array(1.5),
         },
     }
+
     return data
 
 
@@ -102,6 +121,16 @@ def test_load_data(mock_file, mock_exists):
 
     print("Handler_units:", handler.get_units())
     assert handler.get_units() == {
+        "gas": {
+            "coords": "cm",
+            "density": "g/cm^3",
+            "mass": "g",
+            "metallicity": "",
+            "sfr": "Msun/yr",
+            "internal_energy": "erg/g",
+            "velocity": "cm/s",
+            "electron_abundance": ""
+        },
         "stars": {
             "coords": "cm",
             "mass": "g",
