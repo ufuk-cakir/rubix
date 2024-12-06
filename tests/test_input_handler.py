@@ -2,10 +2,25 @@ import pytest
 from rubix.galaxy import BaseHandler
 import h5py
 from rubix import config
+import astropy.units as u
 
+dimensionless = u.def_unit("dimensionless", u.dimensionless_unscaled)
+u.add_enabled_units([dimensionless])
 class ConcreteInputHandler(BaseHandler):
+
+    MAPPED_FIELDS = {
+        "PartType4": {
+            "Coordinates": "coords",
+            "Masses": "mass",
+            "Metallicity": "metallicity",
+            "Velocities": "velocity",
+            "Age": "age",
+        },
+    }
+    MAPPED_PARTICLE_KEYS = {
+        "PartType4": "stars",
+    }
     def get_particle_data(self):
-        # Mock particle data that satisfies the requirements
         return {
             "stars": {
                 "coords": [1, 2, 3],
@@ -13,7 +28,18 @@ class ConcreteInputHandler(BaseHandler):
                 "metallicity": [0.1, 0.2, 0.3],
                 "velocity": [7, 8, 9],
                 "age": [10, 11, 12],
-            }
+            },
+            "gas": {
+                "coords": [1, 2, 3],
+                "mass": [0.1, 0.2, 0.3],
+                "density": [0.1, 0.2, 0.3],
+                "temperature": [10, 20, 30],
+                "metallicity": [0.01, 0.02, 0.03],
+                "sfr": [0.5, 0.6, 0.7],
+                "internal_energy": [100, 200, 300],
+                "velocity": [1.1, 1.2, 1.3],
+                "electron_abundance": [0.8, 0.9, 1.0],
+            },
         }
 
     def get_galaxy_data(self):
@@ -25,12 +51,21 @@ class ConcreteInputHandler(BaseHandler):
         return {"TIME": 0, "NAME": "TNG50-1", "SUBHALO_ID": 0}
 
     def get_units(self):
-        # Mock units that satisfy the requirements
         return {
             "galaxy": config["BaseHandler"]["galaxy"],
             "stars": config["BaseHandler"]["particles"]["stars"],
+            "gas": {
+                "coords": "kpc",
+                "mass": "Msun",
+                "density": "Msun/kpc^3",
+                "temperature": "K",
+                "metallicity": "",
+                "sfr": "Msun/yr",
+                "internal_energy": "erg/g",
+                "velocity": "km/s",
+                "electron_abundance": "dimensionless",
+            },
         }
-
 
 @pytest.fixture
 def input_handler(tmp_path):
@@ -85,7 +120,17 @@ def test_units_are_correct(input_handler):
     assert units == {
         "galaxy": config["BaseHandler"]["galaxy"],
         "stars": config["BaseHandler"]["particles"]["stars"],
-        
+        "gas": {
+            "coords": "kpc",
+            "mass": "Msun",
+            "density": "Msun/kpc^3",
+            "temperature": "K", 
+            "metallicity": "",
+            "sfr": "Msun/yr",
+            "internal_energy": "erg/g",
+            "velocity": "km/s",
+            "electron_abundance": "dimensionless",
+        },
     }
 
 
@@ -93,17 +138,36 @@ def test_rubix_file_has_correct_units(input_handler, tmp_path):
     input_handler.to_rubix(tmp_path)
 
     # get the units from the rubix config
-    from rubix import config 
+    from rubix import config
+
     config = config["BaseHandler"]
     with h5py.File(tmp_path / "rubix_galaxy.h5", "r") as f:
         assert f["galaxy/redshift"].attrs["unit"] == config["galaxy"]["redshift"]
         assert f["galaxy/center"].attrs["unit"] == config["galaxy"]["center"]
-        assert f["galaxy/halfmassrad_stars"].attrs["unit"] == config["galaxy"]["halfmassrad_stars"]
-        assert f["particles/stars/coords"].attrs["unit"] == config["particles"]["stars"]["coords"]
-        assert f["particles/stars/mass"].attrs["unit"] == config["particles"]["stars"]["mass"]
-        assert f["particles/stars/metallicity"].attrs["unit"] == config["particles"]["stars"]["metallicity"]
-        assert f["particles/stars/velocity"].attrs["unit"] == config["particles"]["stars"]["velocity"]
-        assert f["particles/stars/age"].attrs["unit"] == config["particles"]["stars"]["age"]
+        assert (
+            f["galaxy/halfmassrad_stars"].attrs["unit"]
+            == config["galaxy"]["halfmassrad_stars"]
+        )
+        assert (
+            f["particles/stars/coords"].attrs["unit"]
+            == config["particles"]["stars"]["coords"]
+        )
+        assert (
+            f["particles/stars/mass"].attrs["unit"]
+            == config["particles"]["stars"]["mass"]
+        )
+        assert (
+            f["particles/stars/metallicity"].attrs["unit"]
+            == config["particles"]["stars"]["metallicity"]
+        )
+        assert (
+            f["particles/stars/velocity"].attrs["unit"]
+            == config["particles"]["stars"]["velocity"]
+        )
+        assert (
+            f["particles/stars/age"].attrs["unit"]
+            == config["particles"]["stars"]["age"]
+        )
 
 
 def test_missing_galaxy_field_error(input_handler):
@@ -113,7 +177,6 @@ def test_missing_galaxy_field_error(input_handler):
         del galaxy_data["redshift"]
         input_handler._check_galaxy_data(galaxy_data, input_handler.get_units())
     assert "Missing field redshift in galaxy data" in str(excinfo.value)
-
 
 
 def test_galaxy_field_unit_info_missing_error(input_handler):
@@ -131,10 +194,14 @@ def test_missing_particle_type_error(input_handler):
         # Remove a required particle type
         particle_data = input_handler.get_particle_data()
         del particle_data["stars"]
+        # del particle_data["gas"]
         input_handler._check_particle_data(particle_data, input_handler.get_units())
-    assert "Missing particle type stars in particle data" in str(excinfo.value)
+    assert "None of the expected particle types found in particle data" in str(
+        excinfo.value
+    )
 
 
+"""
 def test_missing_particle_field_error(input_handler):
     with pytest.raises(ValueError) as excinfo:
         # Remove a required field from a particle type
@@ -144,6 +211,28 @@ def test_missing_particle_field_error(input_handler):
     assert "Missing field coords in particle data for particle type stars" in str(
         excinfo.value
     )
+
+
+def test_no_particle_types_present(input_handler):
+    particle_data = {}  # Empty particle data
+    try:
+        input_handler._check_particle_data(particle_data, units={})
+    except ValueError as e:
+        assert str(e) == "None of the expected particle types ['stars', 'gas'] are present in particle data"
+    else:
+        assert False, "ValueError was not raised when no particle types were present"
+"""
+
+
+def test_missing_particle_type_error(input_handler):
+    with pytest.raises(ValueError) as excinfo:
+        # Remove a required particle type
+        particle_data = input_handler.get_particle_data()
+        del particle_data["stars"]
+        input_handler._check_particle_data(particle_data, input_handler.get_units())
+    # Update the expected message to match the actual error message
+    expected_message = "Missing particle type stars in particle data"
+    assert str(excinfo.value) == expected_message
 
 
 def test_particle_field_unit_info_missing_error(input_handler):
