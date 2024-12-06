@@ -194,9 +194,9 @@ class RubixPipeline:
             # output.stars.metallictiy_unit = self.data.stars.metallictiy_unit
             output.stars.age_unit = self.data.stars.age_unit
             output.stars.spatial_bin_edges_unit = "kpc"
-            output.stars.wavelength_unit = rubix_config["ssp"]["units"]["wavelength"]
-            output.stars.spectra_unit = rubix_config["ssp"]["units"]["flux"]
-            output.stars.datacube_unit = rubix_config["ssp"]["units"]["flux"]
+            # output.stars.wavelength_unit = rubix_config["ssp"]["units"]["wavelength"]
+            # output.stars.spectra_unit = rubix_config["ssp"]["units"]["flux"]
+            # output.stars.datacube_unit = rubix_config["ssp"]["units"]["flux"]
 
         if output.gas.coords != None:
             output.gas.coords_unit = self.data.gas.coords_unit
@@ -208,9 +208,9 @@ class RubixPipeline:
             output.gas.sfr_unit = self.data.gas.sfr_unit
             output.gas.electron_abundance_unit = self.data.gas.electron_abundance_unit
             output.gas.spatial_bin_edges_unit = "kpc"
-            output.gas.wavelength_unit = rubix_config["ssp"]["units"]["wavelength"]
-            output.gas.spectra_unit = rubix_config["ssp"]["units"]["flux"]
-            output.gas.datacube_unit = rubix_config["ssp"]["units"]["flux"]
+            # output.gas.wavelength_unit = rubix_config["ssp"]["units"]["wavelength"]
+            # output.gas.spectra_unit = rubix_config["ssp"]["units"]["flux"]
+            # output.gas.datacube_unit = rubix_config["ssp"]["units"]["flux"]
 
         return output
 
