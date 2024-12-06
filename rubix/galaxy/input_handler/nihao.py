@@ -18,6 +18,20 @@ class NihaoHandler(BaseHandler):
         self.nihao_config = config or self._load_config()
         self.logger = logger or self._default_logger()
         super().__init__()
+        if "particles" not in self.config:
+            self.config["particles"] = {}
+
+        if "gas" not in self.config["particles"]:
+            self.config["particles"]["gas"] = {}
+
+        if "temperature" not in self.config["particles"]["gas"]:
+            self.config["particles"]["gas"]["temperature"] = "K"
+
+        if "dm" not in self.config["particles"]:
+            self.config["particles"]["dm"] = {}
+
+        if "mass" not in self.config["particles"]["dm"]:
+            self.config["particles"]["dm"]["mass"] = "Msun"
         self.load_data()
 
     def _load_config(self):
@@ -33,37 +47,48 @@ class NihaoHandler(BaseHandler):
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.INFO)
         return logger
-
+    
     def load_data(self):
         """Load data from snapshot and halo file (if available)."""
         self.sim = pynbody.load(self.path)
         self.sim.physical_units()
         fields = self.nihao_config["fields"]
 
-        # Get the particle classes to load from the config or use all by default
         load_classes = self.nihao_config.get("load_classes", ["stars", "gas", "dm"])
         self.data = {}
         units = self.get_units()
 
-        # Conditionally load particle classes
         if "stars" in load_classes:
             self.data["stars"] = {
-                'age': SFTtoAge(self.sim.stars[fields["stars"]["age"]]) * units["stars"]["age"], 
-                'mass': self.sim.stars[fields["stars"]["mass"]] * units["stars"]["mass"], 
-                'metallicity': self.sim.stars[fields["stars"]["metallicity"]] * units["stars"]["metallicity"],
-                'coords': self.sim.stars[fields["stars"]["coords"]] * units["stars"]["coords"],
-                'velocity': self.sim.stars[fields["stars"]["velocity"]] * units["stars"]["velocity"],
+                'age': SFTtoAge(self.sim.stars.get(fields["stars"]["age"], np.zeros(len(self.sim.stars)))) * units["stars"]["age"], 
+                'mass': self.sim.stars.get(fields["stars"]["mass"], np.zeros(len(self.sim.stars))) * units["stars"]["mass"], 
+                'metallicity': self.sim.stars.get(fields["stars"]["metallicity"], np.zeros(len(self.sim.stars))) * units["stars"]["metallicity"],
+                'coords': self.sim.stars.get(fields["stars"]["coords"], np.zeros((len(self.sim.stars), 3))) * units["stars"]["coords"],
+                'velocity': self.sim.stars.get(fields["stars"]["velocity"], np.zeros((len(self.sim.stars), 3))) * units["stars"]["velocity"],
             }
+
         if "gas" in load_classes:
-            self.data["gas"] = {
-                'density': self.sim.gas[fields["gas"]["density"]] * units["gas"]["density"],
-                'temperature': self.sim.gas[fields["gas"]["temperature"]] * units["gas"]["temperature"],
-                'metallicity': self.sim.gas[fields["gas"]["metallicity"]] * units["gas"]["metallicity"],
-            }
+            gas_data = {}
+            optional_gas_fields = ['sfr', 'internal_energy', 'electron_abundance']
+            for field_name, sim_field in fields["gas"].items():
+                if sim_field in self.sim.gas.loadable_keys():
+                    gas_data[field_name] = self.sim.gas[sim_field] * units["gas"][field_name]
+                else:
+                    if field_name in optional_gas_fields:
+                        num_particles = len(self.sim.gas)
+                        unit = units["gas"].get(field_name, u.dimensionless_unscaled)
+                        gas_data[field_name] = np.zeros(num_particles) * unit
+                        self.logger.warning(f"'{sim_field}' field not found in gas data. Assigning zeros to '{field_name}'.")
+                    else:
+                        raise ValueError(f"Missing field '{field_name}' in gas data and cannot assign default value.")
+            self.data["gas"] = gas_data
+
         if "dm" in load_classes:
             self.data["dm"] = {
-                'mass': self.sim.dm[fields["dm"]["mass"]] * units["dm"]["mass"],
+                'mass': self.sim.dm.get(fields["dm"]["mass"], np.zeros(len(self.sim.dm))) * units["dm"]["mass"],
             }
+
+        self.center = self._get_center()
 
         self.logger.info(f"NIHAO snapshot and halo data loaded successfully for classes: {load_classes}.")
 
@@ -86,11 +111,10 @@ class NihaoHandler(BaseHandler):
     def get_galaxy_data(self):
         """Return basic galaxy data including center and redshift."""
         redshift = self.nihao_config.get("galaxy", {}).get("redshift", 0.1)
-        center = self._get_center()
         halfmassrad_stars = self.nihao_config["galaxy"]["halfmassrad_stars"]
         return {
             "redshift": redshift,
-            "center": center,
+            "center": self.center,
             "halfmassrad_stars": halfmassrad_stars,
         }
 
@@ -98,11 +122,17 @@ class NihaoHandler(BaseHandler):
         """Calculate the center of the galaxy based on stellar positions and masses."""
         star_positions = self.sim.stars['pos']
         star_masses = self.sim.stars['mass']
+        
+        if len(star_positions) == 0 or len(star_masses) == 0:
+            self.logger.warning("Star data is empty. Defaulting center to [0, 0, 0].")
+            return u.Quantity([0, 0, 0], self.get_units()["galaxy"]["center"])
+        
+        if np.sum(star_masses) == 0:
+            self.logger.warning("Star masses sum to zero. Defaulting center to [0, 0, 0].")
+            return u.Quantity([0, 0, 0], self.get_units()["galaxy"]["center"])
+        
         center = np.average(star_positions, weights=star_masses, axis=0)
-
-        # Convert center to astropy Quantity
-        units = self.get_units()
-        center_unit = units["galaxy"]["center"]
+        center_unit = self.get_units()["galaxy"]["center"]
         return u.Quantity(center, center_unit)
 
     def get_particle_data(self):
@@ -126,6 +156,8 @@ class NihaoHandler(BaseHandler):
             "kpc": u.kpc,
             "km/s": u.km / u.s,
             "Msun/kpc^3": u.M_sun / u.kpc**3,
+            "Msun/yr": u.M_sun / u.yr,
+            "erg/g": u.erg / u.g,
             "K": u.K,
             "dimensionless": u.dimensionless_unscaled,
         }
