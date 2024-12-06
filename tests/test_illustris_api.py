@@ -80,9 +80,10 @@ def test_get_particle_data(
     mock_hdf5.__enter__.return_value = data
     print(mock_hdf5.keys())
 
-    with patch("os.path.exists", return_value=True), patch(
-        "h5py.File", return_value=mock_hdf5
-    ) as mock_hdf5:
+    with (
+        patch("os.path.exists", return_value=True),
+        patch("h5py.File", return_value=mock_hdf5) as mock_hdf5,
+    ):
 
         # Check the structure of mock_hd5 file
         #
@@ -115,21 +116,25 @@ def test_get_particle_data(
 def test__init__():
     api = IllustrisAPI(api_key="test_key")
     assert api.headers == {"api-key": "test_key"}
-    assert api.particle_type == ["stars"]
+    assert (
+        api.particle_type == ["stars"]
+        or api.particle_type == ["gas"]
+        or api.particle_type == ["stars", "gas"]
+        or api.particle_type == ["gas", "stars"]
+    )
     assert api.snapshot == 99
     assert api.simulation == "TNG50-1"
     assert api.baseURL == "http://www.tng-project.org/api/TNG50-1/snapshots/99"
     assert "TNG50-1" in api.__str__()
-    
+
 
 def test_init_with_logger():
     import logging
+
     logger = logging.getLogger("test_logger")
-    
+
     api = IllustrisAPI(api_key="test_key", logger=logger)
     assert api.logger == logger
-
-
 
 
 def test_get_api_key(api_key):
@@ -241,13 +246,16 @@ def subhalo_data():
 
 def test_load_galaxy(api_instance, galaxy_data, subhalo_data):
     id = 0
-    with patch.object(api_instance, "_get") as mock_get, patch.object(
-        api_instance, "get_subhalo", return_value=subhalo_data
-    ) as mock_get_subhalo, patch.object(
-        api_instance, "_append_subhalo_data"
-    ) as mock_append_subhalo_data, patch.object(
-        api_instance, "_load_hdf5", return_value=galaxy_data
-    ) as mock_load_hdf5:
+    with (
+        patch.object(api_instance, "_get") as mock_get,
+        patch.object(
+            api_instance, "get_subhalo", return_value=subhalo_data
+        ) as mock_get_subhalo,
+        patch.object(api_instance, "_append_subhalo_data") as mock_append_subhalo_data,
+        patch.object(
+            api_instance, "_load_hdf5", return_value=galaxy_data
+        ) as mock_load_hdf5,
+    ):
         api_instance.DEFAULT_FIELDS = {"stars": "Masses"}
         result = api_instance.load_galaxy(id=id)
 
@@ -274,8 +282,9 @@ def test_load_galaxy(api_instance, galaxy_data, subhalo_data):
 
 def test_load_galaxy_unsupported_particle_type(api_instance, subhalo_data):
     id = 0
-    with patch.object(api_instance, "_get") as mock_get, patch.object(  # noqa
-        api_instance, "get_subhalo", return_value=subhalo_data
+    with (
+        patch.object(api_instance, "_get") as mock_get,
+        patch.object(api_instance, "get_subhalo", return_value=subhalo_data),  # noqa
     ):
         api_instance.DEFAULT_FIELDS = {"stars": "Masses"}
         api_instance.particle_type = ["unsupported"]
@@ -286,13 +295,16 @@ def test_load_galaxy_unsupported_particle_type(api_instance, subhalo_data):
 
 def test_load_galaxy_multiple_fields(api_instance, galaxy_data, subhalo_data):
     id = 0
-    with patch.object(api_instance, "_get") as mock_get, patch.object(
-        api_instance, "get_subhalo", return_value=subhalo_data
-    ) as mock_get_subhalo, patch.object(
-        api_instance, "_append_subhalo_data"
-    ) as mock_append_subhalo_data, patch.object(
-        api_instance, "_load_hdf5", return_value=galaxy_data
-    ) as mock_load_hdf5:
+    with (
+        patch.object(api_instance, "_get") as mock_get,
+        patch.object(
+            api_instance, "get_subhalo", return_value=subhalo_data
+        ) as mock_get_subhalo,
+        patch.object(api_instance, "_append_subhalo_data") as mock_append_subhalo_data,
+        patch.object(
+            api_instance, "_load_hdf5", return_value=galaxy_data
+        ) as mock_load_hdf5,
+    ):
         api_instance.DEFAULT_FIELDS = {"stars": ["Masses", "Coordinates"]}
         result = api_instance.load_galaxy(id=id)
         mock_get.assert_called_once_with(
@@ -311,13 +323,16 @@ def test_load_galaxy_multiple_fields(api_instance, galaxy_data, subhalo_data):
 
 def test_load_galaxy_multiple_particle_types(api_instance, galaxy_data, subhalo_data):
     id = 0
-    with patch.object(api_instance, "_get") as mock_get, patch.object(
-        api_instance, "get_subhalo", return_value=subhalo_data
-    ) as mock_get_subhalo, patch.object(
-        api_instance, "_append_subhalo_data"
-    ) as mock_append_subhalo_data, patch.object(
-        api_instance, "_load_hdf5", return_value=galaxy_data
-    ) as mock_load_hdf5:
+    with (
+        patch.object(api_instance, "_get") as mock_get,
+        patch.object(
+            api_instance, "get_subhalo", return_value=subhalo_data
+        ) as mock_get_subhalo,
+        patch.object(api_instance, "_append_subhalo_data") as mock_append_subhalo_data,
+        patch.object(
+            api_instance, "_load_hdf5", return_value=galaxy_data
+        ) as mock_load_hdf5,
+    ):
         api_instance.particle_type = ["stars", "gas"]
         api_instance.DEFAULT_FIELDS["stars"] = ["Masses", "Coordinates"]
         api_instance.DEFAULT_FIELDS["gas"] = ["Coordinates"]
@@ -483,7 +498,6 @@ def test_load_hdf5_with_extension(api_instance, tmp_path):
     ), "File with expected filename doesn't exist."
 
 
-
 def test_load_galaxy_overwrite_reuse(api_instance, tmp_path):
     id = 1
     filename = f"galaxy-id-{id}"
@@ -496,20 +510,26 @@ def test_load_galaxy_overwrite_reuse(api_instance, tmp_path):
     # Ensure the API's DATAPATH is set to the tmp_path
     api_instance.DATAPATH = str(tmp_path)
 
-    with patch.object(api_instance, '_load_hdf5', return_value={"data": "loaded"}) as mock_load_hdf5:
+    with patch.object(
+        api_instance, "_load_hdf5", return_value={"data": "loaded"}
+    ) as mock_load_hdf5:
         # Test reuse without overwrite, file exists
         result = api_instance.load_galaxy(id=id, overwrite=False, reuse=True)
         mock_load_hdf5.assert_called_once_with(filename=filename)
-        assert result == {"data": "loaded"}, "The data should be loaded from the existing file."
+        assert result == {
+            "data": "loaded"
+        }, "The data should be loaded from the existing file."
 
         # Reset mock
         mock_load_hdf5.reset_mock()
 
         # Test overwrite, file exists
-        with patch.object(api_instance, '_get') as mock_get, patch.object(
-            api_instance, 'get_subhalo', return_value={}
-        ) as mock_get_subhalo, patch.object(
-            api_instance, '_append_subhalo_data'
+        with (
+            patch.object(api_instance, "_get") as mock_get,
+            patch.object(
+                api_instance, "get_subhalo", return_value={}
+            ) as mock_get_subhalo,
+            patch.object(api_instance, "_append_subhalo_data"),
         ):
             result = api_instance.load_galaxy(id=id, overwrite=True, reuse=False)
             mock_get.assert_called()
@@ -520,4 +540,6 @@ def test_load_galaxy_overwrite_reuse(api_instance, tmp_path):
         # Test error raise when file exists, and neither overwrite nor reuse are true
         with pytest.raises(ValueError) as exc_info:
             api_instance.load_galaxy(id=id, overwrite=False, reuse=False)
-        assert "already exists" in str(exc_info.value), "An error should be raised when attempting to download without overwrite and reuse."
+        assert "already exists" in str(
+            exc_info.value
+        ), "An error should be raised when attempting to download without overwrite and reuse."

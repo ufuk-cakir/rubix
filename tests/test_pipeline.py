@@ -219,13 +219,14 @@ def test_compile_expression(pipeline_fixture_full):
 
 
 def test_get_jaxpr(pipeline_fixture_full):
-    from functools import partial 
+    from functools import partial
+
     pipeline, x = pipeline_fixture_full
 
-    # README: this does just fix the s parameter to 1.0. 
-    # This does not solve the underlying problem that get_jaxpr does not have 
-    # a `static_argnames` facility. 
-    pipeline.expression = partial(pipeline.expression, s = 1.0)
+    # README: this does just fix the s parameter to 1.0.
+    # This does not solve the underlying problem that get_jaxpr does not have
+    # a `static_argnames` facility.
+    pipeline.expression = partial(pipeline.expression, s=1.0)
     pipeline.assemble()
 
     expr = pipeline.get_jaxpr(
