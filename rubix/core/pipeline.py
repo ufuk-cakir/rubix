@@ -183,6 +183,7 @@ class RubixPipeline:
             "Pipeline run completed in %.2f seconds.", time_end - time_start
         )
 
+        """
         output.galaxy.redshift_unit = self.data.galaxy.redshift_unit
         output.galaxy.center_unit = self.data.galaxy.center_unit
         output.galaxy.halfmassrad_stars_unit = self.data.galaxy.halfmassrad_stars_unit
@@ -211,7 +212,7 @@ class RubixPipeline:
             # output.gas.wavelength_unit = rubix_config["ssp"]["units"]["wavelength"]
             # output.gas.spectra_unit = rubix_config["ssp"]["units"]["flux"]
             # output.gas.datacube_unit = rubix_config["ssp"]["units"]["flux"]
-
+        """
         return output
 
     # TODO: implement gradient calculation
