@@ -85,7 +85,7 @@ target/
 profile_default/
 ipython_config.py
 
-# vscode 
+# vscode
 .vscode
 
 # pyenv
@@ -145,7 +145,7 @@ cython_debug/
 
 
 # vscode and other ide stuff
-.vscode 
+.vscode
 .idea
 
 
@@ -158,3 +158,8 @@ rubix/**/*.ipynb
 
 rubix/spectra/ssp/templates/*.gz
 rubix/spectra/ssp/templates/*fits.gz
+
+firebase.json
+.firebaserc
+
+rubix/telescope/filters/data/*
