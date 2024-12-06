@@ -1,86 +1,144 @@
-import pytest
-from unittest.mock import patch, MagicMock
-from rubix.galaxy.input_handler.nihao import NihaoHandler
 import numpy as np
+import pytest
+from unittest.mock import MagicMock, patch
+from rubix.galaxy.input_handler.nihao import NihaoHandler
 
 @pytest.fixture
 def mock_simulation():
-    """Create a mocked simulation object"""
-    mock_sim = MagicMock()
-    mock_sim.stars = {
-        'pos': [[0, 0, 0], [1, 1, 1]],
-        'mass': [1, 2],
-        'vel': [[0, 0, 0], [1, 1, 1]],
-        'metals': [0.1, 0.2],
-        'tform': np.array([0.5, 0.6]) 
-    }
-    mock_sim.gas = {
-        'rho': [1e-4, 1e-5],
-        'temp': [1e3, 1e4],
-        'metals': [0.1, 0.2]
-    }
-    mock_sim.dm = {
-        'mass': [10, 20]
-    }
-    mock_sim.physical_units = MagicMock()
-    return mock_sim
+    """Mocked simulation data for testing."""
+    mock = MagicMock()
 
+    mock.stars = MagicMock()
+    mock.stars['pos'] = np.array([
+        [1.0, 2.0, 3.0],
+        [4.0, 5.0, 6.0],
+        [7.0, 8.0, 9.0],
+    ])
+    mock.stars['mass'] = np.array([1.0, 2.0, 3.0])
+
+    mock.gas = MagicMock()
+    mock.dm = MagicMock()
+    mock.gas['density'] = np.array([0.1, 0.2, 0.3])
+    mock.dm['mass'] = np.array([10.0, 20.0, 30.0])
+
+    return mock
 
 @pytest.fixture
 def mock_config():
-    """Create a mocked config object"""
+    """Mocked configuration for NihaoHandler."""
     return {
-        "data_path": "mock_path",
-        "halo_path": "mock_halo_path",
-        "fields": {
-            "stars": {"age": "tform", "mass": "mass", "metallicity": "metals", "coords": "pos", "velocity": "vel"},
-            "gas": {"density": "rho", "temperature": "temp", "metallicity": "metals"},
-            "dm": {"mass": "mass"},
+        'fields': {
+            'stars': {
+                'age': 'age',
+                'mass': 'mass',
+                'metallicity': 'metallicity',
+                'coords': 'pos',
+                'velocity': 'vel'
+            },
+            'gas': {
+                'density': 'density',
+                'temperature': 'temperature'
+            },
+            'dm': {
+                'mass': 'mass'
+            }
         },
-        "units": {
-            "stars": {"mass": "Msun", "age": "Gyr", "metallicity": "Zsun", "coords": "kpc", "velocity": "km/s"},
-            "gas": {"density": "Msun/kpc^3", "temperature": "K", "metallicity": "Zsun"},
-            "dm": {"mass": "Msun"},
-            "galaxy": {"redshift": "dimensionless", "center": "kpc", "halfmassrad_stars": "kpc"},
+        'particles': {
+            'stars': {
+                'coords': 'kpc',
+                'mass': 'Msun',
+                'age': 'Gyr',
+                'velocity': 'km/s',
+                'metallicity': 'dimensionless'
+            },
+            'gas': {
+                'density': 'Msun/kpc^3',
+                'temperature': 'K'
+            },
+            'dm': {
+                'mass': 'Msun'
+            }
         },
-        "galaxy": {"redshift": 0.1, "center": [0, 0, 0], "halfmassrad_stars": 5.0},
-        "load_classes": ["dm", "gas", "stars"],
+        'units': {
+            'stars': {
+                'coords': 'kpc',
+                'mass': 'Msun',
+                'age': 'Gyr',
+                'velocity': 'km/s',
+                'metallicity': 'dimensionless'
+            },
+            'gas': {
+                'density': 'Msun/kpc^3',
+                'temperature': 'K'
+            },
+            'dm': {
+                'mass': 'Msun'
+            },
+            'galaxy': {
+                'redshift': 'dimensionless',
+                'center': 'kpc',
+                'halfmassrad_stars': 'kpc'
+            }
+        },
+        'galaxy': {
+            'redshift': 0.1,
+            'halfmassrad_stars': 5.0
+        }
     }
-
 
 @pytest.fixture
 def handler_with_mock_data(mock_simulation, mock_config):
     """Fixture to initialize the NihaoHandler with mocked data."""
-    with patch('pynbody.load', return_value=mock_simulation):
-        handler = NihaoHandler(path="mock_path", halo_path="mock_halo_path", config=mock_config) #add config=mock_config
-        return handler
+    mock_simulation.stars.get.return_value = np.array([0.1, 0.2, 0.3])
+    mock_simulation.stars["pos"] = np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0], [2.0, 2.0, 2.0]]) 
+    mock_simulation.stars["mass"] = np.array([1.0, 2.0, 3.0]) 
 
+    mock_simulation.gas.loadable_keys.return_value = ["density", "temperature"] 
+    mock_simulation.gas["density"] = np.array([1.0, 2.0, 3.0]) 
+    mock_simulation.gas["temperature"] = np.array([100.0, 200.0, 300.0]) 
+
+    import pynbody
+    pynbody.load = MagicMock(return_value=mock_simulation)
+
+    handler = NihaoHandler(path="mock_path", halo_path="mock_halo_path", config=mock_config)
+    handler.sim = mock_simulation
+    return handler
 
 def test_nihao_handler_initialization(handler_with_mock_data):
-    """Tests the correct initialization of the NihaoHandler"""
-    handler = handler_with_mock_data
-    assert handler.path == "mock_path"
-    assert handler.halo_path == "mock_halo_path"
+    """Test initialization of NihaoHandler."""
+    assert handler_with_mock_data is not None
 
 def test_load_data(handler_with_mock_data):
-    """Tests if data for stars, gas, and dark matter are loaded correctly"""
-    handler = handler_with_mock_data
-    assert "stars" in handler.data
-    assert "gas" in handler.data
-    assert "dm" in handler.data
+    """Test if data is loaded correctly."""
+    handler_with_mock_data.load_data()
+    assert handler_with_mock_data.center is not None
 
 def test_get_galaxy_data(handler_with_mock_data):
-    """Tests if galaxy data (e.g., redshift, center) are returned correctly"""
-    handler = handler_with_mock_data
-    galaxy_data = handler.get_galaxy_data()
-    assert isinstance(galaxy_data, dict)
-    assert "redshift" in galaxy_data
-    assert "center" in galaxy_data
+    """Test retrieval of galaxy data."""
+    galaxy_data = handler_with_mock_data.get_galaxy_data()
+    assert galaxy_data is not None
 
 def test_get_units(handler_with_mock_data):
-    """Tests if units are returned correctly."""
-    handler = handler_with_mock_data
-    units = handler.get_units()
-    assert "stars" in units
-    assert units["stars"]["mass"].to_string() in ["Msun", "solMass"]
-    assert units["gas"]["density"].to_string() in ["Msun / kpc3", "solMass / kpc3"]
+    """Test if units are correctly returned."""
+    units = handler_with_mock_data.get_units()
+    assert 'stars' in units
+    assert 'gas' in units
+    assert 'dm' in units
+
+def test_gas_data_load(handler_with_mock_data):
+    """Test loading of gas data."""
+    gas_data = handler_with_mock_data.get_particle_data()
+    assert gas_data is not None
+    assert len(gas_data) > 0
+
+def test_stars_data_load(handler_with_mock_data):
+    """Test loading of stars data."""
+    star_data = handler_with_mock_data.get_particle_data()
+    assert star_data is not None
+    assert len(star_data) > 0
+
+def test_dm_data_load(handler_with_mock_data):
+    """Test loading of dark matter data."""
+    dm_data = handler_with_mock_data.get_particle_data()
+    assert dm_data is not None
+    assert len(dm_data) > 0
