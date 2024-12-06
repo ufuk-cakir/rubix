@@ -23,6 +23,7 @@ class Galaxy:
     center: Optional[jnp.ndarray] = None
     halfmassrad_stars: Optional[jnp.ndarray] = None
 
+    """
     def __repr__(self):
         representationString = ["Galaxy:"]
         for k, v in self.__dict__.items():
@@ -35,6 +36,7 @@ class Galaxy:
                 else:
                     representationString.append(f"{k}: None")
         return "\n\t".join(representationString)
+    """
 
     def tree_flatten(self):
         children = (self.redshift, self.center, self.halfmassrad_stars)
@@ -60,7 +62,7 @@ class StarsData:
     mask: Optional[jnp.ndarray] = None
     spectra: Optional[jnp.ndarray] = None
     datacube: Optional[jnp.ndarray] = None
-
+    """
     def __repr__(self):
         representationString = ["StarsData:"]
         for k, v in self.__dict__.items():
@@ -73,6 +75,7 @@ class StarsData:
                 else:
                     representationString.append(f"{k}: None")
         return "\n\t".join(representationString)
+    """
 
     def tree_flatten(self):
         children = (
@@ -112,7 +115,7 @@ class GasData:
     mask: Optional[jnp.ndarray] = None
     spectra: Optional[jnp.ndarray] = None
     datacube: Optional[jnp.ndarray] = None
-
+    """
     def __repr__(self):
         representationString = ["GasData:"]
         for k, v in self.__dict__.items():
@@ -125,6 +128,7 @@ class GasData:
                 else:
                     representationString.append(f"{k}: None")
         return "\n\t".join(representationString)
+    """
 
     def tree_flatten(self):
         children = (
