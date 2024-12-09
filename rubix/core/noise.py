@@ -1,5 +1,4 @@
 import jax.numpy as jnp
-import jax
 from rubix.telescope.noise.noise import (
     calculate_noise_cube,
     SUPPORTED_NOISE_DISTRIBUTIONS,
@@ -29,12 +28,11 @@ def get_apply_noise(config: dict):
 
     logger = get_logger()
 
-    def apply_noise(inputs: dict[str, jax.Array]) -> dict[str, jax.Array]:
+    def apply_noise(rubixdata: object) -> object:
         logger.info(
             f"Applying noise to datacube with signal to noise ratio: {signal_to_noise} and noise distribution: {noise_distribution}"
         )
-        datacube = inputs["datacube"]
-
+        datacube = rubixdata.stars.datacube
         # Define S2n for each spaxel
         S2N = jnp.ones(datacube.shape[:2]) * signal_to_noise
 
@@ -44,7 +42,7 @@ def get_apply_noise(config: dict):
         )
 
         # Add noise to the datacube
-        inputs["datacube"] += noise_cube
-        return inputs
+        rubixdata.stars.datacube += noise_cube
+        return rubixdata
 
     return apply_noise

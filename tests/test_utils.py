@@ -162,14 +162,14 @@ def test_load_galaxy_data_failure(tmp_path):
         f.create_group("galaxy")
 
     # Test the function should raise an error
-    with pytest.raises(KeyError) as excinfo:
+    with pytest.raises(KeyError):
         load_galaxy_data(str(file_path))
 
 
 def test_load_galaxy_data_file_does_not_exist(tmp_path):
     # Create a temporary HDF5 file with missing datasets
     # Test the function should raise an error
-    with pytest.raises(FileNotFoundError) as excinfo:
+    with pytest.raises(FileNotFoundError):
         load_galaxy_data("wrong path")
 
 

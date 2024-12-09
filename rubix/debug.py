@@ -17,9 +17,6 @@ def random_data(n_particles, min_val, max_val, dimension, key=42):
 
 
 def create_dummy_rubix(n_particles, output_path):
-    basehandler_config = config["BaseHandler"]
-    galaxy_fields = basehandler_config["galaxy"]
-    particles = basehandler_config["particles"]
     ssp = get_ssp_template("BruzualCharlot2003")
 
     # get bounds of the metallicity and age bins
