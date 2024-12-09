@@ -1,5 +1,5 @@
 import jax.numpy as jnp
-import jax
+from typing import Callable, Dict
 from rubix.telescope.noise.noise import (
     calculate_noise_cube,
     SUPPORTED_NOISE_DISTRIBUTIONS,
@@ -7,9 +7,38 @@ from rubix.telescope.noise.noise import (
 
 from rubix.logger import get_logger
 
+from jaxtyping import Array, Float, jaxtyped
+from beartype import beartype as typechecker
 
-def get_apply_noise(config: dict):
 
+@jaxtyped(typechecker=typechecker)
+def get_apply_noise(config: dict) -> Callable:
+    """
+    Get the function to apply noise to the datacube based on the configuration.
+
+    Args:
+        config (dict): Configuration dictionary.
+
+    Returns:
+        The function to apply noise to the datacube.
+
+    Example
+    -------
+    >>> config = {
+    ...     ...
+    ...     "telescope": {
+    ...         "name": "MUSE",
+    ...         "psf": {"name": "gaussian", "size": 5, "sigma": 0.6},
+    ...         "lsf": {"sigma": 0.5},
+    ...         "noise": {"signal_to_noise": 1,"noise_distribution": "normal"},
+    ...    },
+    ...     ...
+    ... }
+
+    >>> from rubix.core.noise import get_apply_noise
+    >>> apply_noise = get_apply_noise(config)
+    >>> rubixdata = apply_noise(rubixdata)
+    """
     if "noise" not in config["telescope"]:
         raise ValueError("Noise information not provided in telescope config")
 
@@ -29,12 +58,11 @@ def get_apply_noise(config: dict):
 
     logger = get_logger()
 
-    def apply_noise(inputs: dict[str, jax.Array]) -> dict[str, jax.Array]:
+    def apply_noise(rubixdata: object) -> object:
         logger.info(
             f"Applying noise to datacube with signal to noise ratio: {signal_to_noise} and noise distribution: {noise_distribution}"
         )
-        datacube = inputs["datacube"]
-
+        datacube = rubixdata.stars.datacube
         # Define S2n for each spaxel
         S2N = jnp.ones(datacube.shape[:2]) * signal_to_noise
 
@@ -44,7 +72,7 @@ def get_apply_noise(config: dict):
         )
 
         # Add noise to the datacube
-        inputs["datacube"] += noise_cube
-        return inputs
+        rubixdata.stars.datacube += noise_cube
+        return rubixdata
 
     return apply_noise

@@ -57,9 +57,7 @@ def test_age_at_z(z):
         astropy_age = astropy_cosmo.age(z).value
         assert jnp.isclose(rubix_age, astropy_age, rtol=TOLERANCE)
     else:
-        import numpy as np
-
-        z = np.array(z)
+        z = jnp.array(z)
         rubix_age = rubix_cosmo.age_at_z(z)
         astropy_age = astropy_cosmo.age(z).value
         for r, a in zip(rubix_age, astropy_age):

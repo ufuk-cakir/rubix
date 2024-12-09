@@ -55,6 +55,8 @@ def _get_sample_inputs(subset=None):
     metallicity_grid, age_grid = np.meshgrid(
         metallicity.flatten(), age.flatten(), indexing="ij"
     )
+    metallicity_grid = jnp.array(metallicity_grid)
+    age_grid = jnp.array(age_grid)
     metallicity_grid = reshape_array(metallicity_grid.flatten())  # type: ignore
     age_grid = reshape_array(age_grid.flatten())  # type: ignore
     print("Metallicity grid shape: ", metallicity_grid.shape)

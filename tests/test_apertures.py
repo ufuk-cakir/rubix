@@ -1,5 +1,6 @@
 import pytest  # type: ignore # noqa
 import jax.numpy as jnp
+import numpy as np
 from rubix.telescope.apertures import (
     HEXAGONAL_APERTURE,
     SQUARE_APERTURE,
@@ -8,14 +9,14 @@ from rubix.telescope.apertures import (
 
 
 def test_square_aperture():
-    sbin = 10
+    sbin = np.int64(10)
     expected = jnp.ones((sbin, sbin)).flatten()
     result = SQUARE_APERTURE(sbin)
     assert jnp.all(result == expected), "Square aperture mask should be all ones"
 
 
 def test_circular_aperture():
-    sbin = 10
+    sbin = np.int64(10)
     result = CIRCULAR_APERTURE(sbin).reshape(sbin, sbin)
     xcentre, ycentre = sbin / 2 + 0.5, sbin / 2 + 0.5
     x = jnp.tile(jnp.arange(1, sbin + 1), (sbin, 1))
@@ -29,7 +30,7 @@ def test_circular_aperture():
 
 
 def test_hexagonal_aperture():
-    sbin = 10
+    sbin = np.int64(10)
     result = HEXAGONAL_APERTURE(sbin).reshape(sbin, sbin)
     expected = jnp.zeros((sbin, sbin))
     xcentre, ycentre = sbin / 2 + 0.5, sbin / 2 + 0.5

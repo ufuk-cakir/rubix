@@ -3,8 +3,37 @@ import jax
 from rubix.logger import get_logger
 from rubix.galaxy.alignment import rotate_galaxy as rotate_galaxy_core
 
+from jaxtyping import Array, Float, jaxtyped
+from beartype import beartype as typechecker
 
+
+@jaxtyped(typechecker=typechecker)
 def get_galaxy_rotation(config: dict):
+    """
+    Get the function to rotate the galaxy based on the configuration.
+
+    Args:
+        config (dict): Configuration dictionary.
+
+    Returns:
+        The function to rotate the galaxy.
+
+    Example
+    --------
+    >>> config = {
+    ...     ...
+    ...     "galaxy":
+    ...         {"dist_z": 0.1,
+    ...         "rotation": {"type": "edge-on"},
+    ...         },
+    ...     ...
+    ... }
+
+    >>> from rubix.core.rotation import get_galaxy_rotation
+    >>> rotate_galaxy = get_galaxy_rotation(config)
+    >>> rubixdata = rotate_galaxy(rubixdata)
+    """
+
     # Check if rotation information is provided under galaxy config
     if "rotation" not in config["galaxy"]:
         raise ValueError("Rotation information not provided in galaxy config")
@@ -20,16 +49,16 @@ def get_galaxy_rotation(config: dict):
         # if type is edge on, alpha = 90, beta = gamma = 0
         if config["galaxy"]["rotation"]["type"] == "face-on":
             logger.debug("Roataion Type found: Face-on")
-            alpha = 0
-            beta = 0
-            gamma = 0
+            alpha = 0.0
+            beta = 0.0
+            gamma = 0.0
 
         else:
             # type is edge-on
             logger.debug("Roataion Type found: edge-on")
-            alpha = 90
-            beta = 0
-            gamma = 0
+            alpha = 90.0
+            beta = 0.0
+            gamma = 0.0
 
     else:
         # If type is not provided, then alpha, beta, gamma should be set
@@ -43,29 +72,58 @@ def get_galaxy_rotation(config: dict):
         beta = config["galaxy"]["rotation"]["beta"]
         gamma = config["galaxy"]["rotation"]["gamma"]
 
-    def rotate_galaxy(inputs: dict[str, jax.Array], type: str = "face-on"):
+    @jaxtyped(typechecker=typechecker)
+    def rotate_galaxy(rubixdata: object, type: str = "face-on") -> object:
         logger.info(f"Rotating galaxy with alpha={alpha}, beta={beta}, gamma={gamma}")
 
-        # Get the inputs
-        coords = inputs["coords"]
-        velocities = inputs["velocities"]
-        masses = inputs["mass"]
-        halfmass_radius = inputs["halfmassrad_stars"]
+        if "stars" in config["data"]["args"]["particle_type"]:
+            # Get the inputs
+            coords = rubixdata.stars.coords
+            velocities = rubixdata.stars.velocity
+            masses = rubixdata.stars.mass
+            halfmass_radius = rubixdata.galaxy.halfmassrad_stars
 
-        # Rotate the galaxy
-        coords, velocities = rotate_galaxy_core(
-            positions=coords,
-            velocities=velocities,
-            masses=masses,
-            halfmass_radius=halfmass_radius,
-            alpha=alpha,
-            beta=beta,
-            gamma=gamma,
-        )
+            # Rotate the galaxy
+            coords, velocities = rotate_galaxy_core(
+                positions=coords,
+                velocities=velocities,
+                masses=masses,
+                halfmass_radius=halfmass_radius,
+                alpha=alpha,
+                beta=beta,
+                gamma=gamma,
+            )
 
-        # Update the inputs
-        inputs["coords"] = coords
-        inputs["velocities"] = velocities
-        return inputs
+            # Update the inputs
+            # rubixdata.stars.coords = coords
+            # rubixdata.stars.velocity = velocities
+            setattr(rubixdata.stars, "coords", coords)
+            setattr(rubixdata.stars, "velocity", velocities)
+
+        if "gas" in config["data"]["args"]["particle_type"]:
+            # Get the inputs
+            coords = rubixdata.gas.coords
+            velocities = rubixdata.gas.velocity
+            masses = rubixdata.gas.mass
+            halfmass_radius = rubixdata.galaxy.halfmassrad_stars
+
+            # Rotate the galaxy
+            coords, velocities = rotate_galaxy_core(
+                positions=coords,
+                velocities=velocities,
+                masses=masses,
+                halfmass_radius=halfmass_radius,
+                alpha=alpha,
+                beta=beta,
+                gamma=gamma,
+            )
+
+            # Update the inputs
+            # rubixdata.gas.coords = coords
+            # rubixdata.gas.velocity = velocities
+            setattr(rubixdata.gas, "coords", coords)
+            setattr(rubixdata.gas, "velocity", velocities)
+
+        return rubixdata
 
     return rotate_galaxy

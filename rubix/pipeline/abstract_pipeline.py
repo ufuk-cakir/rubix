@@ -18,10 +18,9 @@ class AbstractPipeline(ABC):
         __init__ _Create a new pipeline. This should only be called in derived
                 classes' __init__ methods.
 
-        Parameters
-        ----------
-        cfg : dict Read config file defining the pipeline
-        transformers : list Transformer functions to use
+        Args:
+            cfg (dict): Read config file defining the pipeline
+            transformers (list): Transformer functions to use
         """
         self.config = cfg
         self._pipeline = []
@@ -56,10 +55,8 @@ class AbstractPipeline(ABC):
         pipeline Get the sequence of functions that make up the pipeline as a
         dictionary of name: function pairs.
 
-        Returns
-        -------
-        dict
-            Description of the pipeline as name: function pairs.
+        Returns:
+            Description of the pipeline as name: function pairs as dict.
         """
         return dict(zip(self._names, self._pipeline))
 
@@ -69,10 +66,9 @@ class AbstractPipeline(ABC):
         pipeline object. The registered function must be a pure functional
         function in order to be transformable with jax. The registered transformers
         are used to build a pipeline.
-        Parameters
-        ----------
-        cls
-            function object to register.
+
+        Args:
+            cls: function object to register.
 
         Raises
         ------
@@ -119,10 +115,8 @@ class AbstractPipeline(ABC):
         static_kwargs : list, optional
             statiuc keyword arguments that should not be traced by jit, by default []
 
-        Returns
-        -------
-        PjitFunction
-            Compiled pipeline function
+        Returns:
+            Compiled pipeline function as PjitFunction
         """
         f = None
 

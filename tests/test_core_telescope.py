@@ -4,17 +4,41 @@ from rubix.core.telescope import (
     get_telescope,
     get_spatial_bin_edges,
 )
+from rubix.telescope.base import BaseTelescope
 from unittest.mock import patch, MagicMock
+from typing import cast
+import jax.numpy as jnp
+
+
+class MockRubixData:
+    def __init__(self, stars, gas):
+        self.stars = stars
+        self.gas = gas
+
+
+class MockStarsData:
+    def __init__(self, coords):
+        self.coords = coords
+
+
+class MockGasData:
+    def __init__(self, coords):
+        self.coords = coords
 
 
 @patch("rubix.core.telescope.TelescopeFactory")
 def test_get_telescope(mock_factory):
     config = {"telescope": {"name": "MUSE"}}
-    mock_telescope = MagicMock()
+    # Create a mock with spec of BaseTelescope
+    mock_telescope = MagicMock(spec=BaseTelescope)
+
+    # Set the return value of the mock factory method
     mock_factory.return_value.create_telescope.return_value = mock_telescope
 
+    # Call the function under test
     result = get_telescope(config)
 
+    # Assertions
     mock_factory.return_value.create_telescope.assert_called_once_with("MUSE")
     assert result == mock_telescope
 
@@ -46,12 +70,20 @@ def test_get_spaxel_assignment():
 
         assert callable(spaxel_assignment)
 
-        input_data = {"coords": "coords"}
+        # input_data = {"coords": "coords"}
+        input_data = MockRubixData(
+            MockStarsData(
+                coords="coords",
+            ),
+            MockGasData(
+                coords=None,
+            ),
+        )
         result = spaxel_assignment(input_data)
 
-        assert result["pixel_assignment"] == "pixel_assignment"
-        assert result["spatial_bin_edges"] == "spatial_bin_edges"
-        assert result["coords"] == "coords"
+        assert result.stars.pixel_assignment == "pixel_assignment"
+        assert result.stars.spatial_bin_edges == "spatial_bin_edges"
+        assert result.stars.coords == "coords"
 
     # Test for unsupported pixel type
     with patch("rubix.core.telescope.get_telescope") as mock_get_telescope:
@@ -77,8 +109,8 @@ def test_get_spatial_bin_edges(
     mock_get_telescope.return_value = mock_telescope
     mock_get_cosmology.return_value = "cosmology"
     mock_calculate_spatial_bin_edges.return_value = (
-        "spatial_bin_edges",
-        "spatial_bin_size",
+        jnp.array([0.0, 1.0, 2.0]),  # Mocked spatial bin edges
+        jnp.array([1.0, 1.0, 1.0]),  # spatial_bin_size
     )
 
     result = get_spatial_bin_edges(config)
@@ -91,4 +123,6 @@ def test_get_spatial_bin_edges(
         dist_z=0.5,
         cosmology="cosmology",
     )
-    assert result == "spatial_bin_edges"
+    # Assertions
+    assert isinstance(result, jnp.ndarray)  # Ensure the return type matches
+    assert result.shape == (3,)  # Check the shape of spatial_bin_edges

@@ -9,6 +9,8 @@ import h5py
 import os
 import importlib
 from .grid import SSPGrid
+from jaxtyping import Array, Float, jaxtyped
+from beartype import beartype as typechecker
 
 # Setup a logger based on the config
 logger = get_logger()
@@ -22,8 +24,14 @@ else:
     )
 
 
+@jaxtyped(typechecker=typechecker)
 def retrieve_ssp_data_from_fsps(
-    add_neb_emission=True, imf_type=2, zmet=None, tage=0.0, peraa=True, **kwargs
+    add_neb_emission: bool = True,
+    imf_type: int = 2,
+    zmet=None,
+    tage: float = 0.0,
+    peraa: bool = True,
+    **kwargs,
 ) -> "SSPGrid":
     """Use python-fsps to populate arrays and matrices of data
     for the default simple stellar populations (SSPs) in the shapes expected by DSPS
@@ -107,12 +115,13 @@ def retrieve_ssp_data_from_fsps(
     return grid
 
 
+@jaxtyped(typechecker=typechecker)
 def write_fsps_data_to_disk(
     outname: str,
     file_location=TEMPLATE_PATH,
-    add_neb_emission=True,
-    imf_type=2,
-    peraa=True,
+    add_neb_emission: bool = True,
+    imf_type: int = 2,
+    peraa: bool = True,
     **kwargs,
 ):
     """
