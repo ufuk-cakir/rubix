@@ -1,3 +1,4 @@
+#fov in arcsec!
 MUSE:
   fov: 5
   spatial_res: 0.2
