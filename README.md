@@ -7,10 +7,12 @@
 
 ## Installation
 
-The Python package `rubix` can be installed from PyPI:
+The Python package `rubix` can be downloades from git and can be installed:
 
 ```
-python -m pip install rubix
+git clone https://github.com/ufuk-cakir/rubix
+cd rubix
+pip install .
 ```
 
 ## Development installation
@@ -35,7 +37,7 @@ please refer to [here](https://github.com/google/jax?tab=readme-ov-file#installa
 
 
 ## Documentation
-Sphinx Documentation of all the functions is currently available under [this link](https://cakir-ufuk.de/rubix-doc).
+Sphinx Documentation of all the functions is currently available under [this link](https://astro-rubix.web.app/).
 
 ## Configuration Generator Tool
 A tool to interactively generate a user configuration is available under [this link](https://cakir-ufuk.de/docs/getting-started/configuration/).
