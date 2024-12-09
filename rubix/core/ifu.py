@@ -25,18 +25,29 @@ def get_calculate_spectra(config: dict) -> Callable:
     logger = get_logger(config.get("logger", None))
     lookup_interpolation_pmap = get_lookup_interpolation_pmap(config)
 
-    def calculate_spectra(inputs: dict[str, jax.Array]) -> dict[str, jax.Array]:
+    def calculate_spectra(rubixdata: object) -> object:
         logger.info("Calculating IFU cube...")
         logger.debug(
-            f"Input shapes: Metallicity: {inputs['metallicity'].shape}, Age: {inputs['age'].shape}"
+            f"Input shapes: Metallicity: {len(rubixdata.stars.metallicity)}, Age: {len(rubixdata.stars.age)}"
         )
+        # Ensure metallicity and age are arrays and reshape them to be at least 1-dimensional
+        age_data = jax.device_get(rubixdata.stars.age)
+        metallicity_data = jax.device_get(rubixdata.stars.metallicity)
+        # Ensure they are not scalars or empty; convert to 1D arrays if necessary
+        age = jnp.atleast_1d(age_data)
+        metallicity = jnp.atleast_1d(metallicity_data)
+
         spectra = lookup_interpolation_pmap(
-            inputs["metallicity"], inputs["age"]
+            # rubixdata.stars.metallicity, rubixdata.stars.age
+            metallicity,
+            age,
         )  # * inputs["mass"]
         logger.debug(f"Calculation Finished! Spectra shape: {spectra.shape}")
-        inputs["spectra"] = spectra
+        spectra_jax = jnp.array(spectra)
+        rubixdata.stars.spectra = spectra_jax
+        # setattr(rubixdata.gas, "spectra", spectra)
         # jax.debug.print("Calculate Spectra: Spectra {}", spectra)
-        return inputs
+        return rubixdata
 
     return calculate_spectra
 
@@ -46,12 +57,15 @@ def get_scale_spectrum_by_mass(config: dict) -> Callable:
 
     logger = get_logger(config.get("logger", None))
 
-    def scale_spectrum_by_mass(inputs: dict[str, jax.Array]) -> dict[str, jax.Array]:
+    def scale_spectrum_by_mass(rubixdata: object) -> object:
+
         logger.info("Scaling Spectra by Mass...")
-        mass = jnp.expand_dims(inputs["mass"], axis=-1)
-        inputs["spectra"] = inputs["spectra"] * mass
+        mass = jnp.expand_dims(rubixdata.stars.mass, axis=-1)
+        # rubixdata.stars.spectra = rubixdata.stars.spectra * mass
+        spectra_mass = rubixdata.stars.spectra * mass
+        setattr(rubixdata.stars, "spectra", spectra_mass)
         # jax.debug.print("mass mult: Spectra {}", inputs["spectra"])
-        return inputs
+        return rubixdata
 
     return scale_spectrum_by_mass
 
@@ -109,24 +123,37 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
     # This binds the velocity direction, such that later we only need the velocity during the pipeline
     doppler_shift = get_velocities_doppler_shift_vmap(ssp_wave, velocity_direction)
 
-    def doppler_shift_and_resampling(
-        inputs: dict[str, jax.Array]
-    ) -> dict[str, jax.Array]:
+    def doppler_shift_and_resampling(rubixdata: object) -> object:
+        if rubixdata.stars.spectra is not None:
+            # Doppler shift the SSP Wavelengths based on the velocity of the stars
+            doppler_shifted_ssp_wave = doppler_shift(rubixdata.stars.velocity)
+            logger.info("Doppler shifting and resampling stellar spectra...")
+            logger.debug(f"Doppler Shifted SSP Wave: {doppler_shifted_ssp_wave.shape}")
+            logger.debug(f"Telescope Wave Seq: {telescope.wave_seq.shape}")
+            # Function to resample the spectrum to the telescope wavelength grid
+            resample_spectrum_pmap = get_resample_spectrum_pmap(telescope_wavelenght)
+            # jax.debug.print("doppler shifted ssp wave {}", doppler_shifted_ssp_wave)
+            # jax.debug.print("Spectra before resampling {}", inputs["spectra"])
+            spectrum_resampled = resample_spectrum_pmap(
+                rubixdata.stars.spectra, doppler_shifted_ssp_wave
+            )
+            # rubixdata.stars.spectra = spectrum_resampled
+            setattr(rubixdata.stars, "spectra", spectrum_resampled)
+            # jax.debug.print("doppler shift and resampl: Spectra {}", inputs["spectra"])
 
-        # Doppler shift the SSP Wavelengths based on the velocity of the stars
-        doppler_shifted_ssp_wave = doppler_shift(inputs["velocities"])
-        logger.debug(f"Doppler Shifted SSP Wave: {doppler_shifted_ssp_wave.shape}")
-        logger.debug(f"Telescope Wave Seq: {telescope.wave_seq.shape}")
-        # Function to resample the spectrum to the telescope wavelength grid
-        resample_spectrum_pmap = get_resample_spectrum_pmap(telescope_wavelenght)
-        # jax.debug.print("doppler shifted ssp wave {}", doppler_shifted_ssp_wave)
-        # jax.debug.print("Spectra before resampling {}", inputs["spectra"])
-        spectrum_resampled = resample_spectrum_pmap(
-            inputs["spectra"], doppler_shifted_ssp_wave
-        )
-        inputs["spectra"] = spectrum_resampled
-        # jax.debug.print("doppler shift and resampl: Spectra {}", inputs["spectra"])
-        return inputs
+        if rubixdata.gas.spectra is not None:
+            # Doppler shift the SSP Wavelengths based on the velocity of the gas particles
+            doppler_shifted_ssp_wave = doppler_shift(rubixdata.gas.velocity)
+            logger.info("Doppler shifting and resampling gas spectra...")
+            logger.debug(f"Doppler Shifted SSP Wave: {doppler_shifted_ssp_wave.shape}")
+            logger.debug(f"Telescope Wave Seq: {telescope.wave_seq.shape}")
+            # Function to resample the spectrum to the telescope wavelength grid
+            resample_spectrum_pmap = get_resample_spectrum_pmap(telescope_wavelenght)
+            spectrum_resampled = resample_spectrum_pmap(
+                rubixdata.gas.spectra, doppler_shifted_ssp_wave
+            )
+
+        return rubixdata
 
     return doppler_shift_and_resampling
 
@@ -140,14 +167,18 @@ def get_calculate_datacube(config: dict) -> Callable:
     calculate_cube_fn = jax.tree_util.Partial(calculate_cube, num_spaxels=num_spaxels)
     calculate_cube_pmap = jax.pmap(calculate_cube_fn)
 
-    def calculate_datacube(inputs: dict[str, jax.Array]) -> dict[str, jax.Array]:
+    def calculate_datacube(rubixdata: object) -> object:
         logger.info("Calculating Data Cube...")
         ifu_cubes = calculate_cube_pmap(
-            spectra=inputs["spectra"], spaxel_index=inputs["pixel_assignment"]
+            spectra=rubixdata.stars.spectra,
+            spaxel_index=rubixdata.stars.pixel_assignment,
         )
         datacube = jnp.sum(ifu_cubes, axis=0)
         logger.debug(f"Datacube Shape: {datacube.shape}")
-        inputs["datacube"] = datacube
-        return inputs
+        # logger.debug(f"This is the datacube: {datacube}")
+        datacube_jax = jnp.array(datacube)
+        setattr(rubixdata.stars, "datacube", datacube_jax)
+        # rubixdata.stars.datacube = datacube
+        return rubixdata
 
     return calculate_datacube

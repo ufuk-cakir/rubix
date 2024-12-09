@@ -109,6 +109,16 @@ def test_load_data(mock_file, mock_exists):
             "velocity": "cm/s",
             "age": "Gyr",
         },
+        "gas": {
+            "coords": "cm",
+            "density": "g/cm^3",
+            "mass": "g",
+            "metallicity": "",
+            "sfr": "Msun/yr",
+            "internal_energy": "erg/g",
+            "velocity": "cm/s",
+            "electron_abundance": "",
+        },
         "galaxy": {
             "center": "cm",
             "halfmassrad_stars": "cm",

@@ -31,9 +31,9 @@ def get_convolve_psf(config: dict) -> Callable:
         )
 
     # Define the function to convolve the datacube with the PSF kernel
-    def convolve_psf(input: Dict[str, jnp.ndarray]) -> Dict[str, jnp.ndarray]:
+    def convolve_psf(rubixdata: object) -> object:
         """Convolve the input datacube with the PSF kernel."""
-        input["datacube"] = apply_psf(input["datacube"], psf_kernel)
-        return input
+        rubixdata.stars.datacube = apply_psf(rubixdata.stars.datacube, psf_kernel)
+        return rubixdata
 
     return convolve_psf
