@@ -4,13 +4,16 @@
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/ufuk-cakir/rubix/ci.yml?branch=main)](https://github.com/ufuk-cakir/rubix/actions/workflows/ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/rubix/badge/)](https://rubix.readthedocs.io/)
 [![codecov](https://codecov.io/gh/ufuk-cakir/rubix/branch/main/graph/badge.svg)](https://codecov.io/gh/ufuk-cakir/rubix)
+[![All Contributors](https://img.shields.io/github/all-contributors/ufuk-cakir/rubix?color=ee8449&style=flat-square)](#contributors)
 
 ## Installation
 
-The Python package `rubix` can be installed from PyPI:
+The Python package `rubix` can be downloades from git and can be installed:
 
 ```
-python -m pip install rubix
+git clone https://github.com/ufuk-cakir/rubix
+cd rubix
+pip install .
 ```
 
 ## Development installation
@@ -35,7 +38,7 @@ please refer to [here](https://github.com/google/jax?tab=readme-ov-file#installa
 
 
 ## Documentation
-Sphinx Documentation of all the functions is currently available under [this link](https://cakir-ufuk.de/rubix-doc).
+Sphinx Documentation of all the functions is currently available under [this link](https://astro-rubix.web.app/).
 
 ## Configuration Generator Tool
 A tool to interactively generate a user configuration is available under [this link](https://cakir-ufuk.de/docs/getting-started/configuration/).
@@ -43,3 +46,15 @@ A tool to interactively generate a user configuration is available under [this l
 ## Acknowledgments
 
 This repository was set up using the [SSC Cookiecutter for Python Packages](https://github.com/ssciwr/cookiecutter-python-package).
+
+
+## Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
