@@ -236,6 +236,7 @@ class IllustrisHandler(BaseHandler):
         #        attributes_coords = f[part_type]["Coordinates"].attrs
         #        break  # Stop after finding the first match
 
+        # This is only to get the attributes in the HDF5 file to convert coordinates from Illustris units to physicqal units. Hence it is not important if this comes from gas or stars particle type, because both are stored in the dame units.
         for part_type in present_fields:
             if "Coordinates" in f[part_type]:
                 attributes_coords = f[part_type]["Coordinates"].attrs

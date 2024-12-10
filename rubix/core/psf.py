@@ -2,6 +2,7 @@ from rubix.telescope.psf.psf import get_psf_kernel, apply_psf
 
 from typing import Callable, Dict
 import jax.numpy as jnp
+from .data import RubixData
 
 
 # TODO: add option to disable PSF convolution
@@ -31,7 +32,7 @@ def get_convolve_psf(config: dict) -> Callable:
         )
 
     # Define the function to convolve the datacube with the PSF kernel
-    def convolve_psf(rubixdata: object) -> object:
+    def convolve_psf(rubixdata: RubixData) -> RubixData:
         """Convolve the input datacube with the PSF kernel."""
         rubixdata.stars.datacube = apply_psf(rubixdata.stars.datacube, psf_kernel)
         return rubixdata

@@ -1,5 +1,7 @@
 import jax.numpy as jnp
+import jax
 from jaxtyping import Float, Array
+import equinox as eqx
 from rubix.telescope.utils import (
     calculate_spatial_bin_edges,
     square_spaxel_assignment,
@@ -8,7 +10,8 @@ from rubix.telescope.utils import (
 from rubix.telescope.base import BaseTelescope
 from rubix.telescope.factory import TelescopeFactory
 from .cosmology import get_cosmology
-from typing import Callable
+from .data import RubixData
+from typing import Callable, List
 
 
 def get_telescope(config: dict) -> BaseTelescope:
@@ -44,24 +47,18 @@ def get_spaxel_assignment(config: dict) -> Callable:
         raise ValueError(f"Pixel type {telescope.pixel_type} not supported")
     spatial_bin_edges = get_spatial_bin_edges(config)
 
-    def spaxel_assignment(rubixdata: object) -> object:
-        if rubixdata.stars.coords is not None:
-            pixel_assignment = square_spaxel_assignment(
-                rubixdata.stars.coords, spatial_bin_edges
-            )
-            rubixdata.stars.pixel_assignment = pixel_assignment
-            rubixdata.stars.spatial_bin_edges = spatial_bin_edges
+    def spaxel_assignment(rubixdata: RubixData) -> RubixData:
+        def assign_particle(particle):
+            if particle.coords is not None:
+                pixel_assignment = square_spaxel_assignment(
+                    particle.coords, spatial_bin_edges
+                )
+                particle.pixel_assignment = pixel_assignment
+                particle.spatial_bin_edges = spatial_bin_edges
+            return particle
 
-        if rubixdata.gas.coords is not None:
-            pixel_assignment = square_spaxel_assignment(
-                rubixdata.gas.coords, spatial_bin_edges
-            )
-            rubixdata.gas.pixel_assignment = pixel_assignment
-            rubixdata.gas.spatial_bin_edges = spatial_bin_edges
-            # pixel_assignment_jax = jnp.array(pixel_assignment)
-            # setattr(rubixdata.gas, "pixel_assignment", pixel_assignment_jax)
-            # spatial_bin_edges_jax = jnp.array(spatial_bin_edges)
-            # setattr(rubixdata.gas, "spatial_bin_edges", spatial_bin_edges_jax)
+        rubixdata.stars = assign_particle(rubixdata.stars)
+        rubixdata.gas = assign_particle(rubixdata.gas)
 
         return rubixdata
 
@@ -72,7 +69,7 @@ def get_filter_particles(config: dict):
     """Get the function to filter particles outside the aperture."""
     spatial_bin_edges = get_spatial_bin_edges(config)
 
-    def filter_particles(rubixdata: object) -> object:
+    def filter_particles(rubixdata: RubixData) -> RubixData:
         if "stars" in config["data"]["args"]["particle_type"]:
             # if rubixdata.stars.coords is not None:
             mask = mask_particles_outside_aperture(
@@ -101,7 +98,6 @@ def get_filter_particles(config: dict):
             mask = mask_particles_outside_aperture(
                 rubixdata.gas.coords, spatial_bin_edges
             )
-
             attributes = [
                 attr
                 for attr in dir(rubixdata.gas)

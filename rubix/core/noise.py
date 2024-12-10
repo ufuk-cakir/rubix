@@ -4,7 +4,7 @@ from rubix.telescope.noise.noise import (
     calculate_noise_cube,
     SUPPORTED_NOISE_DISTRIBUTIONS,
 )
-
+from .data import RubixData
 from rubix.logger import get_logger
 
 
@@ -29,7 +29,7 @@ def get_apply_noise(config: dict):
 
     logger = get_logger()
 
-    def apply_noise(rubixdata: object) -> object:
+    def apply_noise(rubixdata: RubixData) -> RubixData:
         logger.info(
             f"Applying noise to datacube with signal to noise ratio: {signal_to_noise} and noise distribution: {noise_distribution}"
         )
