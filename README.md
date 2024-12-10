@@ -53,6 +53,13 @@ This repository was set up using the [SSC Cookiecutter for Python Packages](http
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/anschaible"><img src="https://avatars.githubusercontent.com/u/131476730?v=4?s=100" width="100px;" alt="anschaible"/><br /><sub><b>anschaible</b></sub></a><br /><a href="#code-anschaible" title="Code">💻</a> <a href="#content-anschaible" title="Content">🖋</a> <a href="#data-anschaible" title="Data">🔣</a> <a href="#doc-anschaible" title="Documentation">📖</a> <a href="#design-anschaible" title="Design">🎨</a> <a href="#example-anschaible" title="Examples">💡</a> <a href="#ideas-anschaible" title="Ideas, Planning, & Feedback">🤔</a> <a href="#infra-anschaible" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#maintenance-anschaible" title="Maintenance">🚧</a> <a href="#plugin-anschaible" title="Plugin/utility libraries">🔌</a> <a href="#projectManagement-anschaible" title="Project Management">📆</a> <a href="#question-anschaible" title="Answering Questions">💬</a> <a href="#research-anschaible" title="Research">🔬</a> <a href="#review-anschaible" title="Reviewed Pull Requests">👀</a> <a href="#tool-anschaible" title="Tools">🔧</a> <a href="#test-anschaible" title="Tests">⚠️</a> <a href="#talk-anschaible" title="Talks">📢</a> <a href="#userTesting-anschaible" title="User Testing">📓</a></td>
+    </tr>
+  </tbody>
+</table>
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
