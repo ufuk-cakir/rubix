@@ -33,6 +33,33 @@
         "talk",
         "userTesting"
       ]
+    },
+    {
+      "login": "TobiBu",
+      "name": "Tobias Buck",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7574273?v=4",
+      "profile": "https://tobibu.github.io",
+      "contributions": [
+        "code",
+        "content",
+        "data",
+        "doc",
+        "design",
+        "example",
+        "ideas",
+        "infra",
+        "maintenance",
+        "plugin",
+        "projectManagement",
+        "question",
+        "research",
+        "review",
+        "tool",
+        "test",
+        "talk",
+        "userTesting",
+        "mentoring"
+      ]
     }
   ]
 }
