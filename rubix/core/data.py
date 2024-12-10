@@ -15,6 +15,29 @@ from rubix.utils import load_galaxy_data, read_yaml
 from rubix import config as rubix_config
 
 
+# class Particles:
+#    def __init__(self, particle_data: object):
+#        self.particle_data = particle_data
+#        self.attributes = self._filter_attributes()
+#
+#    def _filter_attributes(self) -> list:
+#        """
+#        Filters the attributes of the particle_data object based on the specified criteria.
+#        """
+#        return [
+#            attr
+#            for attr in dir(self.particle_data)
+#            if not attr.startswith("__")
+#            and not callable(getattr(self.particle_data, attr))
+#        ]
+#
+#    def get_attributes(self) -> list:
+#        """
+#        Returns the filtered attributes.
+#        """
+#        return self.attributes
+
+
 # Registering the dataclass with JAX for automatic tree traversal
 @partial(jax.tree_util.register_pytree_node_class)
 @dataclass
@@ -157,11 +180,18 @@ class RubixData:
     stars: Optional[StarsData] = None
     gas: Optional[GasData] = None
 
+
     def __repr__(self):
         representationString = ["RubixData:"]
         for k, v in self.__dict__.items():
             representationString.append("\n\t".join(f"{k}: {v}".split("\n")))
         return "\n\t".join(representationString)
+
+    # def __post_init__(self):
+    #    if self.stars is not None:
+    #        self.stars = Particles(self.stars)
+    #    if self.gas is not None:
+    #        self.gas = Particles(self.gas)
 
     def tree_flatten(self):
         children = (self.galaxy, self.stars, self.gas)
@@ -269,7 +299,7 @@ def reshape_array(
     return reshaped_arr
 
 
-def prepare_input(config: Union[dict, str]) -> object:
+def prepare_input(config: Union[dict, str]) -> RubixData:
     # print(config)
 
     logger_config = config["logger"] if "logger" in config else None  # type:ignore
@@ -323,12 +353,15 @@ def prepare_input(config: Union[dict, str]) -> object:
                         size=size,  # type:ignore
                         replace=False,
                     )  # type:ignore
-                else:
+                elif rubixdata.gas.coords is not None:
                     indices = np.random.choice(
                         np.arange(len(rubixdata.gas.coords)),
                         size=size,  # type:ignore
                         replace=False,
                     )
+                else:
+                    raise ValueError("Neither stars nor gas coordinates are available.")
+
                 # Subset the attributes
                 jax_indices = jnp.array(indices)
                 for attribute in data["particle_data"][partType].keys():
@@ -354,7 +387,7 @@ def prepare_input(config: Union[dict, str]) -> object:
     return rubixdata
 
 
-def get_rubix_data(config: Union[dict, str]) -> object:
+def get_rubix_data(config: Union[dict, str]) -> RubixData:
     """Returns the Rubix data
 
     First converts the data to Rubix format and then prepares the input data.
@@ -365,43 +398,36 @@ def get_rubix_data(config: Union[dict, str]) -> object:
     return prepare_input(config)
 
 
+def process_attributes(obj: RubixData, logger: Callable) -> None:
+    """
+    Process the attributes of the given object and reshape them if they are arrays.
+    """
+    attributes = [attr for attr in dir(obj) if not attr.startswith("__")]
+    for key in attributes:
+        attr_value = getattr(obj, key)
+        if attr_value is None or not isinstance(attr_value, (jnp.ndarray, np.ndarray)):
+            logger.warning(f"Attribute value of {key} is None or not an array")
+            continue
+        reshaped_value = reshape_array(attr_value)
+        setattr(obj, key, reshaped_value)
+
+
 def get_reshape_data(config: Union[dict, str]) -> Callable:
     """Returns a function to reshape the data
 
     Maps the `reshape_array` function to the input data dictionary.
     """
+    # Setup a logger based on the config
+    logger_config = config["logger"] if "logger" in config else None
+    logger = get_logger(logger_config)
 
-    def reshape_data(rubixdata: object) -> object:
+    def reshape_data(rubixdata: RubixData) -> RubixData:
         # Check if input_data has 'stars' and 'gas' attributes and process them separately
-        if rubixdata.stars.velocity is not None:
-            attributes = [
-                attr for attr in dir(rubixdata.stars) if not attr.startswith("__")
-            ]
-            for key in attributes:
-                # Get the attribute value; continue to next key if it's None
-                attr_value = getattr(rubixdata.stars, key)
-                if attr_value is None or not isinstance(
-                    attr_value, (jnp.ndarray, np.ndarray)
-                ):
-                    continue
-                # Ensure reshape_array is compatible with JAX arrays
-                reshaped_value = reshape_array(attr_value)
-                setattr(rubixdata.stars, key, reshaped_value)
+        if rubixdata.stars.coords is not None:
+            process_attributes(rubixdata.stars, logger)
 
-        if rubixdata.gas.velocity is not None:
-            attributes = [
-                attr for attr in dir(rubixdata.gas) if not attr.startswith("__")
-            ]
-            for key in attributes:
-                # Get the attribute value; continue to next key if it's None
-                attr_value = getattr(rubixdata.gas, key)
-                if attr_value is None or not isinstance(
-                    attr_value, (jnp.ndarray, np.ndarray)
-                ):
-                    continue
-                # Ensure reshape_array is compatible with JAX arrays
-                reshaped_value = reshape_array(attr_value)
-                setattr(rubixdata.gas, key, reshaped_value)
+        if rubixdata.gas.coords is not None:
+            process_attributes(rubixdata.gas, logger)
 
         return rubixdata
 

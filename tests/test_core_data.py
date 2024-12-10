@@ -341,8 +341,8 @@ class MockStarsData:
 
 
 class MockGasData:
-    def __init__(self, velocity=None):
-        self.velocity = velocity
+    def __init__(self, coords=None):
+        self.coords = coords
 
 
 @patch("rubix.core.data.reshape_array")
@@ -359,7 +359,7 @@ def test_get_reshape_data(mock_reshape_array):
             age=jnp.array([4.5, 5.5]),
             pixel_assignment=jnp.array([0, 1]),
         ),
-        MockGasData(velocity=None),
+        MockGasData(coords=None),
     )
 
     reshaped_data = MockRubixData(
@@ -371,7 +371,7 @@ def test_get_reshape_data(mock_reshape_array):
             age=jnp.array([4.5]),
             pixel_assignment=jnp.array([0]),
         ),
-        MockGasData(velocity=None),
+        MockGasData(coords=None),
     )
 
     def side_effect(x):
