@@ -6,8 +6,11 @@ import astropy.units as u
 from typing import List, Union, Optional
 from rubix import config
 from rubix.logger import get_logger
+from jaxtyping import Array, Float, jaxtyped
+from beartype import beartype as typechecker
 
 
+@jaxtyped(typechecker=typechecker)
 def create_rubix_galaxy(
     file_path: str,
     particle_data: dict,
@@ -69,6 +72,7 @@ def create_rubix_galaxy(
     logger.info(f"Rubix file saved at {file_path}")
 
 
+@jaxtyped(typechecker=typechecker)
 class BaseHandler(ABC):
     """
     Base class for handling input data and converting it to Rubix format.
