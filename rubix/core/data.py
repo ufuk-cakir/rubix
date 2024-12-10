@@ -390,7 +390,7 @@ def reshape_array(arr: jax.Array) -> jax.Array:
 
 
 @jaxtyped(typechecker=typechecker)
-def prepare_input(config: Union[dict, str]) -> object:
+def prepare_input(config: Union[dict, str]) -> RubixData:
     """
     This function prepares the input data for the pipeline. It loads the data from the file and converts it to Rubix format.
 
@@ -423,9 +423,6 @@ def prepare_input(config: Union[dict, str]) -> object:
     logger = get_logger(logger_config)
     file_path = config["output_path"]
     file_path = os.path.join(file_path, "rubix_galaxy.h5")
-
-    # Load the data from the file
-    data, units = load_galaxy_data(file_path)
 
     # Load the data from the file
     # TODO: maybe also pass the units here, currently this is not used
@@ -495,7 +492,7 @@ def prepare_input(config: Union[dict, str]) -> object:
 
 
 @jaxtyped(typechecker=typechecker)
-def get_rubix_data(config: Union[dict, str]) -> object:
+def get_rubix_data(config: Union[dict, str]) -> RubixData:
     """
     Returns the Rubix data
 
@@ -531,7 +528,7 @@ def get_reshape_data(config: Union[dict, str]) -> Callable:
     >>> rubixdata = reshape_data(rubixdata)
     """
 
-    def reshape_data(rubixdata: object) -> object:
+    def reshape_data(rubixdata: RubixData) -> RubixData:
         # Check if input_data has 'stars' and 'gas' attributes and process them separately
         if rubixdata.stars.velocity is not None:
             attributes = [

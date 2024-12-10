@@ -3,7 +3,7 @@ from rubix.telescope.psf.psf import get_psf_kernel, apply_psf
 from typing import Callable, Dict
 import jax.numpy as jnp
 from rubix.logger import get_logger
-
+from .data import RubixData
 from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker
 
@@ -64,7 +64,7 @@ def get_convolve_psf(config: dict) -> Callable:
         )
 
     # Define the function to convolve the datacube with the PSF kernel
-    def convolve_psf(rubixdata: object) -> object:
+    def convolve_psf(rubixdata: RubixData) -> RubixData:
         """Convolve the input datacube with the PSF kernel."""
         logger.info("Convolving with PSF...")
         rubixdata.stars.datacube = apply_psf(rubixdata.stars.datacube, psf_kernel)

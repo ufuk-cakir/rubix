@@ -11,7 +11,7 @@ from rubix.spectra.ifu import (
     velocity_doppler_shift,
     calculate_cube,
 )
-
+from .data import RubixData
 from .ssp import get_lookup_interpolation_pmap, get_ssp
 from .telescope import get_telescope
 
@@ -52,7 +52,7 @@ def get_calculate_spectra(config: dict) -> Callable:
     lookup_interpolation_pmap = get_lookup_interpolation_pmap(config)
 
     @jaxtyped(typechecker=typechecker)
-    def calculate_spectra(rubixdata: object) -> object:
+    def calculate_spectra(rubixdata: RubixData) -> RubixData:
         logger.info("Calculating IFU cube...")
         logger.debug(
             f"Input shapes: Metallicity: {len(rubixdata.stars.metallicity)}, Age: {len(rubixdata.stars.age)}"
@@ -103,7 +103,7 @@ def get_scale_spectrum_by_mass(config: dict) -> Callable:
     logger = get_logger(config.get("logger", None))
 
     @jaxtyped(typechecker=typechecker)
-    def scale_spectrum_by_mass(rubixdata: object) -> object:
+    def scale_spectrum_by_mass(rubixdata: RubixData) -> RubixData:
 
         logger.info("Scaling Spectra by Mass...")
         mass = jnp.expand_dims(rubixdata.stars.mass, axis=-1)
@@ -223,7 +223,7 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
     doppler_shift = get_velocities_doppler_shift_vmap(ssp_wave, velocity_direction)
 
     @jaxtyped(typechecker=typechecker)
-    def doppler_shift_and_resampling(rubixdata: object) -> object:
+    def doppler_shift_and_resampling(rubixdata: RubixData) -> RubixData:
         if rubixdata.stars.spectra is not None:
             # Doppler shift the SSP Wavelengths based on the velocity of the stars
             doppler_shifted_ssp_wave = doppler_shift(rubixdata.stars.velocity)
@@ -287,7 +287,7 @@ def get_calculate_datacube(config: dict) -> Callable:
     calculate_cube_pmap = jax.pmap(calculate_cube_fn)
 
     @jaxtyped(typechecker=typechecker)
-    def calculate_datacube(rubixdata: object) -> object:
+    def calculate_datacube(rubixdata: RubixData) -> RubixData:
         logger.info("Calculating Data Cube...")
         ifu_cubes = calculate_cube_pmap(
             spectra=rubixdata.stars.spectra,

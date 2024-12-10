@@ -105,7 +105,7 @@ class BaseCosmology(eqx.Module):
     ) -> Float[Array, "..."]:
         return 1 / self._Ez(z)
 
-    # @jaxtyped(typechecker=typechecker)
+    @jaxtyped(typechecker=typechecker)
     @jit
     def comoving_distance_to_z(
         self, redshift: Union[Float[Array, "..."], float]

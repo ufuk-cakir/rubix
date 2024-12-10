@@ -172,7 +172,7 @@ def test_rotate_galaxy():
     positions = jnp.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
     velocities = jnp.array([[0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]])
     masses = jnp.array([1.0, 1.0, 1.0])
-    halfmass_radius = 2.0
+    halfmass_radius = jnp.array([2.0])
 
     #    [1, 0, 0],
     #    [0, 0, -1],

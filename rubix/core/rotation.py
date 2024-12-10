@@ -2,7 +2,7 @@ from typing import Dict
 import jax
 from rubix.logger import get_logger
 from rubix.galaxy.alignment import rotate_galaxy as rotate_galaxy_core
-
+from .data import RubixData
 from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker
 
@@ -73,7 +73,7 @@ def get_galaxy_rotation(config: dict):
         gamma = config["galaxy"]["rotation"]["gamma"]
 
     @jaxtyped(typechecker=typechecker)
-    def rotate_galaxy(rubixdata: object, type: str = "face-on") -> object:
+    def rotate_galaxy(rubixdata: RubixData, type: str = "face-on") -> RubixData:
         logger.info(f"Rotating galaxy with alpha={alpha}, beta={beta}, gamma={gamma}")
 
         if "stars" in config["data"]["args"]["particle_type"]:

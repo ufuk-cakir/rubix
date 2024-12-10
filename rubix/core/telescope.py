@@ -8,6 +8,7 @@ from rubix.telescope.base import BaseTelescope
 from rubix.telescope.factory import TelescopeFactory
 from rubix.logger import get_logger
 from .cosmology import get_cosmology
+from .data import RubixData
 from typing import Callable
 
 from typing import Union
@@ -47,7 +48,7 @@ def get_telescope(config: Union[str, dict]) -> BaseTelescope:
 
 
 @jaxtyped(typechecker=typechecker)
-def get_spatial_bin_edges(config: dict) -> jnp.ndarray:
+def get_spatial_bin_edges(config: dict) -> Float[Array, "n_bins"]:
     """
     Get the spatial bin edges based on the configuration.
 
@@ -104,7 +105,7 @@ def get_spaxel_assignment(config: dict) -> Callable:
         raise ValueError(f"Pixel type {telescope.pixel_type} not supported")
     spatial_bin_edges = get_spatial_bin_edges(config)
 
-    def spaxel_assignment(rubixdata: object) -> object:
+    def spaxel_assignment(rubixdata: RubixData) -> RubixData:
         logger.info("Assigning particles to spaxels...")
         if rubixdata.stars.coords is not None:
             pixel_assignment = square_spaxel_assignment(
@@ -147,7 +148,7 @@ def get_filter_particles(config: dict) -> Callable:
 
     spatial_bin_edges = get_spatial_bin_edges(config)
 
-    def filter_particles(rubixdata: object) -> object:
+    def filter_particles(rubixdata: RubixData) -> RubixData:
         logger.info("Filtering particles outside the aperture...")
         if "stars" in config["data"]["args"]["particle_type"]:
             # if rubixdata.stars.coords is not None:

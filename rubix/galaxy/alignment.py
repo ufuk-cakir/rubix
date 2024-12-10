@@ -160,7 +160,6 @@ def apply_init_rotation(
 
 
 @jaxtyped(typechecker=typechecker)
-# def euler_rotation_matrix(alpha: Float[jnp.ndarray, ""], beta: Float[jnp.ndarray, ""], gamma: Float[jnp.ndarray, ""]) -> Float[jnp.ndarray, "3 3"]:
 def euler_rotation_matrix(
     alpha: float, beta: float, gamma: float
 ) -> Float[Array, "3 3"]:
@@ -210,7 +209,7 @@ def euler_rotation_matrix(
     return R.as_matrix()
 
 
-# @jaxtyped(typechecker=typechecker)
+@jaxtyped(typechecker=typechecker)
 def apply_rotation(
     positions: Float[Array, "* 3"], alpha: float, beta: float, gamma: float
 ) -> Float[Array, "* 3"]:
@@ -231,7 +230,7 @@ def apply_rotation(
     return jnp.dot(positions, R)
 
 
-# @jaxtyped(typechecker=typechecker)
+@jaxtyped(typechecker=typechecker)
 def rotate_galaxy(
     positions: Float[Array, "* 3"],
     velocities: Float[Array, "* 3"],
