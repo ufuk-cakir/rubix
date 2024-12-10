@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch, MagicMock
 import jax.numpy as jnp
 from rubix.pipeline import transformer as transformer
 from rubix.core.pipeline import RubixPipeline
@@ -43,7 +44,10 @@ user_config = {
             "path": file_path,
         },
     },
-    "data": {"subset": {"use_subset": True, "subset_size": 5}},
+    "data": {
+        "subset": {"use_subset": True, "subset_size": 5},
+        "args": {"particle_type": ["stars"]},
+    },
     "output_path": output_path,
     "telescope": {
         "name": "MUSE",
@@ -74,12 +78,30 @@ def test_rubix_pipeline_not_implemented(setup_environment):
         pipeline = RubixPipeline(user_config=config)  # noqa
 
 
+"""
 def test_rubix_pipeline_gradient_not_implemented(setup_environment):
     pipeline = RubixPipeline(user_config=user_config)
     with pytest.raises(
         NotImplementedError, match="Gradient calculation is not implemented yet"
     ):
         pipeline.gradient()
+"""
+
+
+def test_rubix_pipeline_gradient_not_implemented(setup_environment):
+    mock_rubix_data = MagicMock()
+    mock_rubix_data.stars.coords = jnp.array([[0, 0, 0]])
+    mock_rubix_data.stars.velocities = jnp.array([[0, 0, 0]])
+    mock_rubix_data.stars.metallicity = jnp.array([0.1])
+    mock_rubix_data.stars.mass = jnp.array([1.0])
+    mock_rubix_data.stars.age = jnp.array([1.0])
+
+    with patch("rubix.core.pipeline.get_rubix_data", return_value=mock_rubix_data):
+        pipeline = RubixPipeline(user_config=user_config)
+        with pytest.raises(
+            NotImplementedError, match="Gradient calculation is not implemented yet"
+        ):
+            pipeline.gradient()
 
 
 def test_rubix_pipeline_run():
@@ -87,17 +109,17 @@ def test_rubix_pipeline_run():
     output = pipeline.run()
 
     # Check if output is as expected
-    assert "coords" in output
-    assert "velocities" in output
-    assert "metallicity" in output
-    assert "mass" in output
-    assert "age" in output
-    assert "spectra" in output
+    assert hasattr(output.stars, "coords")
+    assert hasattr(output.stars, "velocity")
+    assert hasattr(output.stars, "metallicity")
+    assert hasattr(output.stars, "mass")
+    assert hasattr(output.stars, "age")
+    assert hasattr(output.stars, "spectra")
 
     assert isinstance(pipeline.telescope, BaseTelescope)
     assert isinstance(pipeline.ssp, SSPGrid)
 
-    spectrum = output["spectra"]
+    spectrum = output.stars.spectra
     print("Spectrum shape: ", spectrum.shape)
     print("Spectrum sum: ", jnp.sum(spectrum, axis=-1))
 
@@ -113,14 +135,15 @@ def test_rubix_pipeline_run():
     print("Unique indices of spectra with NaN values: ", unique_spectra_indices)
     print(
         "Masses of the spectra with NaN values: ",
-        output["mass"][unique_spectra_indices],
+        output.stars.mass[unique_spectra_indices],
     )
     print(
-        "Ages of the spectra with NaN values: ", output["age"][unique_spectra_indices]
+        "Ages of the spectra with NaN values: ",
+        output.stars.age[unique_spectra_indices],
     )
     print(
         "Metallicities of the spectra with NaN values: ",
-        output["metallicity"][unique_spectra_indices],
+        output.stars.metallicity[unique_spectra_indices],
     )
 
     ssp = pipeline.ssp

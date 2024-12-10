@@ -1,5 +1,7 @@
 import os
-from typing import Callable, Tuple, Union
+from typing import Callable, Tuple, Union, Optional
+from dataclasses import dataclass, field, make_dataclass
+from functools import partial
 
 import jax
 import jax.numpy as jnp
@@ -10,6 +12,149 @@ from rubix.galaxy import IllustrisAPI, get_input_handler
 from rubix.galaxy.alignment import center_particles
 from rubix.logger import get_logger
 from rubix.utils import load_galaxy_data, read_yaml
+from rubix import config as rubix_config
+
+
+# class Particles:
+#    def __init__(self, particle_data: object):
+#        self.particle_data = particle_data
+#        self.attributes = self._filter_attributes()
+#
+#    def _filter_attributes(self) -> list:
+#        """
+#        Filters the attributes of the particle_data object based on the specified criteria.
+#        """
+#        return [
+#            attr
+#            for attr in dir(self.particle_data)
+#            if not attr.startswith("__")
+#            and not callable(getattr(self.particle_data, attr))
+#        ]
+#
+#    def get_attributes(self) -> list:
+#        """
+#        Returns the filtered attributes.
+#        """
+#        return self.attributes
+
+
+# Registering the dataclass with JAX for automatic tree traversal
+@partial(jax.tree_util.register_pytree_node_class)
+@dataclass
+class Galaxy:
+    redshift: Optional[jnp.ndarray] = None
+    center: Optional[jnp.ndarray] = None
+    halfmassrad_stars: Optional[jnp.ndarray] = None
+
+    def tree_flatten(self):
+        children = (self.redshift, self.center, self.halfmassrad_stars)
+        aux_data = {}
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(cls, aux_data, children):
+        return cls(*children)
+
+
+@partial(jax.tree_util.register_pytree_node_class)
+@dataclass
+class StarsData:
+    # Assuming attributes for StarsData, replace with actual attributes
+    coords: Optional[jnp.ndarray] = None
+    velocity: Optional[jnp.ndarray] = None
+    mass: Optional[jnp.ndarray] = None
+    metallicity: Optional[jnp.ndarray] = None
+    age: Optional[jnp.ndarray] = None
+    pixel_assignment: Optional[jnp.ndarray] = None
+    spatial_bin_edges: Optional[jnp.ndarray] = None
+    mask: Optional[jnp.ndarray] = None
+    spectra: Optional[jnp.ndarray] = None
+    datacube: Optional[jnp.ndarray] = None
+
+    def tree_flatten(self):
+        children = (
+            self.coords,
+            self.velocity,
+            self.mass,
+            self.metallicity,
+            self.age,
+            self.pixel_assignment,
+            self.spatial_bin_edges,
+            self.mask,
+            self.spectra,
+            self.datacube,
+        )
+        aux_data = {}
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(cls, aux_data, children):
+        return cls(*children)
+
+
+@partial(jax.tree_util.register_pytree_node_class)
+@dataclass
+class GasData:
+    # Assuming attributes for GasData, replace with actual attributes
+    coords: Optional[jnp.ndarray] = None
+    velocity: Optional[jnp.ndarray] = None
+    mass: Optional[jnp.ndarray] = None
+    density: Optional[jnp.ndarray] = None
+    internal_energy: Optional[jnp.ndarray] = None
+    metallicity: Optional[jnp.ndarray] = None
+    sfr: Optional[jnp.ndarray] = None
+    electron_abundance: Optional[jnp.ndarray] = None
+    pixel_assignment: Optional[jnp.ndarray] = None
+    spatial_bin_edges: Optional[jnp.ndarray] = None
+    mask: Optional[jnp.ndarray] = None
+    spectra: Optional[jnp.ndarray] = None
+    datacube: Optional[jnp.ndarray] = None
+
+    def tree_flatten(self):
+        children = (
+            self.coords,
+            self.velocity,
+            self.mass,
+            self.density,
+            self.internal_energy,
+            self.metallicity,
+            self.sfr,
+            self.electron_abundance,
+            self.pixel_assignment,
+            self.spatial_bin_edges,
+            self.mask,
+            self.spectra,
+            self.datacube,
+        )
+        aux_data = {}
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(cls, aux_data, children):
+        return cls(*children)
+
+
+@partial(jax.tree_util.register_pytree_node_class)
+@dataclass
+class RubixData:
+    galaxy: Optional[Galaxy] = None
+    stars: Optional[StarsData] = None
+    gas: Optional[GasData] = None
+
+    # def __post_init__(self):
+    #    if self.stars is not None:
+    #        self.stars = Particles(self.stars)
+    #    if self.gas is not None:
+    #        self.gas = Particles(self.gas)
+
+    def tree_flatten(self):
+        children = (self.galaxy, self.stars, self.gas)
+        aux_data = {}
+        return children, aux_data
+
+    @classmethod
+    def tree_unflatten(cls, aux_data, children):
+        return cls(*children)
 
 
 def convert_to_rubix(config: Union[dict, str]):
@@ -106,81 +251,84 @@ def reshape_array(
     return reshaped_arr
 
 
-def prepare_input(config: Union[dict, str]) -> Tuple[
-    Float[Array, "n_particles 3"],
-    Float[Array, "n_particles 3"],
-    Float[Array, " n_particles"],
-    Float[Array, " n_particles"],
-    Float[Array, " n_particles"],
-    float,
-]:
+def prepare_input(config: Union[dict, str]) -> RubixData:
+    # print(config)
 
     logger_config = config["logger"] if "logger" in config else None  # type:ignore
     logger = get_logger(logger_config)
-    file_path = config["output_path"]  # type:ignore
+    file_path = config["output_path"]
     file_path = os.path.join(file_path, "rubix_galaxy.h5")
 
     # Load the data from the file
-    # TODO: maybe also pass the units here, currently this is not used
     data, units = load_galaxy_data(file_path)
 
-    stellar_coordinates = data["particle_data"]["stars"]["coords"]
-    stellar_velocities = data["particle_data"]["stars"]["velocity"]
-    galaxy_center = data["subhalo_center"]
-    halfmassrad_stars = data["subhalo_halfmassrad_stars"]
+    rubixdata = RubixData(Galaxy(), StarsData(), GasData())
 
-    # Center the particles
-    new_stellar_coordinates, new_stellar_velocities = center_particles(
-        stellar_coordinates, stellar_velocities, galaxy_center
-    )
+    rubixdata.galaxy.redshift = data["redshift"]
+    rubixdata.galaxy.center = data["subhalo_center"]
+    rubixdata.galaxy.halfmassrad_stars = data["subhalo_halfmassrad_stars"]
 
-    # Load the metallicity and age data
+    for partType in config["data"]["args"]["particle_type"]:
+        if partType in data["particle_data"]:
+            # Convert attributes to JAX arrays and set them on rubixdata
+            for attribute, value in data["particle_data"][partType].items():
+                jax_value = jnp.array(value)
+                setattr(getattr(rubixdata, partType), attribute, jax_value)
 
-    stars_metallicity = data["particle_data"]["stars"]["metallicity"]
-    stars_mass = data["particle_data"]["stars"]["mass"]
-    stars_age = data["particle_data"]["stars"]["age"]
+            # Center the particles
+            logger.info(f"Centering {partType} particles")
+            rubixdata = center_particles(rubixdata, partType)
 
-    # Check if we should only use a subset of the data for testing and memory reasons
-    if "data" in config:
-        if "subset" in config["data"]:  # type:ignore
-            if config["data"]["subset"]["use_subset"]:  # type:ignore
-                size = config["data"]["subset"]["subset_size"]  # type:ignore
+            if (
+                "data" in config
+                and "subset" in config["data"]
+                and config["data"]["subset"]["use_subset"]
+            ):
+                size = config["data"]["subset"]["subset_size"]
                 # Randomly sample indices
                 # Set random seed for reproducibility
                 np.random.seed(42)
-                indices = np.random.choice(
-                    np.arange(new_stellar_coordinates.shape[0]),
-                    size=size,  # type:ignore
-                    replace=False,
-                )  # type:ignore
+                if rubixdata.stars.coords is not None:
+                    indices = np.random.choice(
+                        np.arange(len(rubixdata.stars.coords)),
+                        size=size,  # type:ignore
+                        replace=False,
+                    )  # type:ignore
+                elif rubixdata.gas.coords is not None:
+                    indices = np.random.choice(
+                        np.arange(len(rubixdata.gas.coords)),
+                        size=size,  # type:ignore
+                        replace=False,
+                    )
+                else:
+                    raise ValueError("Neither stars nor gas coordinates are available.")
 
-                new_stellar_coordinates = new_stellar_coordinates[indices]
-                new_stellar_velocities = new_stellar_velocities[indices]
-                stars_metallicity = stars_metallicity[indices]
-                stars_mass = stars_mass[indices]
-                stars_age = stars_age[indices]
+                # Subset the attributes
+                jax_indices = jnp.array(indices)
+                for attribute in data["particle_data"][partType].keys():
+                    attr_value = getattr(getattr(rubixdata, partType), attribute)
+                    if attr_value.ndim == 2:  # For attributes with shape (N, 3)
+                        setattr(
+                            getattr(rubixdata, partType),
+                            attribute,
+                            attr_value[jax_indices, :],
+                        )
+                    else:  # For attributes with shape (N,)
+                        setattr(
+                            getattr(rubixdata, partType),
+                            attribute,
+                            attr_value[jax_indices],
+                        )
+
+                # Log the subset warning
                 logger.warning(
-                    f"The Subset value is set in config. Using only subset of size {size}"
+                    f"The Subset value is set in config. Using only subset of size {size} for {partType}"
                 )
 
-    return (
-        new_stellar_coordinates,
-        new_stellar_velocities,
-        stars_metallicity,
-        stars_mass,
-        stars_age,
-        halfmassrad_stars,
-    )
+    return rubixdata
 
 
-def get_rubix_data(config: Union[dict, str]) -> Tuple[
-    Float[Array, "n_particles 3"],
-    Float[Array, "n_particles 3"],
-    Float[Array, " n_particles"],
-    Float[Array, " n_particles"],
-    Float[Array, " n_particles"],
-    float,
-]:
+def get_rubix_data(config: Union[dict, str]) -> RubixData:
     """Returns the Rubix data
 
     First converts the data to Rubix format and then prepares the input data.
@@ -191,20 +339,37 @@ def get_rubix_data(config: Union[dict, str]) -> Tuple[
     return prepare_input(config)
 
 
+def process_attributes(obj: RubixData, logger: Callable) -> None:
+    """
+    Process the attributes of the given object and reshape them if they are arrays.
+    """
+    attributes = [attr for attr in dir(obj) if not attr.startswith("__")]
+    for key in attributes:
+        attr_value = getattr(obj, key)
+        if attr_value is None or not isinstance(attr_value, (jnp.ndarray, np.ndarray)):
+            logger.warning(f"Attribute value of {key} is None or not an array")
+            continue
+        reshaped_value = reshape_array(attr_value)
+        setattr(obj, key, reshaped_value)
+
+
 def get_reshape_data(config: Union[dict, str]) -> Callable:
     """Returns a function to reshape the data
 
     Maps the `reshape_array` function to the input data dictionary.
     """
+    # Setup a logger based on the config
+    logger_config = config["logger"] if "logger" in config else None
+    logger = get_logger(logger_config)
 
-    def reshape_data(
-        input_data: dict,
-        keys=["coords", "velocities", "metallicity", "mass", "age", "pixel_assignment"],
-    ) -> dict:
-        # TODO:Maybe write this more elegantly
-        for key in keys:
-            input_data[key] = reshape_array(input_data[key])
+    def reshape_data(rubixdata: RubixData) -> RubixData:
+        # Check if input_data has 'stars' and 'gas' attributes and process them separately
+        if rubixdata.stars.coords is not None:
+            process_attributes(rubixdata.stars, logger)
 
-        return input_data
+        if rubixdata.gas.coords is not None:
+            process_attributes(rubixdata.gas, logger)
+
+        return rubixdata
 
     return reshape_data

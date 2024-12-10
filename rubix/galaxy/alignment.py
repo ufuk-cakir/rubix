@@ -11,50 +11,59 @@ from typing import Tuple
 from jax.scipy.spatial.transform import Rotation
 
 
-def center_particles(
-    stellar_coordinates: Float[Array, " n_stars 3"],
-    stellar_velocities: Float[Array, " n_stars 3"],
-    galaxy_center: Float[Array, "3"],
-) -> Tuple[Float[Array, " n_stars 3"], Float[Array, " n_stars 3"]]:
+def center_particles(rubixdata, key):
     """Center the stellar particles around the galaxy center.
 
     Parameters
     ----------
-    stellar_coordinates : jnp.ndarray
-        The coordinates of the stellar particles.
-    stellar_velocities : jnp.ndarray
-        The velocities of the stellar particles.
+    particle_coordinates : jnp.ndarray
+        The coordinates of the particles.
+    particle_velocities : jnp.ndarray
+        The velocities of the particles.
     galaxy_center : jnp.ndarray
         The center of the galaxy.
 
     Returns
     -------
     jnp.ndarray
-        The new coordinates of the stellar particles.
+        The new coordinates of the particles.
     jnp.ndarray
-        The new velocities of the stellar particles.
+        The new velocities of the particles.
     """
+    if key == "stars":
+        particle_coordinates = rubixdata.stars.coords
+        particle_velocities = rubixdata.stars.velocity
+    elif key == "gas":
+        particle_coordinates = rubixdata.gas.coords
+        particle_velocities = rubixdata.gas.velocity
+    galaxy_center = rubixdata.galaxy.center
+
     # Check if Center is within bounds
     check_bounds = (
-        (galaxy_center[0] >= jnp.min(stellar_coordinates[:, 0]))
-        & (galaxy_center[0] <= jnp.max(stellar_coordinates[:, 0]))
-        & (galaxy_center[1] >= jnp.min(stellar_coordinates[:, 1]))
-        & (galaxy_center[1] <= jnp.max(stellar_coordinates[:, 1]))
-        & (galaxy_center[2] >= jnp.min(stellar_coordinates[:, 2]))
-        & (galaxy_center[2] <= jnp.max(stellar_coordinates[:, 2]))
+        (galaxy_center[0] >= jnp.min(particle_coordinates[:, 0]))
+        & (galaxy_center[0] <= jnp.max(particle_coordinates[:, 0]))
+        & (galaxy_center[1] >= jnp.min(particle_coordinates[:, 1]))
+        & (galaxy_center[1] <= jnp.max(particle_coordinates[:, 1]))
+        & (galaxy_center[2] >= jnp.min(particle_coordinates[:, 2]))
+        & (galaxy_center[2] <= jnp.max(particle_coordinates[:, 2]))
     )
 
     if not check_bounds:
         raise ValueError("Center is not within the bounds of the galaxy")
 
     # Calculate Central Velocity from median velocities within 10kpc of center
-    mask = jnp.linalg.norm(stellar_coordinates - galaxy_center, axis=1) < 10
+    mask = jnp.linalg.norm(particle_coordinates - galaxy_center, axis=1) < 10
     # TODO this should be a median
-    central_velocity = jnp.median(stellar_velocities[mask], axis=0)
+    central_velocity = jnp.median(particle_velocities[mask], axis=0)
 
-    new_stellar_coordinates = stellar_coordinates - galaxy_center
-    new_stellar_velocities = stellar_velocities - central_velocity
-    return new_stellar_coordinates, new_stellar_velocities
+    if key == "stars":
+        rubixdata.stars.coords = particle_coordinates - galaxy_center
+        rubixdata.stars.velocity = particle_velocities - central_velocity
+    elif key == "gas":
+        rubixdata.gas.coords = particle_coordinates - galaxy_center
+        rubixdata.gas.velocity = particle_velocities - central_velocity
+
+    return rubixdata
 
 
 def moment_of_inertia_tensor(positions, masses, halfmass_radius):
@@ -272,4 +281,3 @@ def rotate_galaxy(positions, velocities, masses, halfmass_radius, alpha, beta, g
     vel_final = apply_rotation(vel_rot, alpha, beta, gamma)
 
     return pos_final, vel_final
-

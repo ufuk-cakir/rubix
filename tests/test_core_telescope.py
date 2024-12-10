@@ -7,6 +7,22 @@ from rubix.core.telescope import (
 from unittest.mock import patch, MagicMock
 
 
+class MockRubixData:
+    def __init__(self, stars, gas):
+        self.stars = stars
+        self.gas = gas
+
+
+class MockStarsData:
+    def __init__(self, coords):
+        self.coords = coords
+
+
+class MockGasData:
+    def __init__(self, coords):
+        self.coords = coords
+
+
 @patch("rubix.core.telescope.TelescopeFactory")
 def test_get_telescope(mock_factory):
     config = {"telescope": {"name": "MUSE"}}
@@ -46,12 +62,20 @@ def test_get_spaxel_assignment():
 
         assert callable(spaxel_assignment)
 
-        input_data = {"coords": "coords"}
+        # input_data = {"coords": "coords"}
+        input_data = MockRubixData(
+            MockStarsData(
+                coords="coords",
+            ),
+            MockGasData(
+                coords=None,
+            ),
+        )
         result = spaxel_assignment(input_data)
 
-        assert result["pixel_assignment"] == "pixel_assignment"
-        assert result["spatial_bin_edges"] == "spatial_bin_edges"
-        assert result["coords"] == "coords"
+        assert result.stars.pixel_assignment == "pixel_assignment"
+        assert result.stars.spatial_bin_edges == "spatial_bin_edges"
+        assert result.stars.coords == "coords"
 
     # Test for unsupported pixel type
     with patch("rubix.core.telescope.get_telescope") as mock_get_telescope:

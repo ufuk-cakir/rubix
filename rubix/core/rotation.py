@@ -2,6 +2,7 @@ from typing import Dict
 import jax
 from rubix.logger import get_logger
 from rubix.galaxy.alignment import rotate_galaxy as rotate_galaxy_core
+from .data import RubixData
 
 
 def get_galaxy_rotation(config: dict):
@@ -43,29 +44,45 @@ def get_galaxy_rotation(config: dict):
         beta = config["galaxy"]["rotation"]["beta"]
         gamma = config["galaxy"]["rotation"]["gamma"]
 
-    def rotate_galaxy(inputs: dict[str, jax.Array], type: str = "face-on"):
+    def rotate_galaxy(rubixdata: RubixData, type: str = "face-on"):
         logger.info(f"Rotating galaxy with alpha={alpha}, beta={beta}, gamma={gamma}")
 
-        # Get the inputs
-        coords = inputs["coords"]
-        velocities = inputs["velocities"]
-        masses = inputs["mass"]
-        halfmass_radius = inputs["halfmassrad_stars"]
+        for particle_type in ["stars", "gas"]:
+            if particle_type in config["data"]["args"]["particle_type"]:
+                # Get the component (either stars or gas)
+                component = getattr(rubixdata, particle_type)
 
-        # Rotate the galaxy
-        coords, velocities = rotate_galaxy_core(
-            positions=coords,
-            velocities=velocities,
-            masses=masses,
-            halfmass_radius=halfmass_radius,
-            alpha=alpha,
-            beta=beta,
-            gamma=gamma,
-        )
+                # Get the inputs
+                coords = component.coords
+                velocities = component.velocity
+                masses = component.mass
+                halfmass_radius = rubixdata.galaxy.halfmassrad_stars
 
-        # Update the inputs
-        inputs["coords"] = coords
-        inputs["velocities"] = velocities
-        return inputs
+                assert (
+                    coords is not None
+                ), f"Coordinates not found for {particle_type}. "
+                assert (
+                    velocities is not None
+                ), f"Velocities not found for {particle_type}. "
+                assert masses is not None, f"Masses not found for {particle_type}. "
+
+                # Rotate the galaxy
+                coords, velocities = rotate_galaxy_core(
+                    positions=coords,
+                    velocities=velocities,
+                    masses=masses,
+                    halfmass_radius=halfmass_radius,
+                    alpha=alpha,
+                    beta=beta,
+                    gamma=gamma,
+                )
+
+                # Update the inputs
+                # rubixdata.stars.coords = coords
+                # rubixdata.stars.velocity = velocities
+                setattr(component, "coords", coords)
+                setattr(component, "velocity", velocities)
+
+        return rubixdata
 
     return rotate_galaxy

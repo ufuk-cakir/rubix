@@ -1,7 +1,7 @@
 import pytest
 import jax
 import jax.numpy as jnp
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from rubix.spectra.ifu import resample_spectrum
 from rubix.core.data import reshape_array
@@ -50,6 +50,28 @@ sample_config = {
         "template": {"name": "BruzualCharlot2003"},
     },
 }
+
+
+class MockRubixData:
+    def __init__(self, stars, gas):
+        self.stars = stars
+        self.gas = gas
+
+
+class MockStarsData:
+    def __init__(self, velocity, metallicity, mass, age, spectra=None):
+        # self.coords = coords
+        self.velocity = velocity
+        self.metallicity = metallicity
+        self.mass = mass
+        self.age = age
+        # self.pixel_assignment = pixel_assignment
+        self.spectra = spectra
+
+
+class MockGasData:
+    def __init__(self, spectra):
+        self.spectra = None
 
 
 # Sample inputs for testing
@@ -106,8 +128,17 @@ def _get_sample_inputs(subset=None):
         velocities = velocities[:, :subset]
         mass = mass[:, :subset]
         spectra_reshaped = spectra_reshaped[:, :subset]
-    inputs = dict(
-        metallicity=metallicity_grid, age=age_grid, velocities=velocities, mass=mass
+    # inputs = dict(
+    #    metallicity=metallicity_grid, age=age_grid, velocities=velocities, mass=mass
+    # )
+    inputs = MockRubixData(
+        MockStarsData(
+            velocity=velocities,
+            metallicity=metallicity_grid,
+            mass=mass,
+            age=age_grid,
+        ),
+        MockGasData(spectra=None),
     )
     return inputs, spectra_reshaped
 
@@ -177,16 +208,16 @@ def test_calculate_spectra():
     calculate_spectra = get_calculate_spectra(sample_config)
 
     inputs, expected_spectra = _get_sample_inputs()
-    result = calculate_spectra(inputs.copy())  # type: ignore
-    print("Calculataed Spectra shape:", result["spectra"].shape)
+    result = calculate_spectra(inputs)  # type: ignore
+    print("Calculataed Spectra shape:", result.stars.spectra.shape)
     print("Expected Spectra shape:", expected_spectra.shape)
 
     # print the first 5 values of the calculated and expected spectra
-    print("Calculated Spectra:", result["spectra"][:5])
+    print("Calculated Spectra:", result.stars.spectra[:5])
     print("Expected Spectra:", expected_spectra[:5])
 
     is_close = jnp.isclose(
-        result["spectra"], expected_spectra, rtol=RTOL, atol=ATOL
+        result.stars.spectra, expected_spectra, rtol=RTOL, atol=ATOL
     )  # noqa
 
     print("N_close:", jnp.sum(is_close))
@@ -195,28 +226,44 @@ def test_calculate_spectra():
     # check where it is not close to the expected spectra
     not_close_indices = jnp.where(~is_close)
     # Get the difference between the calculated and expected spectra
-    diff = jnp.abs(result["spectra"] - expected_spectra)
+    diff = jnp.abs(result.stars.spectra - expected_spectra)
     print("Difference of not close index:", diff[not_close_indices])
     print("sum of difference of not close index:", jnp.sum(diff[not_close_indices]))
-    assert jnp.isclose(result["spectra"], expected_spectra, rtol=RTOL, atol=ATOL).all()
-    assert not jnp.any(jnp.isnan(result["spectra"]))
+    assert jnp.isclose(
+        result.stars.spectra, expected_spectra, rtol=RTOL, atol=ATOL
+    ).all()
+    assert not jnp.any(jnp.isnan(result.stars.spectra))
 
 
 def test_scale_spectrum_by_mass():
-    scale_spectrum_by_mass = get_scale_spectrum_by_mass(sample_config)
-    result = scale_spectrum_by_mass(sample_inputs.copy())
-    expected_spectra = sample_inputs["spectra"] * jnp.expand_dims(
-        sample_inputs["mass"], axis=-1
+    input = MockRubixData(
+        MockStarsData(
+            velocity=sample_inputs["velocities"],
+            metallicity=sample_inputs["metallicity"],
+            mass=sample_inputs["mass"],
+            age=sample_inputs["age"],
+            spectra=sample_inputs["spectra"],
+        ),
+        MockGasData(spectra=None),
     )
-    assert jnp.array_equal(result["spectra"], expected_spectra)
-    assert not jnp.any(jnp.isnan(result["spectra"]))
+    expected_spectra = input.stars.spectra * jnp.expand_dims(input.stars.mass, axis=-1)
+    scale_spectrum_by_mass = get_scale_spectrum_by_mass(sample_config)
+    result = scale_spectrum_by_mass(input)
+
+    # Print the values for debugging
+    print("Input Mass:", input.stars.mass)
+    print("Input Spectra:", input.stars.spectra)
+    print("Result Spectra:", result.stars.spectra)
+    print("Expected Spectra:", expected_spectra)
+    assert jnp.array_equal(result.stars.spectra, expected_spectra)
+    assert not jnp.any(jnp.isnan(result.stars.spectra))
 
 
 def test_doppler_shift_and_resampling():
     doppler_shift_and_resampling = get_doppler_shift_and_resampling(sample_config)
     inputs, expected_spectra = _get_sample_inputs(subset=10)
-    inputs["spectra"] = expected_spectra
+    inputs.stars.spectra = expected_spectra
     result = doppler_shift_and_resampling(inputs)  # type: ignore
 
-    assert "spectra" in result
-    assert not jnp.any(jnp.isnan(result["spectra"]))
+    assert hasattr(result.stars, "spectra")
+    assert not jnp.any(jnp.isnan(result.stars.spectra))

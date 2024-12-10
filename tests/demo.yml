@@ -1,24 +1,24 @@
 
-Transformers: 
-  A: 
+Transformers:
+  A:
     name: add
     depends_on: B
     args: []
-    kwargs: 
+    kwargs:
       s: 3.0
-  X: 
+  X:
     name: mult
     depends_on: A
     args: []
-    kwargs: 
+    kwargs:
       m: 3
-  Z: 
+  Z:
     name: div
     depends_on: X
     args: []
-    kwargs: 
+    kwargs:
       d: 4
-  B: 
+  B:
     name: sub
     depends_on: C
     args: []
