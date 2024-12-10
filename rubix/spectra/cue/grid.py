@@ -109,9 +109,9 @@ class CueGasLookup:
         final_log_no = jnp.log10(NO_ratio * no_factor) / 10**log_no_sol
         log_QH = jnp.full(len(rubixdata.gas.mass), 49.58)
 
-        # log_OH_ratio = jnp.full(len(rubixdata.gas.mass), -0.85)
-        # log_NO_ratio = jnp.full(len(rubixdata.gas.mass), -0.134)
-        # log_CO_ratio = jnp.full(len(rubixdata.gas.mass), -0.134)
+        log_OH_ratio = jnp.full(len(rubixdata.gas.mass), -0.85)
+        log_NO_ratio = jnp.full(len(rubixdata.gas.mass), -0.134)
+        log_CO_ratio = jnp.full(len(rubixdata.gas.mass), -0.134)
 
         theta = [
             alpha_HeII,
@@ -123,9 +123,12 @@ class CueGasLookup:
             log_HI_HeI,
             log_QH,
             n_H,
-            final_log_oh,
-            final_log_no,
-            final_log_co,
+            # final_log_oh,
+            # final_log_no,
+            # final_log_co,
+            log_OH_ratio,
+            log_NO_ratio,
+            log_CO_ratio,
         ]
         theta = jnp.transpose(jnp.array(theta))
         logger.debug(f"theta: {theta.shape}")
@@ -201,9 +204,8 @@ class CueGasLookup:
         wavelengthrange = jnp.linspace(wave_start, wave_end, steps)
         return wavelengthrange
 
-    # @tf.function
-    def continuum_tf(self, particlenumber, theta):
-        return cont_predict(particlenumber, theta=theta).nn_predict()
+    def continuum_tf(self, theta):
+        return cont_predict(theta=theta).nn_predict()
 
     def calculate_continuum(self, theta):
         """
@@ -234,19 +236,19 @@ class CueGasLookup:
         """
         logger = get_logger(self.config.get("logger", None))
         logger.info("Calculating continuum")
-        config = {"particlenumber": 1}
-        wavelength_cont, continuum = jax2tf.call_tf(self.continuum_tf)(1000, theta)
+        par = theta
+        wavelength_cont, continuum = jax2tf.call_tf(self.continuum_tf)(par)
         # wavelength_cont, continuum = jax2tf.call_tf(cont_predict)(theta)
         # wavelength_cont, continuum = cont_predict(theta).nn_predict()
 
         # Convert result back to JAX array if needed
-        wave_cont_jax = jnp.array(wavelength_cont)
-        continuum_jax = jnp.array(continuum)
-        logger.debug(
-            f"wave_cont_jax: {wave_cont_jax.shape}, continuum_jax: {continuum_jax.shape}"
-        )
-        logger.debug(f"wave_cont_jax: {wave_cont_jax}, continuum_jax: {continuum_jax}")
-        return wave_cont_jax, continuum_jax
+        # wave_cont_jax = jnp.array(wavelength_cont)
+        # continuum_jax = jnp.array(continuum)
+        # logger.debug(
+        #    f"wave_cont_jax: {wave_cont_jax.shape}, continuum_jax: {continuum_jax.shape}"
+        # )
+        # logger.debug(f"wave_cont_jax: {wave_cont_jax}, continuum_jax: {continuum_jax}")
+        return wavelength_cont, continuum
 
     def get_resample_continuum(self, rubixdata):
         """
@@ -318,9 +320,8 @@ class CueGasLookup:
         )
         return rubixdata
 
-    # @tf.function
-    def lines_tf(self, particlenumber, theta):
-        return line_predict(particlenumber, theta=theta).nn_predict()
+    def lines_tf(self, theta):
+        return line_predict(theta=theta).nn_predict()
 
     def calculate_lines(self, theta):
         """
@@ -360,18 +361,20 @@ class CueGasLookup:
         # print(f"theta shape before passed to tf function: {theta.shape}")
         # wavelength, nn_spectra = jax2tf.call_tf(line_predict)(theta)
         # wavelength, nn_spectra = line_predict(theta).nn_predict()
-        wavelength, nn_spectra = jax2tf.call_tf(self.lines_tf)(1000, theta)
+        # wavelength, nn_spectra = jax2tf.call_tf(self.lines_tf)(1000, theta)
+        par = theta
+        wavelength_lines, lines = jax2tf.call_tf(self.lines_tf)(par)
 
         # Convert result back to JAX array if needed
-        wave_line_jax = jnp.array(wavelength)
-        lines_jax = jnp.array(nn_spectra)
-        lines_jax = jnp.nan_to_num(lines_jax, posinf=0.0, neginf=0.0)
-        logger.debug(
-            f"wave_line_jax: {wave_line_jax.shape}, lines_jax: {lines_jax.shape}"
-        )
-        logger.debug(f"wave_line_jax: {wave_line_jax}, lines_jax: {lines_jax}")
+        # wave_line_jax = jnp.array(wavelength)
+        # lines_jax = jnp.array(nn_spectra)
+        # lines_jax = jnp.nan_to_num(lines_jax, posinf=0.0, neginf=0.0)
+        # logger.debug(
+        #    f"wave_line_jax: {wave_line_jax.shape}, lines_jax: {lines_jax.shape}"
+        # )
+        # logger.debug(f"wave_line_jax: {wave_line_jax}, lines_jax: {lines_jax}")
 
-        return wave_line_jax, lines_jax
+        return wavelength_lines, lines
 
     def get_emission_lines(self, rubixdata):
         """
