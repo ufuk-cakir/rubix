@@ -72,7 +72,7 @@ def prepare_theta(config: dict, rubixdata):
     log_HeI_OII = jnp.full(len(rubixdata.gas.mass), 0.7)
     log_HI_HeI = jnp.full(len(rubixdata.gas.mass), 0.85)
     # log_QH = rubixdata.gas.electron_abundance
-    n_H = rubixdata.gas.density
+    n_H = jnp.full(len(rubixdata.gas.mass), 10**2.5)  # rubixdata.gas.density
     # n_H = jnp.full(len(rubixdata.gas.mass), 10**2.5)
     OH_ratio = rubixdata.gas.metals[:, 4] / rubixdata.gas.metals[:, 0]
     NO_ratio = rubixdata.gas.metals[:, 3] / rubixdata.gas.metals[:, 4]
@@ -108,9 +108,9 @@ def prepare_theta(config: dict, rubixdata):
         # final_log_oh,
         # final_log_no,
         # final_log_co,
-        log_OH_ratio,
-        log_NO_ratio,
-        log_CO_ratio,
+        final_log_oh,
+        final_log_no,
+        final_log_co,
     ]
     theta = jnp.transpose(jnp.array(theta))
     logger.debug(f"theta: {theta.shape}")
@@ -150,9 +150,59 @@ def get_gas_emission(config: dict):
 
         theta = prepare_theta(config, rubixdata)
         # Use the pre-processed lookup data here
-        rubixdata = preprocessed_lookup_data.get_gas_emission_flux(rubixdata)
-        rubixdata = jax.block_until_ready(rubixdata)
+        logger.debug("Calculating gas emission")
+        logger.debug("theta: %s", theta.shape)
+        # logger.debug("theta1 %s", theta[1])
+        logger.debug("internal_energy: %s", rubixdata.gas.internal_energy.shape)
+        logger.debug("electron_abundance: %s", rubixdata.gas.electron_abundance.shape)
+        # wave, flux = preprocessed_lookup_data.get_gas_emission_flux(theta, rubixdata.gas.internal_energy, rubixdata.gas.electron_abundance)
+        # rubixdata = jax.block_until_ready(rubixdata)
         # rubixdata = jax.device_put(rubixdata)
+
+        """
+        # Define the vectorized function
+        vectorized_get_gas_emission_flux = jax.vmap(
+            preprocessed_lookup_data.get_gas_emission_flux,
+            in_axes=(0, 0, 0)  # Vectorize over the first dimension of each input
+        )
+
+        # Apply the vectorized function to the inputs
+        wave, flux = vectorized_get_gas_emission_flux(
+            theta,
+            rubixdata.gas.internal_energy,
+            rubixdata.gas.electron_abundance
+        )
+
+        rubixdata.gas.wave = wave
+        rubixdata.gas.spectra = flux
+        """
+        # Initialize the output arrays
+        num_particles = theta.shape[0]
+        wave_list = []
+        flux_list = []
+
+        # par = [[21.5, 14.85, 6.45, 3.15, 4.55, 0.7, 0.85, 49.58, 10**2.5, -0.85, -0.134, -0.134]]
+        # par = jnp.array(par)
+
+        # Loop over the particles
+        for i in range(num_particles):
+            par = theta[i]
+            par = jnp.array(par)
+            par = jnp.reshape(par, (1, 12))
+            wave, flux = preprocessed_lookup_data.get_gas_emission_flux(
+                par,
+                rubixdata.gas.internal_energy[i] * 1e-12,
+                rubixdata.gas.electron_abundance[i],
+            )
+            wave_list.append(wave)
+            flux_list.append(flux)
+            logger.debug("flux: %s", flux)
+        # Stack the results
+        wave = wave_list[0]
+        flux = jnp.stack(flux_list)
+
+        rubixdata.gas.wave = wave
+        rubixdata.gas.spectra = flux
 
         logger.debug("Completed gas emission calculation: %s", rubixdata)
         logger.debug(

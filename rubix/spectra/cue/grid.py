@@ -214,7 +214,9 @@ class CueGasLookup:
         # dispersion = dispersionfactor * wavelengths
         logger.debug(f"dispersionfactor: {dispersionfactor.shape}")
         logger.debug(f"dispersionfactor: {dispersionfactor}")
-        return dispersionfactor
+        return (
+            dispersionfactor * 1e8
+        )  # because otherwise the dispersion factor is orders of magnitudeds too small
 
     def gaussian(self, x, a, b, c):
         """
@@ -251,7 +253,7 @@ class CueGasLookup:
 
         wavelengthrange = self.get_wavelengthrange()
         temperature = self.illustris_gas_temp(internal_energy_u, electron_abundance)
-        dispersionfactor = self.dispersionfactor(temperature) * 1e8
+        dispersionfactor = self.dispersionfactor(temperature)
 
         # Define a function to compute the Gaussian for a single set of parameters
         def compute_gaussian(l, wl, fwhm):

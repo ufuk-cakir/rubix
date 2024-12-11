@@ -107,6 +107,8 @@ def get_resample_spectrum_pmap(target_wavelength) -> Callable:
 # Vectorize the resample_spectrum function
 def get_resample_spectrum_vmap_gas(target_wavelength) -> Callable:
     def resample_spectrum_vmap_gas(initial_spectrum, initial_wavelength):
+        # initial_spectrum = jnp.ravel(initial_spectrum)  # Flatten to 1D
+        # initial_wavelength = jnp.ravel(initial_wavelength)
         return resample_spectrum_gas(
             initial_spectrum=initial_spectrum,
             initial_wavelength=initial_wavelength,
@@ -251,9 +253,25 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
             resample_spectrum_pmap = get_resample_spectrum_pmap_gas(
                 telescope_wavelenght
             )
-            spectrum_resampled_gas = resample_spectrum_pmap(
-                rubixdata.gas.spectra, doppler_shifted_cue_wave
-            )
+            spectra = rubixdata.gas.spectra
+            wavelength = doppler_shifted_cue_wave
+
+            # spectra = spectra.squeeze(axis=0)  # Remove unnecessary dimension
+            # wavelength = wavelength.ravel()
+            # spectra = spectra.ravel()
+            # wavelength = jnp.expand_dims(wavelength, axis=0)
+            # spectra = jnp.expand_dims(spectra, axis=0)
+            # assert spectra.shape == wavelength.shape
+
+            # Check shapes again to ensure compatibility
+            print("Processed spectra shape:", spectra.shape)
+            print("Processed wavelength shape:", wavelength.shape)
+
+            # Pass to the resampling function
+            spectrum_resampled_gas = resample_spectrum_pmap(spectra, wavelength)
+            # spectrum_resampled_gas = resample_spectrum_pmap(
+            #    rubixdata.gas.spectra, doppler_shifted_cue_wave
+            # )
             spectrum_resampled_gas = jnp.nan_to_num(
                 spectrum_resampled_gas, nan=0.0, posinf=0.0, neginf=0.0
             )
@@ -312,6 +330,14 @@ def get_calculate_datacube(config: dict) -> Callable:
             logger.debug(
                 f"Gas pixel assignment shape: {rubixdata.gas.pixel_assignment.shape}"
             )
+            # rubixdata.gas.spectra = jnp.squeeze(rubixdata.gas.spectra, axis=0)
+            # rubixdata.gas.pixel_assignment = jnp.squeeze(
+            #    rubixdata.gas.pixel_assignment, axis=0
+            # )
+            # assert rubixdata.gas.spectra.ndim == 2, f"Spectra must be 2D, got {rubixdata.gas.spectra.ndim}D"
+            # assert rubixdata.gas.pixel_assignment.ndim == 1, f"Spaxel index must be 1D, got {rubixdata.gas.pixel_assignment.ndim}D"
+            # assert rubixdata.gas.spectra.shape[0] == rubixdata.gas.pixel_assignment.shape[0], \
+            # f"Number of particles in spectra ({rubixdata.gas.spectra.shape[0]}) and spaxel index ({rubixdata.gas.pixel_assignment.shape[0]}) must match"
             ifu_cubes_gas = calculate_cube_pmap(
                 spectra=rubixdata.gas.spectra,
                 spaxel_index=rubixdata.gas.pixel_assignment,
