@@ -42,6 +42,82 @@ def preprocess_config(config: dict):
     }
 
 
+def prepare_theta(config: dict, rubixdata):
+    """
+    Returns the theta parameters for the Cue model (Li et al. 2024) for the shape of the ionizing spectrum and the ionizing gas properties.
+    The theta parameters are calculated for each gas cell with the Illustris data.
+    Be aware that we are using default values for the theta parameters for the ionizing spectrum shape from the CUE github repository.
+    https://github.com/yi-jia-li/cue
+
+    Parameters:
+    rubixdata (RubixData): The RubixData object containing the gas data.
+
+    Returns:
+    jnp.ndarray: The theta parameters that are the input for the Cue model.
+
+    Cue states in their code in line.py
+    Nebular Line Emission Prediction
+    :param theta: nebular parameters of n samples, (n, 12) matrix
+    :param gammas, log_L_ratios, log_QH, n_H, log_OH_ratio, log_NO_ratio, log_CO_ratio: 12 input parameters
+    """
+    logger = get_logger(config.get("logger", None))
+    logger.warning(
+        "Using default theta parameters for the Cue model (Li et al. 2024) for the shape of the ionizing spectrum. Ionizing gas properties are calculated for each gas cell with the Illustris data."
+    )
+    alpha_HeII = jnp.full(len(rubixdata.gas.mass), 21.5)
+    alpha_OII = jnp.full(len(rubixdata.gas.mass), 14.85)
+    alpha_HeI = jnp.full(len(rubixdata.gas.mass), 6.45)
+    alpha_HI = jnp.full(len(rubixdata.gas.mass), 3.15)
+    log_OII_HeII = jnp.full(len(rubixdata.gas.mass), 4.55)
+    log_HeI_OII = jnp.full(len(rubixdata.gas.mass), 0.7)
+    log_HI_HeI = jnp.full(len(rubixdata.gas.mass), 0.85)
+    # log_QH = rubixdata.gas.electron_abundance
+    n_H = rubixdata.gas.density
+    # n_H = jnp.full(len(rubixdata.gas.mass), 10**2.5)
+    OH_ratio = rubixdata.gas.metals[:, 4] / rubixdata.gas.metals[:, 0]
+    NO_ratio = rubixdata.gas.metals[:, 3] / rubixdata.gas.metals[:, 4]
+    CO_ratio = rubixdata.gas.metals[:, 2] / rubixdata.gas.metals[:, 4]
+
+    log_oh_sol = -3.07
+    log_co_sol = -0.37
+    log_no_sol = -0.88
+
+    oh_factor = 16 / 1
+    co_factor = 12 / 16
+    no_factor = 14 / 16
+
+    final_log_oh = jnp.log10(OH_ratio * oh_factor) / log_oh_sol
+    final_log_co = jnp.log10(CO_ratio * co_factor) / 10**log_co_sol
+    final_log_no = jnp.log10(NO_ratio * no_factor) / 10**log_no_sol
+    log_QH = jnp.full(len(rubixdata.gas.mass), 49.58)
+
+    log_OH_ratio = jnp.full(len(rubixdata.gas.mass), -0.85)
+    log_NO_ratio = jnp.full(len(rubixdata.gas.mass), -0.134)
+    log_CO_ratio = jnp.full(len(rubixdata.gas.mass), -0.134)
+
+    theta = [
+        alpha_HeII,
+        alpha_OII,
+        alpha_HeI,
+        alpha_HI,
+        log_OII_HeII,
+        log_HeI_OII,
+        log_HI_HeI,
+        log_QH,
+        n_H,
+        # final_log_oh,
+        # final_log_no,
+        # final_log_co,
+        log_OH_ratio,
+        log_NO_ratio,
+        log_CO_ratio,
+    ]
+    theta = jnp.transpose(jnp.array(theta))
+    logger.debug(f"theta: {theta.shape}")
+    logger.debug(f"theta: {theta}")
+    return theta
+
+
 def preprocess_cue(config: dict):
     """
     Perform any necessary pre-processing based on the config and return
@@ -72,6 +148,7 @@ def get_gas_emission(config: dict):
         """Calculate gas emission lines and gas continuum emission."""
         logger.info("Calculation gas emission...")
 
+        theta = prepare_theta(config, rubixdata)
         # Use the pre-processed lookup data here
         rubixdata = preprocessed_lookup_data.get_gas_emission_flux(rubixdata)
         rubixdata = jax.block_until_ready(rubixdata)

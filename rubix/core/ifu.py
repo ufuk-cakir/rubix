@@ -16,7 +16,7 @@ from rubix.spectra.ifu import (
 from .ssp import get_lookup_interpolation_pmap, get_ssp
 from .telescope import get_telescope
 from rubix.spectra.cloudy.grid import CloudyGasLookup
-from rubix.spectra.cue.grid import CueGasLookup
+from rubix.spectra.cue.grid_all import CueGasLookup
 from rubix.core.cue import preprocess_config
 
 
