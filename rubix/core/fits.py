@@ -1,6 +1,7 @@
 import numpy as np
 from astropy.io import fits
 from rubix.core.telescope import get_telescope
+from rubix.logger import get_logger
 from mpdaf.obj import Cube
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
@@ -18,6 +19,8 @@ def store_fits(config, data, filepath):
     Returns:
         None
     """
+    logger_config = config["logger"] if "logger" in config else None  # type:ignore
+    logger = get_logger(logger_config)
 
     if "cube_type" not in config["data"]["args"]:
         datacube = data.stars.datacube
@@ -93,6 +96,7 @@ def store_fits(config, data, filepath):
         f"{filepath}{config['simulation']['name']}_id{config['data']['load_galaxy_args']['id']}_snap{config['data']['args']['snapshot']}_{parttype}_subset{config['data']['subset']['use_subset']}.fits",
         overwrite=True,
     )
+    logger.info(f"Datacube saved to {filepath}")
 
 
 def load_fits(filepath):
