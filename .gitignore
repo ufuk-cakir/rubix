@@ -162,3 +162,11 @@ rubix/spectra/ssp/templates/*fits.gz
 rubix/spectra/cue/cue/*
 
 rubix/telescope/filters/data/*
+
+
+.firebaserc
+firebase.json
+.firebase/*
+
+utils
+utils/*

@@ -13,10 +13,10 @@ from rubix.spectra.ssp.grid import HDF5SSPGrid, SSPGrid, pyPipe3DSSPGrid
 
 
 def test_convert_units():
-    data = [1, 2, 3]
+    data = jnp.array([1.0, 2.0, 3.0])
     from_units = "Gyr"
     to_units = "Myr"
-    expected_result = [1000, 2000, 3000]
+    expected_result = jnp.array([1000.0, 2000.0, 3000.0])
 
     result = SSPGrid.convert_units(data, from_units, to_units)
     assert np.allclose(result, expected_result)
@@ -261,30 +261,27 @@ def test_from_pyPipe3D():
                 "NAXIS2": 6,
                 "NAXIS2": 6,
             }
-            mock_instance[0].data = [
-                [0.5, 1.0, 1.5, 2.0],
-                [0.5, 1.0, 1.5, 2.0],
-                [0.5, 1.0, 1.5, 2.0],
-                [0.5, 1.0, 1.5, 2.0],
-                [0.5, 1.0, 1.5, 2.0],
-                [0.5, 1.0, 1.5, 2.0],
-            ]
-            mock_instance[0].data = [
-                [0.5, 1.0, 1.5, 2.0],
-                [0.5, 1.0, 1.5, 2.0],
-                [0.5, 1.0, 1.5, 2.0],
-                [0.5, 1.0, 1.5, 2.0],
-                [0.5, 1.0, 1.5, 2.0],
-                [0.5, 1.0, 1.5, 2.0],
-            ]
+            mock_instance[0].data = jnp.array(
+                [
+                    [0.5, 1.0, 1.5, 2.0],
+                    [0.5, 1.0, 1.5, 2.0],
+                    [0.5, 1.0, 1.5, 2.0],
+                    [0.5, 1.0, 1.5, 2.0],
+                    [0.5, 1.0, 1.5, 2.0],
+                    [0.5, 1.0, 1.5, 2.0],
+                ],
+                dtype=jnp.float32,
+            )
 
             result = pyPipe3DSSPGrid.from_file(config, file_location)
 
             assert isinstance(result, pyPipe3DSSPGrid)
-            assert np.allclose(result.age, [1, 2, 3])
+            assert np.allclose(result.age, jnp.array([1.0, 2.0, 3.0]))
 
-            assert np.allclose(result.metallicity, [0.01, 0.02])
-            assert np.allclose(result.wavelength, [4000, 5000, 6000, 7000])
+            assert np.allclose(result.metallicity, jnp.array([0.01, 0.02]))
+            assert np.allclose(
+                result.wavelength, jnp.array([4000.0, 5000.0, 6000.0, 7000.0])
+            )
             assert np.allclose(
                 result.flux,
                 [

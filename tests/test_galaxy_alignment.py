@@ -129,9 +129,9 @@ def test_apply_init_rotation():
 
 
 def test_euler_rotation_matrix():
-    alpha = 90
-    beta = 0
-    gamma = 0
+    alpha = 90.0
+    beta = 0.0
+    gamma = 0.0
 
     expected_rotation_matrix = jnp.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
 
@@ -148,9 +148,9 @@ def test_euler_rotation_matrix():
 def test_apply_rotation():
     positions = jnp.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
 
-    alpha = 90
-    beta = 0
-    gamma = 0
+    alpha = 90.0
+    beta = 0.0
+    gamma = 0.0
 
     rotation_matrix = jnp.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
 
@@ -172,7 +172,7 @@ def test_rotate_galaxy():
     positions = jnp.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
     velocities = jnp.array([[0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]])
     masses = jnp.array([1.0, 1.0, 1.0])
-    halfmass_radius = 2.0
+    halfmass_radius = jnp.array([2.0])
 
     #    [1, 0, 0],
     #    [0, 0, -1],
@@ -181,9 +181,9 @@ def test_rotate_galaxy():
     expected_rotated_positions = jnp.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
     expected_rotated_velocities = jnp.array([[0, 0, 1], [0, -1, 0], [1, 0, 0]])
 
-    alpha = 90
-    beta = 0
-    gamma = 0
+    alpha = 90.0
+    beta = 0.0
+    gamma = 0.0
 
     rotated_positions, rotated_velocities = rotate_galaxy(
         positions, velocities, masses, halfmass_radius, alpha, beta, gamma

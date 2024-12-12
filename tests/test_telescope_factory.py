@@ -12,6 +12,7 @@ from rubix.telescope.factory import (
 import numpy as np
 import yaml
 import jax
+import jax.numpy as jnp
 
 jax.config.update("jax_platform_name", "cpu")
 
@@ -20,12 +21,12 @@ jax.config.update("jax_platform_name", "cpu")
 def sample_telescope_config():
     return {
         "telescope1": {
-            "fov": 100,
+            "fov": 100.0,
             "spatial_res": 10,
-            "wave_range": (400, 700),
+            "wave_range": [400.0, 700.0],
             "wave_res": 0.5,
             "lsf_fwhm": 0.1,
-            "signal_to_noise": 100,
+            "signal_to_noise": 100.0,
             "aperture_type": "square",
             "pixel_type": "square",
         }
@@ -43,13 +44,13 @@ def test_telescope_factory_with_file_path(tmpdir):
     # Create a factory instance with a string argument simulating a path to a config file
     dummy_data = {
         "telescope1": {
-            "fov": 100,
+            "fov": 100.0,
             "spatial_res": 10,
             "aperture_type": "square",
-            "wave_range": [400, 700],
+            "wave_range": [400.0, 700.0],
             "wave_res": 0.5,
             "lsf_fwhm": 0.1,
-            "signal_to_noise": 100,
+            "signal_to_noise": 100.0,
             "pixel_type": "square",
         }
     }
@@ -62,14 +63,14 @@ def test_telescope_factory_with_file_path(tmpdir):
 
     # Create a telescope using the factory and check if it is correctly configured
     telescope = factory.create_telescope("telescope1")
-    assert telescope.fov == 100
+    assert telescope.fov == 100.0
     assert telescope.spatial_res == 10
-    assert telescope.wave_range == [400, 700]
+    assert telescope.wave_range == [400.0, 700.0]
     assert telescope.wave_res == 0.5
     assert telescope.lsf_fwhm == 0.1
     assert telescope.signal_to_noise == 100
     # Check if the aperture region is correctly initialized
-    assert np.all(telescope.aperture_region == SQUARE_APERTURE(np.floor(100 / 10)))
+    assert np.all(telescope.aperture_region == SQUARE_APERTURE(np.int64(100 / 10)))
 
 
 def test_create_telescope_with_valid_config(sample_telescope_config):
@@ -114,7 +115,7 @@ def test_create_telescope_with_different_apertures(
     ) as mocked_aperture:  # noqa
         factory = TelescopeFactory(telescopes_config=config)
         telescope = factory.create_telescope("telescope1")
-        sbin = np.floor(
+        sbin = np.int64(
             config["telescope1"]["fov"] / config["telescope1"]["spatial_res"]
         )
         expected_aperture = aperture_function(sbin)

@@ -6,8 +6,11 @@ import astropy.units as u
 from typing import List, Union, Optional
 from rubix import config
 from rubix.logger import get_logger
+from jaxtyping import Array, Float, jaxtyped
+from beartype import beartype as typechecker
 
 
+@jaxtyped(typechecker=typechecker)
 def create_rubix_galaxy(
     file_path: str,
     particle_data: dict,
@@ -17,6 +20,21 @@ def create_rubix_galaxy(
     config: dict,
     logger: logging.Logger,
 ):
+    """
+    Create a Rubix file with the given data.
+
+    Args:
+        file_path (str): Path to save the Rubix file.
+        particle_data (dict): Dictionary containing the particle data.
+        galaxy_data (dict): Dictionary containing the galaxy data.
+        simulation_metadata (dict): Dictionary containing the simulation metadata.
+        units (dict): Dictionary containing the units.
+        config (dict): Dictionary containing the configuration.
+        logger (logging.Logger): Logger object to log messages.
+
+    Returns:
+        None
+    """
     logger.debug("Creating Rubix file at path: %s", file_path)
 
     with h5py.File(file_path, "w") as f:
@@ -54,7 +72,16 @@ def create_rubix_galaxy(
     logger.info(f"Rubix file saved at {file_path}")
 
 
+@jaxtyped(typechecker=typechecker)
 class BaseHandler(ABC):
+    """
+    Base class for handling input data and converting it to Rubix format.
+
+    Args:
+        config (dict): Configuration for the BaseHandler.
+        _logger (logging.Logger): Logger object to log messages.
+    """
+
     def __init__(self, logger_config=None):
         """Initializes the BaseHandler class"""
         self.config = config["BaseHandler"]
@@ -77,6 +104,12 @@ class BaseHandler(ABC):
         """Returns the units in the required format"""
 
     def to_rubix(self, output_path: str):
+        """
+        Converts the input data to Rubix format and saves it to the output path.
+
+        Args:
+            output_path (str): Path to save the Rubix file.
+        """
         self._logger.debug("Converting to Rubix format..")
 
         os.makedirs(output_path, exist_ok=True)

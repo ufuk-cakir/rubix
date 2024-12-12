@@ -2,24 +2,25 @@
 
 """
 
+import numpy as np
 from jaxtyping import Array, Float
 import jax.numpy as jnp
+from jaxtyping import Array, Float, jaxtyped
+from beartype import beartype as typechecker
 
 __all__ = ["HEXAGONAL_APERTURE", "SQUARE_APERTURE", "CIRCULAR_APERTURE"]
 
 
-def HEXAGONAL_APERTURE(sbin: int) -> Float[Array, " sbin*sbin"]:
-    """Creates a hexagonal aperture mask for the observation of a galaxy.
+@jaxtyped(typechecker=typechecker)
+def HEXAGONAL_APERTURE(sbin: np.int64) -> Float[Array, "..."]:
+    """
+    Creates a hexagonal aperture mask for the observation of a galaxy.
 
-    Parameters
-    ----------
-    sbin : int
-        The size of the spatial bin in each direction for the aperture mask.
+    Args:
+        sbin (int): The size of the spatial bin in each direction for the aperture mask.
 
-    Returns
-    -------
-    jnp.ndarray
-        A 1D array of the aperture mask.
+    Returns:
+        A jnp.ndarray 1D array of the aperture mask.
     """
 
     sbin = int(sbin)  # Ensure that the input is an integer
@@ -43,36 +44,30 @@ def HEXAGONAL_APERTURE(sbin: int) -> Float[Array, " sbin*sbin"]:
     return ap_region.flatten()
 
 
-def SQUARE_APERTURE(sbin: int) -> Float[Array, " sbin*sbin"]:
+@jaxtyped(typechecker=typechecker)
+def SQUARE_APERTURE(sbin: np.int64) -> Float[Array, "..."]:
     """Creates a square aperture mask for the observation of a galaxy.
 
-    Parameters
-    ----------
-    sbin : int
-        The size of the spatial bin in each direction for the aperture mask.
+    Args:
+        sbin (int): The size of the spatial bin in each direction for the aperture mask.
 
-    Returns
-    -------
-    jnp.ndarray
-        A 1D array of the aperture mask.
+    Returns:
+        A jnp.ndarray 1D array of the aperture mask.
     """
 
     sbin = int(sbin)
     return jnp.ones((sbin, sbin)).flatten()
 
 
-def CIRCULAR_APERTURE(sbin: int) -> Float[Array, " sbin*sbin"]:
+@jaxtyped(typechecker=typechecker)
+def CIRCULAR_APERTURE(sbin: np.int64) -> Float[Array, "..."]:
     """Creates a circular aperture mask for the observation of a galaxy.
 
-    Parameters
-    ----------
-    sbin : int
-        The size of the spatial bin in each direction for the aperture mask.
+    Args:
+        sbin (int): The size of the spatial bin in each direction for the aperture mask.
 
-    Returns
-    -------
-    jnp.ndarray
-        A 1D array of the aperture mask.
+    Returns:
+        A jnp.ndarray 1D array of the aperture mask.
     """
     sbin = int(sbin)
     aperture = jnp.zeros((sbin, sbin))  # Empty matrix for aperture mask
