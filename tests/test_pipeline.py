@@ -219,15 +219,18 @@ def test_compile_expression(pipeline_fixture_full):
 
 
 def test_get_jaxpr(pipeline_fixture_full):
+    from functools import partial
+
     pipeline, x = pipeline_fixture_full
 
+    # README: this does just fix the s parameter to 1.0.
+    # This does not solve the underlying problem that get_jaxpr does not have
+    # a `static_argnames` facility.
+    pipeline.expression = partial(pipeline.expression, s=1.0)
     pipeline.assemble()
 
     expr = pipeline.get_jaxpr(
         x,
-        static_args=[
-            1,
-        ],
     )
 
     manual_expr = make_jaxpr(manual_func)(x)
@@ -273,10 +276,6 @@ def test_get_jaxpr_for_element(pipeline_fixture_full):
     expr = make_jaxpr(Partial(mult, m=3.0))(x)  # that is what we do internally
 
     manual_expr = pipeline.get_jaxpr_for_element("X", x)
-
-    print(expr)
-    print("___")
-    print(manual_expr)
 
     assert len(expr.eqns) == len(manual_expr.eqns)
 

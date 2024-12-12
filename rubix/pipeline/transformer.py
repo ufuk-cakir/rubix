@@ -59,7 +59,9 @@ def expression_transformer(
 ):
     """
     expression_transformer Create a jax intermediate expression with given
-    untraced arguments from a function.
+    untraced arguments from a function. Please note that this only works with
+    static positional arguments: JAX does currently not provide a way to have
+    static keyword arguments when creating a jaxpr and not a jited function.
 
     Parameters
     ----------

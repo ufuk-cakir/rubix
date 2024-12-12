@@ -112,7 +112,7 @@ celerybeat.pid
 
 # Environments
 .env
-.venv
+.venv*
 env/
 venv/
 ENV/
@@ -158,8 +158,12 @@ rubix/**/*.ipynb
 
 rubix/spectra/ssp/templates/*.gz
 rubix/spectra/ssp/templates/*fits.gz
+rubix/spectra/cue/cue/*
+rubix/telescope/filters/data/*
+
 
 firebase.json
 .firebaserc
 
-rubix/telescope/filters/data/*
+
+

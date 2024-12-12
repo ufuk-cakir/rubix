@@ -162,25 +162,25 @@ class BaseCosmology(eqx.Module):
         rho_crit0 = RHO_CRIT0_KPC3_UNITY_H * self.h * self.h
         rho_crit = rho_crit0 * self._Ez(redshift) ** 2
         return rho_crit
-    
+
     @jit
     def _integrand_oneOverEz1pz(self, z):
         return 1.0 / self._Ez(z) / (1.0 + z)
-    
+
     @jit
     def _Om_at_z(self, z):
         E = self._Ez(z)
         return self.Om0 * (1.0 + z) ** 3 / E / E
-    
 
-    
-    
+
+
+
     @jit
     def _delta_vir(self, z):
         x = self._Om(z) - 1.0
         Delta = 18 * jnp.pi**2 + 82.0 * x - 39.0 * x**2
         return Delta
-    
+
     @jit
     def virial_dynamical_time(self, redshift):
         delta = self._delta_vir(redshift)
@@ -188,4 +188,3 @@ class BaseCosmology(eqx.Module):
         return t_cross
 
 """
-

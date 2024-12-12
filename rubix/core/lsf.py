@@ -3,6 +3,7 @@ from .telescope import get_telescope
 from typing import Callable, Dict
 import jax.numpy as jnp
 from rubix.logger import get_logger
+from .data import RubixData
 
 
 def get_convolve_lsf(config: dict) -> Callable:
@@ -22,11 +23,13 @@ def get_convolve_lsf(config: dict) -> Callable:
     wave_resolution = telescope.wave_res  # Wave Relolution of the telescope
 
     # Define the function to convolve the datacube with the PSF kernel
-    def convolve_lsf(rubixdata: object) -> object:
+    def convolve_lsf(rubixdata: RubixData) -> RubixData:
         """Convolve the input datacube with the LSF."""
         logger.info("Convolving with LSF...")
         rubixdata.stars.datacube = apply_lsf(
-            datacube=rubixdata.stars.datacube, lsf_sigma=sigma, wave_resolution=wave_resolution
+            datacube=rubixdata.stars.datacube,
+            lsf_sigma=sigma,
+            wave_resolution=wave_resolution,
         )
         return rubixdata
 

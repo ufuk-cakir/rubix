@@ -15,6 +15,29 @@ from rubix.utils import load_galaxy_data, read_yaml
 from rubix import config as rubix_config
 
 
+# class Particles:
+#    def __init__(self, particle_data: object):
+#        self.particle_data = particle_data
+#        self.attributes = self._filter_attributes()
+#
+#    def _filter_attributes(self) -> list:
+#        """
+#        Filters the attributes of the particle_data object based on the specified criteria.
+#        """
+#        return [
+#            attr
+#            for attr in dir(self.particle_data)
+#            if not attr.startswith("__")
+#            and not callable(getattr(self.particle_data, attr))
+#        ]
+#
+#    def get_attributes(self) -> list:
+#        """
+#        Returns the filtered attributes.
+#        """
+#        return self.attributes
+
+
 # Registering the dataclass with JAX for automatic tree traversal
 @partial(jax.tree_util.register_pytree_node_class)
 @dataclass
@@ -118,6 +141,12 @@ class RubixData:
     stars: Optional[StarsData] = None
     gas: Optional[GasData] = None
 
+    # def __post_init__(self):
+    #    if self.stars is not None:
+    #        self.stars = Particles(self.stars)
+    #    if self.gas is not None:
+    #        self.gas = Particles(self.gas)
+
     def tree_flatten(self):
         children = (self.galaxy, self.stars, self.gas)
         aux_data = {}
@@ -126,43 +155,6 @@ class RubixData:
     @classmethod
     def tree_unflatten(cls, aux_data, children):
         return cls(*children)
-
-
-"""
-class RubixData:
-    def __init__(self, galaxy, stars, gas):
-        self.galaxy = galaxy
-        self.stars = stars
-        self.gas = gas
-
-
-class Galaxy:
-    def __init__(self):
-        self.redshift = None
-        self.center = None
-        self.halfmassrad_stars = None
-
-
-class StarsData:
-    def __init__(self):
-        self.coords = None
-        self.velocity = None
-        self.metallicity = None
-        self.mass = None
-        self.age = None
-
-
-class GasData:
-    def __init__(self):
-        self.coords = None
-        self.velocity = None
-        self.mass = None
-        self.density = None
-        self.internal_energy = None
-        self.metallicity = None
-        self.sfr = None
-        self.electron_abundance = None
-"""
 
 
 def convert_to_rubix(config: Union[dict, str]):
@@ -259,7 +251,7 @@ def reshape_array(
     return reshaped_arr
 
 
-def prepare_input(config: Union[dict, str]) -> object:
+def prepare_input(config: Union[dict, str]) -> RubixData:
     # print(config)
 
     logger_config = config["logger"] if "logger" in config else None  # type:ignore
@@ -268,14 +260,6 @@ def prepare_input(config: Union[dict, str]) -> object:
     file_path = os.path.join(file_path, "rubix_galaxy.h5")
 
     # Load the data from the file
-    data, units = load_galaxy_data(file_path)
-
-    # Galaxy = create_dynamic_dataclass("Galaxy", rubix_config["BaseHandler"]["galaxy"])
-    # StarsData = create_dynamic_dataclass("StarsData", rubix_config["BaseHandler"]["particles"]["stars"])
-    # GasData = create_dynamic_dataclass("GasData", rubix_config["BaseHandler"]["particles"]["gas"])
-
-    # Load the data from the file
-    # TODO: maybe also pass the units here, currently this is not used
     data, units = load_galaxy_data(file_path)
 
     rubixdata = RubixData(Galaxy(), StarsData(), GasData())
@@ -295,107 +279,56 @@ def prepare_input(config: Union[dict, str]) -> object:
             logger.info(f"Centering {partType} particles")
             rubixdata = center_particles(rubixdata, partType)
 
-            if "data" in config:
-                if "subset" in config["data"]:  # type:ignore
-                    if config["data"]["subset"]["use_subset"]:  # type:ignore
-                        size = config["data"]["subset"]["subset_size"]  # type:ignore
-                        # Randomly sample indices
-                        # Set random seed for reproducibility
-                        np.random.seed(42)
-                        if rubixdata.stars.coords is not None:
-                            indices = np.random.choice(
-                                np.arange(len(rubixdata.stars.coords)),
-                                size=size,  # type:ignore
-                                replace=False,
-                            )  # type:ignore
-                        else:
-                            indices = np.random.choice(
-                                np.arange(len(rubixdata.gas.coords)),
-                                size=size,  # type:ignore
-                                replace=False,
-                            )
-                        # Subset the attributes
-                        jax_indices = jnp.array(indices)
-                        for attribute in data["particle_data"][partType].keys():
-                            attr_value = getattr(
-                                getattr(rubixdata, partType), attribute
-                            )
-                            if attr_value.ndim == 2:  # For attributes with shape (N, 3)
-                                setattr(
-                                    getattr(rubixdata, partType),
-                                    attribute,
-                                    attr_value[jax_indices, :],
-                                )
-                            else:  # For attributes with shape (N,)
-                                setattr(
-                                    getattr(rubixdata, partType),
-                                    attribute,
-                                    attr_value[jax_indices],
-                                )
-
-                        # Log the subset warning
-                        logger.warning(
-                            f"The Subset value is set in config. Using only subset of size {size} for {partType}"
-                        )
-
-    """
-    if "stars" in config["data"]["args"]["particle_type"]:
-        for attribute, value in data["particle_data"]["stars"].items():
-            jax_value = jnp.array(value)
-            setattr(rubixdata.stars, attribute, jax_value)
-        rubixdata = center_particles(rubixdata, "stars")
-
-    if "gas" in config["data"]["args"]["particle_type"]:
-        for attribute, value in data["particle_data"]["gas"].items():
-            jax_value = jnp.array(value)
-            setattr(rubixdata.gas, attribute, value)
-        rubixdata = center_particles(rubixdata, "gas")
-
-    if "data" in config:
-        if "subset" in config["data"]:  # type:ignore
-            if config["data"]["subset"]["use_subset"]:  # type:ignore
-                size = config["data"]["subset"]["subset_size"]  # type:ignore
+            if (
+                "data" in config
+                and "subset" in config["data"]
+                and config["data"]["subset"]["use_subset"]
+            ):
+                size = config["data"]["subset"]["subset_size"]
                 # Randomly sample indices
                 # Set random seed for reproducibility
                 np.random.seed(42)
-                if "stars" in config["data"]["args"]["particle_type"]:
+                if rubixdata.stars.coords is not None:
                     indices = np.random.choice(
-                    np.arange(len(rubixdata.stars.coords)),
-                    size=size,  # type:ignore
-                    replace=False,
-                )  # type:ignore
-                    rubixdata.stars.coords = rubixdata.stars.coords[indices,:]
-                    rubixdata.stars.velocity = rubixdata.stars.velocity[indices,:]
-                    rubixdata.stars.metallicity = rubixdata.stars.metallicity[indices]
-                    rubixdata.stars.mass = rubixdata.stars.mass[indices]
-                    rubixdata.stars.age = rubixdata.stars.age[indices]
-                    logger.warning(
-                    f"The Subset value is set in config. Using only subset of size {size} for stars"
-                )
-                if "gas" in config["data"]["args"]["particle_type"]:
+                        np.arange(len(rubixdata.stars.coords)),
+                        size=size,  # type:ignore
+                        replace=False,
+                    )  # type:ignore
+                elif rubixdata.gas.coords is not None:
                     indices = np.random.choice(
-                    np.arange(len(rubixdata.stars.coords)),
-                    size=size,  # type:ignore
-                    replace=False,
-                )  # type:ignore
-                    rubixdata.gas.coords = rubixdata.gas.coords[indices,:]
-                    rubixdata.gas.velocity = rubixdata.gas.velocity[indices,:]
-                    rubixdata.gas.metallicity = rubixdata.gas.metallicity[indices]
-                    rubixdata.gas.mass = rubixdata.gas.mass[indices]
-                    rubixdata.gas.density = rubixdata.gas.density[indices]
-                    rubixdata.gas.internal_energy = rubixdata.gas.internal_energy[indices]
-                    rubixdata.gas.metallcity = rubixdata.gas.metallicity[indices]
-                    rubixdata.gas.sfr = rubixdata.gas.sfr[indices]
-                    rubixdata.gas.electron_abundance = rubixdata.gas.electron_abundance[indices]
-                    logger.warning(
-                    f"The Subset value is set in config. Using only subset of size {size} for gas"
+                        np.arange(len(rubixdata.gas.coords)),
+                        size=size,  # type:ignore
+                        replace=False,
+                    )
+                else:
+                    raise ValueError("Neither stars nor gas coordinates are available.")
+
+                # Subset the attributes
+                jax_indices = jnp.array(indices)
+                for attribute in data["particle_data"][partType].keys():
+                    attr_value = getattr(getattr(rubixdata, partType), attribute)
+                    if attr_value.ndim == 2:  # For attributes with shape (N, 3)
+                        setattr(
+                            getattr(rubixdata, partType),
+                            attribute,
+                            attr_value[jax_indices, :],
+                        )
+                    else:  # For attributes with shape (N,)
+                        setattr(
+                            getattr(rubixdata, partType),
+                            attribute,
+                            attr_value[jax_indices],
+                        )
+
+                # Log the subset warning
+                logger.warning(
+                    f"The Subset value is set in config. Using only subset of size {size} for {partType}"
                 )
-    """
 
     return rubixdata
 
 
-def get_rubix_data(config: Union[dict, str]) -> object:
+def get_rubix_data(config: Union[dict, str]) -> RubixData:
     """Returns the Rubix data
 
     First converts the data to Rubix format and then prepares the input data.
@@ -406,67 +339,37 @@ def get_rubix_data(config: Union[dict, str]) -> object:
     return prepare_input(config)
 
 
+def process_attributes(obj: RubixData, logger: Callable) -> None:
+    """
+    Process the attributes of the given object and reshape them if they are arrays.
+    """
+    attributes = [attr for attr in dir(obj) if not attr.startswith("__")]
+    for key in attributes:
+        attr_value = getattr(obj, key)
+        if attr_value is None or not isinstance(attr_value, (jnp.ndarray, np.ndarray)):
+            logger.warning(f"Attribute value of {key} is None or not an array")
+            continue
+        reshaped_value = reshape_array(attr_value)
+        setattr(obj, key, reshaped_value)
+
+
 def get_reshape_data(config: Union[dict, str]) -> Callable:
     """Returns a function to reshape the data
 
     Maps the `reshape_array` function to the input data dictionary.
     """
-    """
-    def reshape_data(
-        input_data: dict,
-        keys=["coords", "velocity", "metallicity", "mass", "age", "pixel_assignment"],
-    ) -> dict:
-        # TODO:Maybe write this more elegantly
-        for key in keys:
-            input_data[key] = reshape_array(input_data[key])
+    # Setup a logger based on the config
+    logger_config = config["logger"] if "logger" in config else None
+    logger = get_logger(logger_config)
 
-        return input_data
-    """
-
-    def reshape_data(rubixdata: object) -> object:
+    def reshape_data(rubixdata: RubixData) -> RubixData:
         # Check if input_data has 'stars' and 'gas' attributes and process them separately
-        if rubixdata.stars.velocity is not None:
-            attributes = [
-                attr for attr in dir(rubixdata.stars) if not attr.startswith("__")
-            ]
-            for key in attributes:
-                # Get the attribute value; continue to next key if it's None
-                attr_value = getattr(rubixdata.stars, key)
-                if attr_value is None or not isinstance(
-                    attr_value, (jnp.ndarray, np.ndarray)
-                ):
-                    continue
-                # Ensure reshape_array is compatible with JAX arrays
-                reshaped_value = reshape_array(attr_value)
-                setattr(rubixdata.stars, key, reshaped_value)
+        if rubixdata.stars.coords is not None:
+            process_attributes(rubixdata.stars, logger)
 
-        if rubixdata.gas.velocity is not None:
-            attributes = [
-                attr for attr in dir(rubixdata.gas) if not attr.startswith("__")
-            ]
-            for key in attributes:
-                # Get the attribute value; continue to next key if it's None
-                attr_value = getattr(rubixdata.gas, key)
-                if attr_value is None or not isinstance(
-                    attr_value, (jnp.ndarray, np.ndarray)
-                ):
-                    continue
-                # Ensure reshape_array is compatible with JAX arrays
-                reshaped_value = reshape_array(attr_value)
-                setattr(rubixdata.gas, key, reshaped_value)
+        if rubixdata.gas.coords is not None:
+            process_attributes(rubixdata.gas, logger)
 
         return rubixdata
 
-    """
-    def reshape_data(
-        rubixdata: object,
-        keys=["coords", "velocity", "metallicity", "mass", "age", "pixel_assignment"],
-        ) -> object:
-            # TODO:Maybe write this more elegantly
-            for key in keys:
-                attr_value = getattr(rubixdata.stars, key)
-                reshaped_value = reshape_array(attr_value)
-                setattr(rubixdata.stars, key, reshaped_value)
-            return rubixdata
-     """
     return reshape_data
