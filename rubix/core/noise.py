@@ -4,7 +4,7 @@ from rubix.telescope.noise.noise import (
     calculate_noise_cube,
     SUPPORTED_NOISE_DISTRIBUTIONS,
 )
-
+from .data import RubixData
 from rubix.logger import get_logger
 from .data import RubixData
 from jaxtyping import Array, Float, jaxtyped

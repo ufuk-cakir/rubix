@@ -33,6 +33,7 @@ dependencies = [
     "jaxtyping",
     "equinox",
     "jax[cpu]!=0.4.27",
+    "jax[cpu]!=0.4.36",
     "interpax",
     "astroquery",
     "beartype",
@@ -44,6 +45,7 @@ tests = [
     "pytest-mock",
     "nbval",
     "jax[cpu]!=0.4.27",
+    "jax[cpu]!=0.4.36",
     "pre-commit",
 ]
 docs = [
@@ -55,7 +57,9 @@ docs = [
     "sphinx_rtd_theme",
 ]
 
-cuda = ["jax[cuda]!=0.4.27"]
+cuda = [
+    "jax[cuda]!=0.4.27",
+    "jax[cuda]!=0.4.36",]
 
 
 # The following section contains setuptools-specific configuration

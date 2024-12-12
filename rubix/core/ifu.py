@@ -14,6 +14,7 @@ from rubix.spectra.ifu import (
 from .data import RubixData
 from .ssp import get_lookup_interpolation_pmap, get_ssp
 from .telescope import get_telescope
+from .data import RubixData
 
 from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker
@@ -59,8 +60,10 @@ def get_calculate_spectra(config: dict) -> Callable:
         )
 
         # Ensure metallicity and age are arrays and reshape them to be at least 1-dimensional
-        age_data = jax.device_get(rubixdata.stars.age)
-        metallicity_data = jax.device_get(rubixdata.stars.metallicity)
+        # age_data = jax.device_get(rubixdata.stars.age)
+        age_data = rubixdata.stars.age
+        # metallicity_data = jax.device_get(rubixdata.stars.metallicity)
+        metallicity_data = rubixdata.stars.metallicity
         # Ensure they are not scalars or empty; convert to 1D arrays if necessary
         age = jnp.atleast_1d(age_data)
         metallicity = jnp.atleast_1d(metallicity_data)
@@ -209,7 +212,7 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
 
     # Get the telescope wavelength bins
     telescope = get_telescope(config)
-    telescope_wavelenght = telescope.wave_seq
+    telescope_wavelength = telescope.wave_seq
 
     # Get the SSP grid to doppler shift the wavelengths
     ssp = get_ssp(config)
@@ -229,18 +232,15 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
             doppler_shifted_ssp_wave = doppler_shift(rubixdata.stars.velocity)
             logger.info("Doppler shifting and resampling stellar spectra...")
             logger.debug(f"Doppler Shifted SSP Wave: {doppler_shifted_ssp_wave.shape}")
-            logger.debug(f"Telescope Wave Seq: {telescope.wave_seq.shape}")
-            # Function to resample the spectrum to the telescope wavelength grid
-            resample_spectrum_pmap = get_resample_spectrum_pmap(telescope_wavelenght)
-            # jax.debug.print("doppler shifted ssp wave {}", doppler_shifted_ssp_wave)
-            # jax.debug.print("Spectra before resampling {}", inputs["spectra"])
-            spectrum_resampled = resample_spectrum_pmap(
-                rubixdata.stars.spectra, doppler_shifted_ssp_wave
-            )
-            # rubixdata.stars.spectra = spectrum_resampled
-            setattr(rubixdata.stars, "spectra", spectrum_resampled)
-            # jax.debug.print("doppler shift and resampl: Spectra {}", inputs["spectra"])
+            logger.debug(f"Telescope Wave Seq: {telescope_wavelength.shape}")
 
+            # Function to resample the spectrum to the telescope wavelength grid
+            resample_spectrum_pmap = get_resample_spectrum_pmap(telescope_wavelength)
+            spectrum_resampled = resample_spectrum_pmap(
+                particle.spectra, doppler_shifted_ssp_wave
+            )
+            setattr(rubixdata.stars, "spectra", spectrum_resampled)
+            
         if rubixdata.gas.spectra is not None:
             # Doppler shift the SSP Wavelengths based on the velocity of the gas particles
             doppler_shifted_ssp_wave = doppler_shift(rubixdata.gas.velocity)

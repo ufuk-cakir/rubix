@@ -9,9 +9,8 @@ from rubix.telescope.factory import TelescopeFactory
 from rubix.logger import get_logger
 from .cosmology import get_cosmology
 from .data import RubixData
-from typing import Callable
+from typing import Callable, Union
 
-from typing import Union
 from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker
 from unittest.mock import patch, MagicMock
@@ -113,7 +112,7 @@ def get_spaxel_assignment(config: dict) -> Callable:
             )
             rubixdata.stars.pixel_assignment = pixel_assignment
             rubixdata.stars.spatial_bin_edges = spatial_bin_edges
-
+        
         if rubixdata.gas.coords is not None:
             pixel_assignment = square_spaxel_assignment(
                 rubixdata.gas.coords, spatial_bin_edges
@@ -178,7 +177,6 @@ def get_filter_particles(config: dict) -> Callable:
             mask = mask_particles_outside_aperture(
                 rubixdata.gas.coords, spatial_bin_edges
             )
-
             attributes = [
                 attr
                 for attr in dir(rubixdata.gas)

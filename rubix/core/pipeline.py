@@ -3,7 +3,6 @@ from typing import Union
 
 import jax
 import jax.numpy as jnp
-import sys
 
 from rubix.logger import get_logger
 from rubix.pipeline import linear_pipeline as pipeline
@@ -78,13 +77,12 @@ class RubixPipeline:
         self.logger.info(
             f"Data loaded with {star_count} star particles and {gas_count} gas particles."
         )
-        self.logger.info(f"Data loaded with {sys.getsizeof(rubixdata)} properties.")
         # Setup the data dictionary
         # TODO: This is a temporary solution, we need to figure out a better way to handle the data
         # This works, because JAX can trace through the data dictionary
         # Other option may be named tuples or data classes to have fixed keys
 
-        self.logger.debug("Data: %s", rubixdata)
+        # self.logger.debug("Data: %s", rubixdata)
         # self.logger.debug(
         #    "Data Shape: %s",
         #    {k: v.shape for k, v in rubixdata.items() if hasattr(v, "shape")},

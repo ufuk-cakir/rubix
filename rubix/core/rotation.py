@@ -76,53 +76,41 @@ def get_galaxy_rotation(config: dict):
     def rotate_galaxy(rubixdata: RubixData, type: str = "face-on") -> RubixData:
         logger.info(f"Rotating galaxy with alpha={alpha}, beta={beta}, gamma={gamma}")
 
-        if "stars" in config["data"]["args"]["particle_type"]:
-            # Get the inputs
-            coords = rubixdata.stars.coords
-            velocities = rubixdata.stars.velocity
-            masses = rubixdata.stars.mass
-            halfmass_radius = rubixdata.galaxy.halfmassrad_stars
+        for particle_type in ["stars", "gas"]:
+            if particle_type in config["data"]["args"]["particle_type"]:
+                # Get the component (either stars or gas)
+                component = getattr(rubixdata, particle_type)
 
-            # Rotate the galaxy
-            coords, velocities = rotate_galaxy_core(
-                positions=coords,
-                velocities=velocities,
-                masses=masses,
-                halfmass_radius=halfmass_radius,
-                alpha=alpha,
-                beta=beta,
-                gamma=gamma,
-            )
+                # Get the inputs
+                coords = component.coords
+                velocities = component.velocity
+                masses = component.mass
+                halfmass_radius = rubixdata.galaxy.halfmassrad_stars
 
-            # Update the inputs
-            # rubixdata.stars.coords = coords
-            # rubixdata.stars.velocity = velocities
-            setattr(rubixdata.stars, "coords", coords)
-            setattr(rubixdata.stars, "velocity", velocities)
+                assert (
+                    coords is not None
+                ), f"Coordinates not found for {particle_type}. "
+                assert (
+                    velocities is not None
+                ), f"Velocities not found for {particle_type}. "
+                assert masses is not None, f"Masses not found for {particle_type}. "
 
-        if "gas" in config["data"]["args"]["particle_type"]:
-            # Get the inputs
-            coords = rubixdata.gas.coords
-            velocities = rubixdata.gas.velocity
-            masses = rubixdata.gas.mass
-            halfmass_radius = rubixdata.galaxy.halfmassrad_stars
+                # Rotate the galaxy
+                coords, velocities = rotate_galaxy_core(
+                    positions=coords,
+                    velocities=velocities,
+                    masses=masses,
+                    halfmass_radius=halfmass_radius,
+                    alpha=alpha,
+                    beta=beta,
+                    gamma=gamma,
+                )
 
-            # Rotate the galaxy
-            coords, velocities = rotate_galaxy_core(
-                positions=coords,
-                velocities=velocities,
-                masses=masses,
-                halfmass_radius=halfmass_radius,
-                alpha=alpha,
-                beta=beta,
-                gamma=gamma,
-            )
-
-            # Update the inputs
-            # rubixdata.gas.coords = coords
-            # rubixdata.gas.velocity = velocities
-            setattr(rubixdata.gas, "coords", coords)
-            setattr(rubixdata.gas, "velocity", velocities)
+                # Update the inputs
+                # rubixdata.stars.coords = coords
+                # rubixdata.stars.velocity = velocities
+                setattr(component, "coords", coords)
+                setattr(component, "velocity", velocities)
 
         return rubixdata
 
