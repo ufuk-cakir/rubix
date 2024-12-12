@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from unittest.mock import patch, MagicMock, mock_open
+from unittest.mock import patch, MagicMock
 from rubix.spectra.ssp.factory import get_ssp_template
 from rubix.spectra.ssp.factory import HDF5SSPGrid, pyPipe3DSSPGrid
 from rubix.paths import TEMPLATE_PATH

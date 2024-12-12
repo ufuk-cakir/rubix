@@ -1,7 +1,5 @@
 import jax.numpy as jnp
-import jax
 from jaxtyping import Float, Array
-import equinox as eqx
 from rubix.telescope.utils import (
     calculate_spatial_bin_edges,
     square_spaxel_assignment,
@@ -11,7 +9,7 @@ from rubix.telescope.base import BaseTelescope
 from rubix.telescope.factory import TelescopeFactory
 from .cosmology import get_cosmology
 from .data import RubixData
-from typing import Callable, List
+from typing import Callable
 
 
 def get_telescope(config: dict) -> BaseTelescope:

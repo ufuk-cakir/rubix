@@ -1,5 +1,4 @@
 import jax.numpy as jnp
-import jax
 from rubix.telescope.noise.noise import (
     calculate_noise_cube,
     SUPPORTED_NOISE_DISTRIBUTIONS,

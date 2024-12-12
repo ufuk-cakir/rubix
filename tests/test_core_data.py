@@ -1,5 +1,4 @@
 from unittest.mock import MagicMock, Mock, patch, call
-import pytest
 
 import jax
 import jax.numpy as jnp

@@ -1,7 +1,6 @@
 from rubix.telescope.psf.psf import get_psf_kernel, apply_psf
 
-from typing import Callable, Dict
-import jax.numpy as jnp
+from typing import Callable
 from .data import RubixData
 
 

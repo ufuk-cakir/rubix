@@ -1,5 +1,3 @@
-from typing import Dict
-import jax
 from rubix.logger import get_logger
 from rubix.galaxy.alignment import rotate_galaxy as rotate_galaxy_core
 from .data import RubixData

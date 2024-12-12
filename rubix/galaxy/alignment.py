@@ -6,8 +6,6 @@ SimSpin code.
 """
 
 import jax.numpy as jnp
-from jaxtyping import Float, Array
-from typing import Tuple
 from jax.scipy.spatial.transform import Rotation
 
 
