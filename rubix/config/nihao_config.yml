@@ -1,7 +1,3 @@
-# path to the data and halo files
-data_path: "path/to/your/data/file"  # placeholder for the actual path
-halo_path: "path/to/your/halo/file"   # placeholder for the actual path
-
 # fields to be read from the data files
 fields:
   stars:
