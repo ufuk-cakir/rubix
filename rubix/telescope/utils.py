@@ -76,7 +76,7 @@ def calculate_wave_edges(
 def square_spaxel_assignment(
     coords: Union[Int[Array, "..."], Float[Array, "..."]],
     spatial_bin_edges: Union[Int[Array, "..."], Float[Array, "..."]],
-) -> Int[Array, "..."]:
+) -> Float[Array, "..."]:
     """
     Bin the particle coordinates into a 2D image with the given bin edges for square pixels.
 
@@ -146,7 +146,7 @@ def square_spaxel_assignment(
 
     # Flatten the 2D indices to 1D indices
     pixel_positions = x_indices + (number_of_bins * y_indices)
-    pixel_positions = jnp.array(pixel_positions, dtype=jnp.int32)
+    pixel_positions = jnp.array(pixel_positions, dtype=jnp.float32)
     return pixel_positions
 
 

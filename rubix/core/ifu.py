@@ -110,6 +110,8 @@ def get_scale_spectrum_by_mass(config: dict) -> Callable:
         # rubixdata.stars.spectra = rubixdata.stars.spectra * mass
         spectra_mass = rubixdata.stars.spectra * mass
         setattr(rubixdata.stars, "spectra", spectra_mass)
+        # for testing the gradient to store the spectra also before resampling
+        setattr(rubixdata.stars, "spectra_mass", spectra_mass)
         # jax.debug.print("mass mult: Spectra {}", inputs["spectra"])
         return rubixdata
 

@@ -81,6 +81,7 @@ class StarsData:
         spatial_bin_edges: Spatial bin edges of the IFU grid
         mask: Mask for the stars
         spectra: Spectra for each stellar particle
+        spectra_mass: Mass of the spectra for each stellar particle before resampling (for gradient calculation, testing reasons)
         datacube: IFU datacube for the stellar component
 
     """
@@ -94,6 +95,9 @@ class StarsData:
     spatial_bin_edges: Optional[jnp.ndarray] = None
     mask: Optional[jnp.ndarray] = None
     spectra: Optional[jnp.ndarray] = None
+    spectra_mass: Optional[jnp.ndarray] = (
+        None  # for gradient calculation, testing reasons
+    )
     datacube: Optional[jnp.ndarray] = None
 
     def tree_flatten(self):
@@ -115,6 +119,7 @@ class StarsData:
             self.spatial_bin_edges,
             self.mask,
             self.spectra,
+            self.spectra_mass,
             self.datacube,
         )
         aux_data = {}

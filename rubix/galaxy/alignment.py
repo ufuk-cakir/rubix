@@ -1,3 +1,4 @@
+import jax
 import jax.numpy as jnp
 from jaxtyping import Float, Array
 from typing import Tuple, Union
@@ -162,7 +163,9 @@ def apply_init_rotation(
 @jaxtyped(typechecker=typechecker)
 # def euler_rotation_matrix(alpha: Float[jnp.ndarray, ""], beta: Float[jnp.ndarray, ""], gamma: Float[jnp.ndarray, ""]) -> Float[jnp.ndarray, "3 3"]:
 def euler_rotation_matrix(
-    alpha: float, beta: float, gamma: float
+    alpha: Union[float, jax.core.Tracer],
+    beta: Union[float, jax.core.Tracer],
+    gamma: Union[float, jax.core.Tracer],
 ) -> Float[Array, "3 3"]:
     """
     Create a 3x3 rotation matrix given Euler angles (in degrees)
@@ -212,7 +215,10 @@ def euler_rotation_matrix(
 
 # @jaxtyped(typechecker=typechecker)
 def apply_rotation(
-    positions: Float[Array, "* 3"], alpha: float, beta: float, gamma: float
+    positions: Float[Array, "* 3"],
+    alpha: Union[float, jax.core.Tracer],
+    beta: Union[float, jax.core.Tracer],
+    gamma: Union[float, jax.core.Tracer],
 ) -> Float[Array, "* 3"]:
     """
     Apply a rotation to a set of positions given Euler angles.
@@ -237,9 +243,9 @@ def rotate_galaxy(
     velocities: Float[Array, "* 3"],
     masses: Float[Array, "..."],
     halfmass_radius: Float[Array, "..."],
-    alpha: float,
-    beta: float,
-    gamma: float,
+    alpha: Union[float, jax.core.Tracer],
+    beta: Union[float, jax.core.Tracer],
+    gamma: Union[float, jax.core.Tracer],
 ) -> Tuple[Float[Array, "* 3"], Float[Array, "* 3"]]:
     """
     Orientate the galaxy by applying a rotation matrix to the positions of the particles.

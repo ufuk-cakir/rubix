@@ -243,7 +243,7 @@ def resample_spectrum(
 @jaxtyped(typechecker=typechecker)
 def calculate_cube(
     spectra: Float[Array, "n_stars n_wave_bins"],
-    spaxel_index: Int[Array, " n_stars"],
+    spaxel_index: Float[Array, " n_stars"],
     num_spaxels: int,
 ) -> Float[Array, "num_spaxels num_spaxels n_wave_bins"]:
     """
@@ -257,6 +257,7 @@ def calculate_cube(
     Returns:
         The spectral data cube in an array-like format with shape `(num_spaxels, num_spaxels, n_wave_bins)`.
     """
+    spaxel_index = spaxel_index.astype(int)
     datacube = jax.ops.segment_sum(spectra, spaxel_index, num_segments=num_spaxels**2)
     datacube = datacube.reshape(num_spaxels, num_spaxels, spectra.shape[-1])
     return datacube
