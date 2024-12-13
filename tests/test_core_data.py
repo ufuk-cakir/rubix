@@ -137,7 +137,13 @@ def test_prepare_input(mock_center_particles, mock_path_join):
     }
     units = {
         "galaxy": {"center": "kpc", "halfmassrad_stars": "kpc", "redshift": ""},
-        "stars": {"mass": "Msun"},
+        "stars": {
+            "coords": "kpc",
+            "velocity": "km/s",
+            "metallicity": "",
+            "mass": "Msun",
+            "age": "Gyr",
+        },
     }
     mock_load_galaxy_data = (particle_data, units)
     with patch("rubix.core.data.load_galaxy_data", return_value=mock_load_galaxy_data):
@@ -191,7 +197,13 @@ def test_prepare_input_subset_case(
     }
     units = {
         "galaxy": {"center": "kpc", "halfmassrad_stars": "kpc", "redshift": ""},
-        "stars": {"mass": "Msun"},
+        "stars": {
+            "coords": "kpc",
+            "velocity": "km/s",
+            "metallicity": "",
+            "mass": "Msun",
+            "age": "Gyr",
+        },
     }
 
     mock_load_galaxy_data.return_value = (particle_data, units)
