@@ -5,10 +5,40 @@ from rubix.telescope.noise.noise import (
 )
 from .data import RubixData
 from rubix.logger import get_logger
+from .data import RubixData
+from typing import Callable
+from jaxtyping import jaxtyped
+from beartype import beartype as typechecker
 
 
-def get_apply_noise(config: dict):
+@jaxtyped(typechecker=typechecker)
+def get_apply_noise(config: dict) -> Callable:
+    """
+    Get the function to apply noise to the datacube based on the configuration.
 
+    Args:
+        config (dict): Configuration dictionary.
+
+    Returns:
+        The function to apply noise to the datacube.
+
+    Example
+    -------
+    >>> config = {
+    ...     ...
+    ...     "telescope": {
+    ...         "name": "MUSE",
+    ...         "psf": {"name": "gaussian", "size": 5, "sigma": 0.6},
+    ...         "lsf": {"sigma": 0.5},
+    ...         "noise": {"signal_to_noise": 1,"noise_distribution": "normal"},
+    ...    },
+    ...     ...
+    ... }
+
+    >>> from rubix.core.noise import get_apply_noise
+    >>> apply_noise = get_apply_noise(config)
+    >>> rubixdata = apply_noise(rubixdata)
+    """
     if "noise" not in config["telescope"]:
         raise ValueError("Noise information not provided in telescope config")
 

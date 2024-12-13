@@ -34,14 +34,14 @@ def test_cosmological_doppler_shift():
 
 
 def test_calculate_diff():
-    vec = jnp.array([1, 2, 4, 7])
+    vec = jnp.array([1.0, 2.0, 4.0, 7.0])
     differences = calculate_diff(vec)
     expected_differences = jnp.array([0, 1, 2, 3])
     assert jnp.array_equal(differences, expected_differences)
 
 
 def test_calculate_diff_without_padding():
-    vec = jnp.array([1, 2, 4, 7])
+    vec = jnp.array([1.0, 2.0, 4.0, 7.0])
     differences = calculate_diff(vec, pad_with_zero=False)
     expected_differences = jnp.array([1, 2, 3])
     assert jnp.array_equal(
@@ -229,8 +229,11 @@ def test_resample_spectrum_if_spec_is_zero():
 
 def test_calculate_cube():
     # Test data
-    spectra = jnp.array([[100, 200, 300], [400, 500, 600], [700, 800, 900], [1, 2, 3]])
-    spaxel_index = jnp.array([0, 1, 1, 3])
+    spectra = jnp.array(
+        [[100, 200, 300], [400, 500, 600], [700, 800, 900], [1, 2, 3]],
+        dtype=jnp.float32,
+    )
+    spaxel_index = jnp.array([0, 1, 1, 3], dtype=jnp.int32)
     num_spaxels = 2
 
     # Expected result

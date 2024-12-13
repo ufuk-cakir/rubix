@@ -58,9 +58,9 @@ user_config = {
     "galaxy": {
         "dist_z": 0.1,
         "rotation": {
-            "alpha": 0,
-            "beta": 0,
-            "gamma": 0,
+            "alpha": 0.0,
+            "beta": 0.0,
+            "gamma": 0.0,
         },
     },
     "ssp": {
