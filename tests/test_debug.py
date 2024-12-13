@@ -1,7 +1,5 @@
-import pytest
 import h5py
 import jax.numpy as jnp
-from jax import random
 from rubix.debug import (
     random_data,
     create_dummy_rubix,
