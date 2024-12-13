@@ -6,7 +6,8 @@ from rubix.telescope.noise.noise import (
 from .data import RubixData
 from rubix.logger import get_logger
 from .data import RubixData
-from jaxtyping import Array, Float, jaxtyped
+from typing import Callable
+from jaxtyping import jaxtyped
 from beartype import beartype as typechecker
 
 

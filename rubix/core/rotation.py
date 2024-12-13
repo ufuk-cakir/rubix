@@ -1,7 +1,7 @@
 from rubix.logger import get_logger
 from rubix.galaxy.alignment import rotate_galaxy as rotate_galaxy_core
 from .data import RubixData
-from jaxtyping import Array, Float, jaxtyped
+from jaxtyping import jaxtyped
 from beartype import beartype as typechecker
 
 

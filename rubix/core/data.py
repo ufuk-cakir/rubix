@@ -6,14 +6,13 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 import numpy as np
-from jaxtyping import Array, Float
 
 from rubix.galaxy import IllustrisAPI, get_input_handler
 from rubix.galaxy.alignment import center_particles
 from rubix.logger import get_logger
 from rubix.utils import load_galaxy_data, read_yaml
 
-from jaxtyping import Array, Float, jaxtyped
+from jaxtyping import jaxtyped
 from beartype import beartype as typechecker
 
 

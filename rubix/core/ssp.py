@@ -1,11 +1,10 @@
-from typing import Callable
-
 import jax
 
 from rubix.logger import get_logger
 from rubix.spectra.ssp.factory import get_ssp_template
 
-from jaxtyping import Array, Float, jaxtyped
+from typing import Callable
+from jaxtyping import jaxtyped
 from beartype import beartype as typechecker
 
 

@@ -1,6 +1,6 @@
 from rubix.telescope.psf.psf import get_psf_kernel, apply_psf
 
-from typing import Callable, Dict
+from typing import Callable
 from rubix.logger import get_logger
 from .data import RubixData
 from jaxtyping import jaxtyped

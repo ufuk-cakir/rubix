@@ -21,7 +21,7 @@ from .psf import get_convolve_psf
 from .lsf import get_convolve_lsf
 from .noise import get_apply_noise
 
-from jaxtyping import Array, Float, jaxtyped
+from jaxtyping import jaxtyped
 from beartype import beartype as typechecker
 
 
