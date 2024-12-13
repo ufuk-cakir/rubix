@@ -36,6 +36,9 @@ dependencies = [
     "jax[cpu]!=0.4.36",
     "interpax",
     "astroquery",
+    "mpdaf",
+    "ipywidgets",
+    "jdaviz"
 ]
 [project.optional-dependencies]
 tests = [
@@ -55,6 +58,7 @@ docs = [
     "sphinx_mdinclude",
     "sphinx_rtd_theme",
 ]
+
 
 cuda = [
     "jax[cuda]!=0.4.27",
