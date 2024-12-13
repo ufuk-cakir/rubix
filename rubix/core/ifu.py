@@ -226,11 +226,11 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
     doppler_shift = get_velocities_doppler_shift_vmap(ssp_wave, velocity_direction)
 
     @jaxtyped(typechecker=typechecker)
-    def doppler_shift_and_resampling(rubixdata: RubixData) -> RubixData:
-        if rubixdata.stars.spectra is not None:
-            # Doppler shift the SSP Wavelengths based on the velocity of the stars
-            doppler_shifted_ssp_wave = doppler_shift(rubixdata.stars.velocity)
-            logger.info("Doppler shifting and resampling stellar spectra...")
+    def process_particle(particle: str) -> Float[Array, "..."]:
+        if particle.spectra is not None:
+            # Doppler shift based on the velocity of the particle
+            doppler_shifted_ssp_wave = doppler_shift(particle.velocity)
+            logger.info(f"Doppler shifting and resampling spectra...")
             logger.debug(f"Doppler Shifted SSP Wave: {doppler_shifted_ssp_wave.shape}")
             logger.debug(f"Telescope Wave Seq: {telescope_wavelength.shape}")
 
@@ -239,19 +239,15 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
             spectrum_resampled = resample_spectrum_pmap(
                 particle.spectra, doppler_shifted_ssp_wave
             )
-            setattr(rubixdata.stars, "spectra", spectrum_resampled)
-            
-        if rubixdata.gas.spectra is not None:
-            # Doppler shift the SSP Wavelengths based on the velocity of the gas particles
-            doppler_shifted_ssp_wave = doppler_shift(rubixdata.gas.velocity)
-            logger.info("Doppler shifting and resampling gas spectra...")
-            logger.debug(f"Doppler Shifted SSP Wave: {doppler_shifted_ssp_wave.shape}")
-            logger.debug(f"Telescope Wave Seq: {telescope.wave_seq.shape}")
-            # Function to resample the spectrum to the telescope wavelength grid
-            resample_spectrum_pmap = get_resample_spectrum_pmap(telescope_wavelenght)
-            spectrum_resampled = resample_spectrum_pmap(
-                rubixdata.gas.spectra, doppler_shifted_ssp_wave
-            )
+            return spectrum_resampled
+        return particle.spectra
+    
+
+    @jaxtyped(typechecker=typechecker)
+    def doppler_shift_and_resampling(rubixdata: RubixData) -> RubixData:
+        for particle_name in ["stars", "gas"]:
+            particle = getattr(rubixdata, particle_name)
+            particle.spectra = process_particle(particle)
 
         return rubixdata
 

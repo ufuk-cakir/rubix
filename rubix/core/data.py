@@ -537,6 +537,20 @@ def get_rubix_data(config: Union[dict, str]) -> RubixData:
     convert_to_rubix(config)
     return prepare_input(config)
 
+@jaxtyped(typechecker=typechecker)
+def process_attributes(obj: RubixData, logger: Callable) -> None:
+    """
+    Process the attributes of the given object and reshape them if they are arrays.
+    """
+    attributes = [attr for attr in dir(obj) if not attr.startswith("__")]
+    for key in attributes:
+        attr_value = getattr(obj, key)
+        if attr_value is None or not isinstance(attr_value, (jnp.ndarray, np.ndarray)):
+            logger.warning(f"Attribute value of {key} is None or not an array")
+            continue
+        reshaped_value = reshape_array(attr_value)
+        setattr(obj, key, reshaped_value)
+
 
 @jaxtyped(typechecker=typechecker)
 def get_reshape_data(config: Union[dict, str]) -> Callable:
