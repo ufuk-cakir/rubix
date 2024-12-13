@@ -1,5 +1,7 @@
 from .base import BaseHandler
 from .illustris import IllustrisHandler
+from typing import Union
+from unittest.mock import MagicMock
 from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker
 
@@ -7,7 +9,7 @@ __all__ = ["IllustrisHandler", "BaseHandler"]
 
 
 @jaxtyped(typechecker=typechecker)
-def get_input_handler(config: dict, logger=None) -> BaseHandler:
+def get_input_handler(config: dict, logger=None) -> Union[BaseHandler, MagicMock]:
     """
     Creates a handler based on the config
 

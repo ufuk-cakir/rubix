@@ -12,6 +12,7 @@ from rubix.galaxy.alignment import center_particles
 from rubix.logger import get_logger
 from rubix.utils import load_galaxy_data, read_yaml
 
+import logging
 from jaxtyping import jaxtyped
 from beartype import beartype as typechecker
 
@@ -537,8 +538,9 @@ def get_rubix_data(config: Union[dict, str]) -> RubixData:
     convert_to_rubix(config)
     return prepare_input(config)
 
+
 @jaxtyped(typechecker=typechecker)
-def process_attributes(obj: RubixData, logger: Callable) -> None:
+def process_attributes(obj: Union[StarsData, GasData], logger: logging.Logger) -> None:
     """
     Process the attributes of the given object and reshape them if they are arrays.
     """

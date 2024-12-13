@@ -1,4 +1,5 @@
-from typing import Callable
+from typing import Callable, Union
+from rubix.core.data import StarsData, GasData
 
 import jax
 import jax.numpy as jnp
@@ -226,7 +227,9 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
     doppler_shift = get_velocities_doppler_shift_vmap(ssp_wave, velocity_direction)
 
     @jaxtyped(typechecker=typechecker)
-    def process_particle(particle: str) -> Float[Array, "..."]:
+    def process_particle(
+        particle: Union[StarsData, GasData]
+    ) -> Union[Float[Array, "..."], None]:
         if particle.spectra is not None:
             # Doppler shift based on the velocity of the particle
             doppler_shifted_ssp_wave = doppler_shift(particle.velocity)
@@ -241,7 +244,6 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
             )
             return spectrum_resampled
         return particle.spectra
-    
 
     @jaxtyped(typechecker=typechecker)
     def doppler_shift_and_resampling(rubixdata: RubixData) -> RubixData:
