@@ -1,5 +1,4 @@
 import jax.numpy as jnp
-from jaxtyping import Float, Array
 from rubix.telescope.utils import (
     calculate_spatial_bin_edges,
     square_spaxel_assignment,
@@ -14,8 +13,6 @@ from typing import Callable, Union
 
 from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker
-from unittest.mock import patch, MagicMock
-
 
 @jaxtyped(typechecker=typechecker)
 def get_telescope(config: Union[str, dict]) -> BaseTelescope:
