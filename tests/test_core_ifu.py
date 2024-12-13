@@ -1,13 +1,10 @@
-import pytest
 import jax
 import jax.numpy as jnp
 import numpy as np
-from unittest.mock import Mock, patch
 
 from rubix.spectra.ifu import resample_spectrum
 from rubix.core.data import reshape_array, RubixData, Galaxy, StarsData, GasData
 from rubix.core.ssp import get_ssp
-from rubix.core.telescope import get_telescope
 from rubix.core.ifu import (
     get_calculate_spectra,
     get_scale_spectrum_by_mass,

@@ -1,6 +1,6 @@
 import os
-from typing import Callable, Tuple, Union, Optional
-from dataclasses import dataclass, field, make_dataclass
+from typing import Callable, Union, Optional
+from dataclasses import dataclass
 from functools import partial
 
 import jax
@@ -12,7 +12,6 @@ from rubix.galaxy import IllustrisAPI, get_input_handler
 from rubix.galaxy.alignment import center_particles
 from rubix.logger import get_logger
 from rubix.utils import load_galaxy_data, read_yaml
-from rubix import config as rubix_config
 
 from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker

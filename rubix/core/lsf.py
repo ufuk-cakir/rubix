@@ -1,7 +1,6 @@
 from rubix.telescope.lsf.lsf import apply_lsf
 from .telescope import get_telescope
-from typing import Callable, Dict
-import jax.numpy as jnp
+from typing import Callable
 from rubix.logger import get_logger
 from .data import RubixData
 from jaxtyping import Array, Float, jaxtyped

@@ -1,4 +1,5 @@
 import jax.numpy as jnp
+from jaxtyping import Float, Array
 from rubix.telescope.utils import (
     calculate_spatial_bin_edges,
     square_spaxel_assignment,

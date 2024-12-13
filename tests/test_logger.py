@@ -1,4 +1,3 @@
-import pytest
 from rubix.logger import get_logger
 
 

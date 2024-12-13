@@ -1,10 +1,9 @@
 from rubix.telescope.psf.psf import get_psf_kernel, apply_psf
 
 from typing import Callable, Dict
-import jax.numpy as jnp
 from rubix.logger import get_logger
 from .data import RubixData
-from jaxtyping import Array, Float, jaxtyped
+from jaxtyping import jaxtyped
 from beartype import beartype as typechecker
 
 
