@@ -19,12 +19,6 @@ fields:
   dm:
     mass: "mass"
 
-particles:
-  gas:
-    temperature: "K"
-  dm:
-    mass: "Msun"
-
 # units for the fields
 units:
   stars:
@@ -49,7 +43,3 @@ units:
     redshift: "dimensionless"
     center: "kpc"
     halfmassrad_stars: "kpc"
-
-galaxy:
-  redshift: 0.1
-  halfmassrad_stars: 5.0
