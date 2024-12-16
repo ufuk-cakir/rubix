@@ -1,3 +1,4 @@
+
 from .base import BaseHandler
 import pynbody
 import numpy as np
@@ -10,7 +11,6 @@ import os
 Zsun = u.def_unit("Zsun", u.dimensionless_unscaled)
 u.add_enabled_units(Zsun)
 
-
 class NihaoHandler(BaseHandler):
     def __init__(self, path, halo_path=None, logger=None, config=None):
         """Initialize handler with paths to snapshot and halo files."""
@@ -19,26 +19,18 @@ class NihaoHandler(BaseHandler):
         self.nihao_config = config or self._load_config()
         self.logger = logger or self._default_logger()
         super().__init__()
-        if "particles" not in self.config:
-            self.config["particles"] = {}
-
-        if "gas" not in self.config["particles"]:
-            self.config["particles"]["gas"] = {}
-
-        if "temperature" not in self.config["particles"]["gas"]:
-            self.config["particles"]["gas"]["temperature"] = "K"
-
         if "dm" not in self.config["particles"]:
             self.config["particles"]["dm"] = {}
 
         if "mass" not in self.config["particles"]["dm"]:
-            self.config["particles"]["dm"]["mass"] = "Msun"
+            self.config["particles"]["dm"]["mass"] = self.nihao_config["units"]["stars"]["mass"]
         self.load_data()
 
     def _load_config(self):
         """Load the YAML configuration."""
         config_path = os.path.join(
-            os.path.dirname(__file__), "../../config/nihao_config.yml"
+            os.path.dirname(__file__),
+            "../../config/nihao_config.yml" 
         )
         if not os.path.exists(config_path):
             raise FileNotFoundError(f"Config file not found: {config_path}")
@@ -56,44 +48,22 @@ class NihaoHandler(BaseHandler):
         self.sim = pynbody.load(self.path)
         self.halos = self.sim.halos()
         self.sim.physical_units()
+
         pynbody.analysis.center(self.halos[0])
         pynbody.analysis.faceon(self.halos[0])
 
         fields = self.nihao_config["fields"]
-
         load_classes = self.nihao_config.get("load_classes", ["stars", "gas", "dm"])
         self.data = {}
         units = self.get_units()
 
-        """
-        # Center the galaxy based on halo data if available
-        self.get_halo_data()
-        if self.halo_data:
-            halo_positions = self.halo_data['pos'].view(np.ndarray)
-            halo_masses = self.halo_data['mass'].view(np.ndarray)
-            halo_center = (
-                np.average(halo_positions, axis=0, weights=halo_masses)
-                if halo_masses.size == halo_positions.shape[0]
-                else halo_positions.mean(axis=0)
-            )
-            self.sim['pos'] -= halo_center
-            self.center = u.Quantity([0, 0, 0], self.get_units()["galaxy"]["center"])
-        else:
-            self.logger.warning("No halo data available. Skipping centering.")
-        """
-
         # Load data for stars, gas, and dark matter
         for cls in load_classes:
             if cls == "stars":
-                # Convert SimArray to np.array before multiplying by units
                 self.data["stars"] = {
                     field: np.array(
-                        self.sim.stars.get(
-                            fields["stars"].get(field, ""),
-                            np.zeros(len(self.sim.stars)),
-                        )
-                    )
-                    * units["stars"].get(field, u.dimensionless_unscaled)
+                        self.sim.stars.get(fields["stars"].get(field, ""), np.zeros(len(self.sim.stars)))
+                    ) * units["stars"].get(field, u.dimensionless_unscaled)
                     for field in fields["stars"]
                 }
             elif cls == "gas":
@@ -101,19 +71,15 @@ class NihaoHandler(BaseHandler):
                     field: (
                         np.array(self.sim.gas[sim_field]) * units["gas"][field]
                         if sim_field in self.sim.gas.loadable_keys()
-                        else np.zeros(len(self.sim.gas))
-                        * units["gas"].get(field, u.dimensionless_unscaled)
+                        else np.zeros(len(self.sim.gas)) * units["gas"].get(field, u.dimensionless_unscaled)
                     )
                     for field, sim_field in fields["gas"].items()
                 }
             elif cls == "dm":
                 self.data["dm"] = {
                     "mass": np.array(
-                        self.sim.dm.get(
-                            fields["dm"]["mass"], np.zeros(len(self.sim.dm))
-                        )
-                    )
-                    * units["dm"]["mass"]
+                        self.sim.dm.get(fields["dm"]["mass"], np.zeros(len(self.sim.dm)))
+                    ) * units["dm"]["mass"]
                 }
 
         self.logger.info(
@@ -124,7 +90,7 @@ class NihaoHandler(BaseHandler):
         """Load halo data if available."""
         if self.halo_path:
             halos = self.sim.halos(filename=self.halo_path)
-            self.halo_data = halos[0]
+            self.halo_data = halos[1]
             self.logger.info("Halo data loaded.")
         else:
             self.halo_data = None
@@ -133,10 +99,20 @@ class NihaoHandler(BaseHandler):
 
     def get_galaxy_data(self):
         """Return basic galaxy data."""
+        if "stars" in self.data:
+            positions = self.data["stars"]["coords"].value
+            masses = self.data["stars"]["mass"].value
+            halfmassrad_stars = self.calculate_halfmass_radius(positions, masses)
+            self.logger.info(f"Half-mass radius calculated: {halfmassrad_stars:.2f} kpc")
+        else:
+            halfmassrad_stars = None
+            self.logger.warning("No star data available to calculate the half-mass radius.")
+        redshift = self.nihao_config.get("redshift", 0.1)
+
         return {
-            "redshift": self.nihao_config.get("galaxy", {}).get("redshift", 0.1),
+            "redshift": redshift,
             "center": [0, 0, 0],
-            "halfmassrad_stars": self.nihao_config["galaxy"]["halfmassrad_stars"],
+            "halfmassrad_stars": halfmassrad_stars,
         }
 
     def get_particle_data(self):
@@ -145,11 +121,21 @@ class NihaoHandler(BaseHandler):
 
     def get_simulation_metadata(self):
         """Return metadata for the simulation."""
-        return {
-            "path": self.path,
-            "halo_path": self.halo_path,
-            "logger": str(self.logger),
-        }
+        return {"path": self.path, "halo_path": self.halo_path, "logger": str(self.logger)}
+    
+    def calculate_halfmass_radius(self, positions, masses):
+        """Calculates the half-mass radius based on the positions and masses of the stars."""
+
+        if positions.ndim == 1:
+            positions = positions[:, np.newaxis]
+        distances = np.linalg.norm(positions, axis=1)  
+        sorted_indices = np.argsort(distances) 
+        cumulative_mass = np.cumsum(masses[sorted_indices])
+        total_mass = cumulative_mass[-1]
+
+        halfmass_index = np.searchsorted(cumulative_mass, total_mass / 2)
+        halfmass_radius = distances[sorted_indices[halfmass_index]]
+        return halfmass_radius
 
     def get_units(self):
         """Define and return units for all quantities based on the YAML config."""
@@ -165,10 +151,11 @@ class NihaoHandler(BaseHandler):
             "K": u.K,
             "dimensionless": u.dimensionless_unscaled,
         }
+        units_config = self.nihao_config["units"]
         return {
             category: {
                 field: unit_map[unit]
-                for field, unit in self.nihao_config["units"][category].items()
+                for field, unit in fields.items()
             }
-            for category in self.nihao_config["units"]
+            for category, fields in units_config.items()
         }
