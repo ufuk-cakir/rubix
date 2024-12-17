@@ -68,24 +68,59 @@ def mock_config():
 
 @pytest.fixture
 def handler_with_mock_data(mock_simulation, mock_config):
-    """Fixture to initialize the NihaoHandler with mocked data."""
-    mock_simulation.stars.get.return_value = np.array([0.1, 0.2, 0.3])
-    mock_simulation.stars["pos"] = np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0], [2.0, 2.0, 2.0]])
-    mock_simulation.stars["mass"] = np.array([1.0, 2.0, 3.0])
+    star_arrays = {
+        'pos': np.array([
+            [0.0, 0.0, 0.0],
+            [1.0, 1.0, 1.0],
+            [2.0, 2.0, 2.0]
+        ]),
+        'mass': np.array([1.0, 2.0, 3.0]),
+        'vel': np.array([
+            [10.0, 0.0, 0.0],
+            [0.0, 10.0, 0.0],
+            [0.0, 0.0, 10.0]
+        ]),
+        'metallicity': np.array([0.02, 0.03, 0.01]),
+        'age': np.array([1.0, 2.0, 3.0])
+    }
 
-    mock_simulation.gas.loadable_keys.return_value = ["density", "temperature"]
-    mock_simulation.gas["density"] = np.array([1.0, 2.0, 3.0])
-    mock_simulation.gas["temperature"] = np.array([100.0, 200.0, 300.0])
+    gas_arrays = {
+        'density': np.array([1.0, 2.0, 3.0]),
+        'temperature': np.array([100.0, 200.0, 300.0])
+    }
+
+    dm_arrays = {
+        'mass': np.array([10.0, 20.0, 30.0])
+    }
+
+    def get_star_item(key):
+        return star_arrays[key]
+    
+    def get_gas_item(key):
+        return gas_arrays[key]
+    
+    def get_dm_item(key):
+        return dm_arrays[key]
+
+    mock_simulation.stars.loadable_keys.return_value = list(star_arrays.keys())
+    mock_simulation.gas.loadable_keys.return_value = list(gas_arrays.keys())
+    mock_simulation.dm.loadable_keys.return_value = list(dm_arrays.keys())
+
+    mock_simulation.stars.__getitem__.side_effect = get_star_item
+    mock_simulation.gas.__getitem__.side_effect = get_gas_item
+    mock_simulation.dm.__getitem__.side_effect = get_dm_item
+
+    mock_simulation.stars.__len__.return_value = len(star_arrays['pos'])
+    mock_simulation.gas.__len__.return_value = len(gas_arrays['density'])
+    mock_simulation.dm.__len__.return_value = len(dm_arrays['mass'])
 
     import pynbody
     pynbody.load = MagicMock(return_value=mock_simulation)
-    
     pynbody.analysis.center = MagicMock()
     pynbody.analysis.faceon = MagicMock()
 
     handler = NihaoHandler(path="mock_path", halo_path="mock_halo_path", config=mock_config)
     handler.sim = mock_simulation
-    
     handler.center = np.array([0, 0, 0])
 
     return handler
