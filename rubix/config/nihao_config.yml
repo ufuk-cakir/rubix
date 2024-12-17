@@ -14,7 +14,7 @@ fields:
     velocity: "vel"
     mass: "mass"
     sfr: "sfr"
-    internal_energy: "eps"
+    internal_energy: "u"
     electron_abundance: "electron_abundance"
   dm:
     mass: "mass"
