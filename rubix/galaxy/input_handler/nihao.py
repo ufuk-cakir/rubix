@@ -1,4 +1,3 @@
-
 from .base import BaseHandler
 import pynbody
 import numpy as np
@@ -56,46 +55,41 @@ class NihaoHandler(BaseHandler):
         load_classes = self.nihao_config.get("load_classes", ["stars", "gas", "dm"])
         self.data = {}
         units = self.get_units()
-
+        
         # Load data for stars, gas, and dark matter
         for cls in load_classes:
-            if cls == "stars":
-                self.data["stars"] = {
-                    field: np.array(
-                        self.sim.stars.get(fields["stars"].get(field, ""), np.zeros(len(self.sim.stars)))
-                    ) * units["stars"].get(field, u.dimensionless_unscaled)
-                    for field in fields["stars"]
-                }
-            elif cls == "gas":
-                self.data["gas"] = {
-                    field: (
-                        np.array(self.sim.gas[sim_field]) * units["gas"][field]
-                        if sim_field in self.sim.gas.loadable_keys()
-                        else np.zeros(len(self.sim.gas)) * units["gas"].get(field, u.dimensionless_unscaled)
-                    )
-                    for field, sim_field in fields["gas"].items()
-                }
-            elif cls == "dm":
-                self.data["dm"] = {
-                    "mass": np.array(
-                        self.sim.dm.get(fields["dm"]["mass"], np.zeros(len(self.sim.dm)))
-                    ) * units["dm"]["mass"]
-                }
+            if cls in ["stars", "gas", "dm"]:
+                self.data[cls] = self.load_particle_data(
+                    getattr(self.sim, cls), fields[cls], units[cls], cls
+                )
 
         self.logger.info(
             f"NIHAO snapshot and halo data loaded successfully for classes: {load_classes}."
         )
-
+    def load_particle_data(self, sim, fields, units, particle_type):
+        """Helper function to load particle data for a given particle type."""
+        data = {}
+        for field, sim_field in fields.items():
+            if field == "internal_energy" and "temp" in sim.loadable_keys():
+                # Derive internal energy using pynbody's 'u'
+                data[field] = np.array(sim["u"]) * units[field]
+                self.logger.info("Derived internal energy from temperature.")
+            elif sim_field in sim.loadable_keys():
+                data[field] = np.array(sim[sim_field]) * units[field]
+            else:
+                self.logger.warning(f"Field {field} ({sim_field}) not found for {particle_type}. Assigning zeros.")
+                data[field] = np.zeros(len(sim)) * units.get(field, u.dimensionless_unscaled)
+        return data
+    
     def get_halo_data(self):
-        """Load halo data if available."""
+        """Load and return halo data if available."""
         if self.halo_path:
             halos = self.sim.halos(filename=self.halo_path)
-            self.halo_data = halos[1]
             self.logger.info("Halo data loaded.")
+            return halos[1]
         else:
-            self.halo_data = None
             self.logger.warning("No halo file provided or found.")
-        return self.halo_data
+            return None
 
     def get_galaxy_data(self):
         """Return basic galaxy data."""
