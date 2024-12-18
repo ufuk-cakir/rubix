@@ -93,8 +93,30 @@ calc_gradient:
       args: []
       kwargs: {}
 
+    doppler_shift_and_resampling:
+      name: doppler_shift_and_resampling
+      depends_on: scale_spectrum_by_mass
+      args: []
+      kwargs: {}
+
     calculate_datacube:
       name: calculate_datacube
-      depends_on: scale_spectrum_by_mass
+      depends_on: doppler_shift_and_resampling
+      args: []
+      kwargs: {}
+
+    convolve_psf:
+      name: convolve_psf
+      depends_on: calculate_datacube
+      args: []
+      kwargs: {}
+    convolve_lsf:
+      name: convolve_lsf
+      depends_on: convolve_psf
+      args: []
+      kwargs: {}
+    apply_noise:
+      name: apply_noise
+      depends_on: convolve_lsf
       args: []
       kwargs: {}

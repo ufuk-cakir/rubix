@@ -19,7 +19,7 @@ from beartype import beartype as typechecker
 
 
 # Registering the dataclass with JAX for automatic tree traversal
-@jaxtyped(typechecker=typechecker)
+# @jaxtyped(typechecker=typechecker)
 @partial(jax.tree_util.register_pytree_node_class)
 @dataclass
 class Galaxy:
@@ -64,7 +64,7 @@ class Galaxy:
         return cls(*children)
 
 
-@jaxtyped(typechecker=typechecker)
+# @jaxtyped(typechecker=typechecker)
 @partial(jax.tree_util.register_pytree_node_class)
 @dataclass
 class StarsData:
@@ -140,7 +140,7 @@ class StarsData:
         return cls(*children)
 
 
-@jaxtyped(typechecker=typechecker)
+# @jaxtyped(typechecker=typechecker)
 @partial(jax.tree_util.register_pytree_node_class)
 @dataclass
 class GasData:
@@ -219,7 +219,7 @@ class GasData:
         return cls(*children)
 
 
-@jaxtyped(typechecker=typechecker)
+# @jaxtyped(typechecker=typechecker)
 @partial(jax.tree_util.register_pytree_node_class)
 @dataclass
 class RubixData:
