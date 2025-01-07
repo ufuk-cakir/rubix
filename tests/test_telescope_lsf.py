@@ -1,6 +1,5 @@
 import jax.numpy as jnp
 from rubix.telescope.lsf.lsf import apply_lsf
-import pytest
 
 
 def test_apply_lsf_with_delta_function():

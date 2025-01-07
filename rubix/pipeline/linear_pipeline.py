@@ -1,8 +1,7 @@
 from . import abstract_pipeline as apl
-from .transformer import bound_transformer, compiled_transformer
+from .transformer import bound_transformer
 from jax.tree_util import Partial
 from copy import deepcopy
-import warnings
 
 
 class LinearTransformerPipeline(apl.AbstractPipeline):

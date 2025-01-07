@@ -31,7 +31,6 @@ def get_calculate_spectra(config: dict) -> Callable:
         logger.debug(
             f"Input shapes: Metallicity: {len(rubixdata.stars.metallicity)}, Age: {len(rubixdata.stars.age)}"
         )
-
         # Ensure metallicity and age are arrays and reshape them to be at least 1-dimensional
         # age_data = jax.device_get(rubixdata.stars.age)
         age_data = rubixdata.stars.age
@@ -131,7 +130,7 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
         if particle.spectra is not None:
             # Doppler shift based on the velocity of the particle
             doppler_shifted_ssp_wave = doppler_shift(particle.velocity)
-            logger.info(f"Doppler shifting and resampling spectra...")
+            logger.info("Doppler shifting and resampling spectra...")
             logger.debug(f"Doppler Shifted SSP Wave: {doppler_shifted_ssp_wave.shape}")
             logger.debug(f"Telescope Wave Seq: {telescope_wavelength.shape}")
 
@@ -170,7 +169,7 @@ def get_calculate_datacube(config: dict) -> Callable:
         )
         datacube = jnp.sum(ifu_cubes, axis=0)
         logger.debug(f"Datacube Shape: {datacube.shape}")
-        logger.debug(f"This is the datacube: {datacube}")
+        # logger.debug(f"This is the datacube: {datacube}")
         datacube_jax = jnp.array(datacube)
         setattr(rubixdata.stars, "datacube", datacube_jax)
         # rubixdata.stars.datacube = datacube

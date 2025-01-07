@@ -1,12 +1,10 @@
 import time
 from typing import Union
 
-import jax
-import jax.numpy as jnp
+from jax import block_until_ready
 
 from rubix.logger import get_logger
 from rubix.pipeline import linear_pipeline as pipeline
-from rubix.pipeline import transformer as transformer
 from rubix.utils import get_config, get_pipeline_config
 
 from .data import get_reshape_data, get_rubix_data
@@ -22,6 +20,7 @@ from .telescope import get_spaxel_assignment, get_telescope, get_filter_particle
 from .psf import get_convolve_psf
 from .lsf import get_convolve_lsf
 from .noise import get_apply_noise
+from rubix import config as rubix_config
 
 
 class RubixPipeline:
@@ -174,12 +173,41 @@ class RubixPipeline:
         self.logger.info("Running the pipeline on the input data...")
         output = self.func(self.data)
 
-        jax.block_until_ready(output)
+        block_until_ready(output)
         time_end = time.time()
-
         self.logger.info(
             "Pipeline run completed in %.2f seconds.", time_end - time_start
         )
+
+        output.galaxy.redshift_unit = self.data.galaxy.redshift_unit
+        output.galaxy.center_unit = self.data.galaxy.center_unit
+        output.galaxy.halfmassrad_stars_unit = self.data.galaxy.halfmassrad_stars_unit
+
+        if output.stars.coords != None:
+            output.stars.coords_unit = self.data.stars.coords_unit
+            output.stars.velocity_unit = self.data.stars.velocity_unit
+            output.stars.mass_unit = self.data.stars.mass_unit
+            # output.stars.metallictiy_unit = self.data.stars.metallictiy_unit
+            output.stars.age_unit = self.data.stars.age_unit
+            output.stars.spatial_bin_edges_unit = "kpc"
+            # output.stars.wavelength_unit = rubix_config["ssp"]["units"]["wavelength"]
+            # output.stars.spectra_unit = rubix_config["ssp"]["units"]["flux"]
+            # output.stars.datacube_unit = rubix_config["ssp"]["units"]["flux"]
+
+        if output.gas.coords != None:
+            output.gas.coords_unit = self.data.gas.coords_unit
+            output.gas.velocity_unit = self.data.gas.velocity_unit
+            output.gas.mass_unit = self.data.gas.mass_unit
+            output.gas.density = self.data.gas.density_unit
+            output.gas.internal_energy_unit = self.data.gas.internal_energy_unit
+            # output.gas.metallicity_unit = self.data.gas.metallicity_unit
+            output.gas.sfr_unit = self.data.gas.sfr_unit
+            output.gas.electron_abundance_unit = self.data.gas.electron_abundance_unit
+            output.gas.spatial_bin_edges_unit = "kpc"
+            # output.gas.wavelength_unit = rubix_config["ssp"]["units"]["wavelength"]
+            # output.gas.spectra_unit = rubix_config["ssp"]["units"]["flux"]
+            # output.gas.datacube_unit = rubix_config["ssp"]["units"]["flux"]
+
         return output
 
     # TODO: implement gradient calculation

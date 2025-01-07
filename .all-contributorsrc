@@ -12,8 +12,8 @@
       "login": "ufuk-cakir",
       "name": "Ufuk Çakır",
       "avatar_url": "https://avatars.githubusercontent.com/u/92611643?v=4",
-      "profile": "https://cakir-ufuk.de/", 
-        "contributions": [
+      "profile": "https://cakir-ufuk.de/",
+      "contributions": [
         "code",
         "content",
         "data",
@@ -85,6 +85,15 @@
         "talk",
         "userTesting",
         "mentoring"
+      ]
+    },
+    {
+      "login": "robin-janssen",
+      "name": "Robin Janssen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/82322346?v=4",
+      "profile": "https://github.com/robin-janssen",
+      "contributions": [
+        "code"
       ]
     }
   ]
