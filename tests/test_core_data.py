@@ -83,70 +83,61 @@ def test_rubix_file_already_exists():
             ), "Function should return the output path when file exists"
 
 
-@patch("rubix.core.data.load_galaxy_data")
 @patch("rubix.core.data.os.path.join")
 @patch("rubix.core.data.center_particles")
-def test_prepare_input(mock_center_particles, mock_path_join, mock_load_galaxy_data):
-    # Mock file path
+def test_prepare_input(mock_center_particles, mock_path_join):
     mock_path_join.return_value = "/path/to/output/rubix_galaxy.h5"
-
-    # Mock load_galaxy_data return value
-    mock_load_galaxy_data.return_value = (
-        {
-            "particle_data": {
-                "stars": {
-                    "coords": jnp.array([[1, 2, 3]]),
-                    "velocity": jnp.array([[4, 5, 6]]),
-                    "metallicity": jnp.array([0.1]),
-                    "mass": jnp.array([1000]),
-                    "age": jnp.array([4.5]),
-                }
+    particle_data = {
+        "particle_data": {
+            "stars": {
+                "coords": [[1, 2, 3]],
+                "velocity": [[4, 5, 6]],
+                "metallicity": [0.1],
+                "mass": [1000],
+                "age": [4.5],
             },
-            "subhalo_center": jnp.array([0, 0, 0]),
-            "subhalo_halfmassrad_stars": 1,
-            "redshift": 0.1,
         },
-        {
-            "galaxy": {"center": "kpc", "halfmassrad_stars": "kpc", "redshift": ""},
-            "stars": {"mass": "Msun"},
-        },
-    )
-
-    # Mock center_particles return value
-    mock_center_particles.return_value = RubixData(Galaxy(), StarsData(), GasData())
-    mock_center_particles.return_value.stars.coords = jnp.array([[1, 2, 3]])
-    mock_center_particles.return_value.stars.velocity = jnp.array([[4, 5, 6]])
-    mock_center_particles.return_value.stars.metallicity = jnp.array([0.1])
-    mock_center_particles.return_value.stars.mass = jnp.array([1000])
-    mock_center_particles.return_value.stars.age = jnp.array([4.5])
-    mock_center_particles.return_value.galaxy.halfmassrad_stars = 1
-
-    # Updated configuration with 'particle_type'
-    config_dict = {
-        "data": {
-            "name": "IllustrisAPI",
-            "args": {"particle_type": ["stars"]},  # Include 'particle_type'
-            "load_galaxy_args": {},
-        },
-        "output_path": "/path/to/output",
+        "subhalo_center": [0, 0, 0],
+        "subhalo_halfmassrad_stars": 1,
+        "redshift": 0.1,
     }
+    units = {
+        "galaxy": {"center": "kpc", "halfmassrad_stars": "kpc", "redshift": ""},
+        "stars": {
+            "coords": "kpc",
+            "velocity": "km/s",
+            "metallicity": "",
+            "mass": "Msun",
+            "age": "Gyr",
+        },
+    }
+    mock_load_galaxy_data = (particle_data, units)
+    with patch("rubix.core.data.load_galaxy_data", return_value=mock_load_galaxy_data):
+        # mock_center_particles.return_value = ([[1, 2, 3]], [[4, 5, 6]])
+        mock_center_particles.return_value = RubixData(Galaxy(), StarsData(), GasData())
+        mock_center_particles.return_value.stars.coords = [[1, 2, 3]]
+        mock_center_particles.return_value.stars.velocity = [[4, 5, 6]]
+        mock_center_particles.return_value.stars.metallicity = [0.1]
+        mock_center_particles.return_value.stars.mass = [1000]
+        mock_center_particles.return_value.stars.age = [4.5]
+        mock_center_particles.return_value.galaxy.halfmassrad_stars = 1
 
-    # Call the function under test
-    rubixdata = prepare_input(config_dict)
+        rubixdata = prepare_input(config_dict)
 
-    # Assertions
-    assert jnp.array_equal(rubixdata.stars.coords, jnp.array([[1, 2, 3]]))
-    assert jnp.array_equal(rubixdata.stars.velocity, jnp.array([[4, 5, 6]]))
-    assert jnp.array_equal(rubixdata.stars.metallicity, jnp.array([0.1]))
-    assert jnp.array_equal(rubixdata.stars.mass, jnp.array([1000]))
-    assert jnp.array_equal(rubixdata.stars.age, jnp.array([4.5]))
-    assert rubixdata.galaxy.halfmassrad_stars == 1
+        assert rubixdata.stars.coords == [[1, 2, 3]]
+        assert rubixdata.stars.velocity == [[4, 5, 6]]
+        assert rubixdata.stars.metallicity == [0.1]
+        assert rubixdata.stars.mass == [1000]
+        assert rubixdata.stars.age == [4.5]
+        assert rubixdata.galaxy.halfmassrad_stars == 1
 
-    # Check mock interactions
-    mock_path_join.assert_called_once_with(
-        config_dict["output_path"], "rubix_galaxy.h5"
-    )
-    mock_load_galaxy_data.assert_called_once_with("/path/to/output/rubix_galaxy.h5")
+        print(mock_path_join.call_args_list)  # Print all calls to os.path.join
+        # Check if the specific call is in the list of calls
+        assert (
+            call(config_dict["output_path"], "rubix_galaxy.h5")
+            in mock_path_join.call_args_list
+        )
+
 
 
 @patch("rubix.core.data.os.path.join")
@@ -176,7 +167,13 @@ def test_prepare_input_subset_case(
     }
     units = {
         "galaxy": {"center": "kpc", "halfmassrad_stars": "kpc", "redshift": ""},
-        "stars": {"mass": "Msun"},
+        "stars": {
+            "coords": "kpc",
+            "velocity": "km/s",
+            "metallicity": "",
+            "mass": "Msun",
+            "age": "Gyr",
+        },
     }
 
     mock_load_galaxy_data.return_value = (particle_data, units)

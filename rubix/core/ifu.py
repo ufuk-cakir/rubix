@@ -59,7 +59,6 @@ def get_calculate_spectra(config: dict) -> Callable:
         logger.debug(
             f"Input shapes: Metallicity: {len(rubixdata.stars.metallicity)}, Age: {len(rubixdata.stars.age)}"
         )
-
         # Ensure metallicity and age are arrays and reshape them to be at least 1-dimensional
         # age_data = jax.device_get(rubixdata.stars.age)
         age_data = rubixdata.stars.age

@@ -26,7 +26,8 @@ def calculate_spatial_bin_edges(
     Returns:
         The bin edges for the spatial bins and the spatial bin size as jnp.array.
     """
-    ang_size = cosmology.angular_scale(dist_z)
+    ang_size = cosmology.angular_scale(dist_z)  # kpc/arcsec
+    # fov in arcsec
     aperture_size = ang_size * fov
     spatial_bin_size = aperture_size / spatial_bins
     spatial_bin_edges = jnp.arange(

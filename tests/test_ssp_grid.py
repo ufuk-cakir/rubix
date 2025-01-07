@@ -298,6 +298,24 @@ def test_from_pyPipe3D():
             )
             assert result.flux.shape == (2, 3, 4)
 
+            assert np.allclose(result.metallicity, [0.01, 0.02])
+            assert np.allclose(result.wavelength, [4000, 5000, 6000, 7000])
+            assert np.allclose(
+                result.flux,
+                [
+                    [[0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0]],
+                    [[0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0]],
+                ],
+            )
+            assert np.allclose(
+                result.flux,
+                [
+                    [[0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0]],
+                    [[0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0], [0.5, 1.0, 1.5, 2.0]],
+                ],
+            )
+            assert result.flux.shape == (2, 3, 4)
+
 
 def test_from_pyPipe3D_wrong_field_name():
     config = {
@@ -541,9 +559,37 @@ def test_checkout_SSP_template_SSL_error_HDF5SSPGrid():
         ):
             HDF5SSPGrid.checkout_SSP_template(config, file_location)
 
-        # there is a nested try-catch block in checkout_SSP_template that
-        # is traversed when request.get is mocked, so it must have been
-        # called twice
+
+def test_checkout_SSP_template_SSL_error_HDF5SSPGrid():
+    config = {
+        "format": "hdf5",
+        "file_name": "test.hdf5",
+        "source": "http://example.com/",  # This URL will raise an exception when accessed
+        "fields": {
+            "age": {"name": "age", "in_log": False, "units": "Gyr"},
+            "metallicity": {"name": "metallicity", "in_log": False, "units": ""},
+            "wavelength": {"name": "wavelength", "in_log": False, "units": "Angstrom"},
+            "flux": {"name": "flux", "in_log": False, "units": "Lsun/Angstrom"},
+        },
+        "name": "TestSSPGrid",
+    }
+    file_location = "/path/to/files"
+
+    # Mock the requests.get function to raise an exception
+    with patch("requests.get") as mock_get:
+        mock_get.side_effect = [
+            requests.exceptions.SSLError("Download error"),
+            requests.exceptions.HTTPError("Download error"),
+        ]
+
+        with pytest.raises(
+            FileNotFoundError,
+            match="Could not download file test.hdf5 from url http://example.com/.",
+        ):
+            HDF5SSPGrid.checkout_SSP_template(config, file_location)
+
+        # there is a nested try-catch block in checkout_SSP_template that is traversed when request.get
+        # is mocked, so it must have been called twice
         assert rubix.spectra.ssp.grid.requests.get.call_count == 2
         rubix.spectra.ssp.grid.requests.get.assert_called_with(
             config["source"] + config["file_name"], verify=False

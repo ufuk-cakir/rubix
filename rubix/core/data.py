@@ -58,6 +58,19 @@ class Galaxy:
     center: Optional[jnp.ndarray] = None
     halfmassrad_stars: Optional[jnp.ndarray] = None
 
+    def __repr__(self):
+        representationString = ["Galaxy:"]
+        for k, v in self.__dict__.items():
+            if not k.endswith("_unit"):
+                if v is not None:
+                    attrString = f"{k}: shape = {v.shape}, dtype = {v.dtype}"
+                    if hasattr(self, k + "_unit") and getattr(self, k + "_unit") != "":
+                        attrString += f", unit = {getattr(self, k + '_unit')}"
+                    representationString.append(attrString)
+                else:
+                    representationString.append(f"{k}: None")
+        return "\n\t".join(representationString)
+
     def tree_flatten(self):
         """
         Flattens the Galaxy object into a tuple of children and auxiliary data
@@ -117,6 +130,19 @@ class StarsData:
     mask: Optional[jnp.ndarray] = None
     spectra: Optional[jnp.ndarray] = None
     datacube: Optional[jnp.ndarray] = None
+
+    def __repr__(self):
+        representationString = ["StarsData:"]
+        for k, v in self.__dict__.items():
+            if not k.endswith("_unit"):
+                if v is not None:
+                    attrString = f"{k}: shape = {v.shape}, dtype = {v.dtype}"
+                    if hasattr(self, k + "_unit") and getattr(self, k + "_unit") != "":
+                        attrString += f", unit = {getattr(self, k + '_unit')}"
+                    representationString.append(attrString)
+                else:
+                    representationString.append(f"{k}: None")
+        return "\n\t".join(representationString)
 
     def tree_flatten(self):
         """
@@ -194,6 +220,19 @@ class GasData:
     spectra: Optional[jnp.ndarray] = None
     datacube: Optional[jnp.ndarray] = None
 
+    def __repr__(self):
+        representationString = ["GasData:"]
+        for k, v in self.__dict__.items():
+            if not k.endswith("_unit"):
+                if v is not None:
+                    attrString = f"{k}: shape = {v.shape}, dtype = {v.dtype}"
+                    if hasattr(self, k + "_unit") and getattr(self, k + "_unit") != "":
+                        attrString += f", unit = {getattr(self, k + '_unit')}"
+                    representationString.append(attrString)
+                else:
+                    representationString.append(f"{k}: None")
+        return "\n\t".join(representationString)
+
     def tree_flatten(self):
         """
         Flattens the Gas object into a tuple of children and auxiliary data
@@ -252,6 +291,13 @@ class RubixData:
     galaxy: Optional[Galaxy] = None
     stars: Optional[StarsData] = None
     gas: Optional[GasData] = None
+
+
+    def __repr__(self):
+        representationString = ["RubixData:"]
+        for k, v in self.__dict__.items():
+            representationString.append("\n\t".join(f"{k}: {v}".split("\n")))
+        return "\n\t".join(representationString)
 
     # def __post_init__(self):
     #    if self.stars is not None:
@@ -370,6 +416,8 @@ def convert_to_rubix(config: Union[dict, str]):
     input_handler = get_input_handler(config, logger=logger)
     input_handler.to_rubix(output_path=config["output_path"])
 
+    print("Converted to Rubix format!")
+
     return config["output_path"]
 
 
@@ -456,18 +504,29 @@ def prepare_input(config: Union[dict, str]) -> RubixData:
     # TODO: maybe also pass the units here, currently this is not used
     data, units = load_galaxy_data(file_path)
 
+    # Create the RubixData object
     rubixdata = RubixData(Galaxy(), StarsData(), GasData())
 
+    # Set the galaxy attributes
     rubixdata.galaxy.redshift = data["redshift"]
+    rubixdata.galaxy.redshift_unit = units["galaxy"]["redshift"]
     rubixdata.galaxy.center = data["subhalo_center"]
+    rubixdata.galaxy.center_unit = units["galaxy"]["center"]
     rubixdata.galaxy.halfmassrad_stars = data["subhalo_halfmassrad_stars"]
+    rubixdata.galaxy.halfmassrad_stars_unit = units["galaxy"]["halfmassrad_stars"]
 
+    # Set the particle attributes
     for partType in config["data"]["args"]["particle_type"]:
         if partType in data["particle_data"]:
             # Convert attributes to JAX arrays and set them on rubixdata
             for attribute, value in data["particle_data"][partType].items():
                 jax_value = jnp.array(value)
                 setattr(getattr(rubixdata, partType), attribute, jax_value)
+                setattr(
+                    getattr(rubixdata, partType),
+                    attribute + "_unit",
+                    units[partType][attribute],
+                )
 
             # Center the particles
             logger.info(f"Centering {partType} particles")

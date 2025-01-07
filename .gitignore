@@ -164,10 +164,9 @@ rubix/spectra/cue/cue/*
 
 rubix/telescope/filters/data/*
 
+utils
+utils/*
 
 .firebaserc
 firebase.json
 .firebase/*
-
-utils
-utils/*

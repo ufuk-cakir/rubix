@@ -1,4 +1,5 @@
 from rubix.telescope.psf.psf import get_psf_kernel, apply_psf
+from rubix.logger import get_logger
 
 from typing import Callable
 from rubix.logger import get_logger
@@ -38,7 +39,7 @@ def get_convolve_psf(config: dict) -> Callable:
     """
 
     logger = get_logger(config.get("logger", None))
-
+    
     # Check if key exists in config file
     if "psf" not in config["telescope"]:
         raise ValueError("PSF configuration not found in telescope configuration")
