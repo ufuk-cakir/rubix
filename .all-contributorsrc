@@ -9,6 +9,32 @@
   "contributorsPerLine": 7,
   "contributors": [
     {
+      "login": "ufuk-cakir",
+      "name": "Ufuk Çakır",
+      "avatar_url": "https://avatars.githubusercontent.com/u/92611643?v=4",
+      "profile": "https://cakir-ufuk.de/",
+      "contributions": [
+        "code",
+        "content",
+        "data",
+        "doc",
+        "design",
+        "example",
+        "ideas",
+        "infra",
+        "maintenance",
+        "plugin",
+        "projectManagement",
+        "question",
+        "research",
+        "review",
+        "tool",
+        "test",
+        "talk",
+        "userTesting"
+      ]
+    },
+    {
       "login": "anschaible",
       "name": "anschaible",
       "avatar_url": "https://avatars.githubusercontent.com/u/131476730?v=4",
@@ -32,6 +58,42 @@
         "test",
         "talk",
         "userTesting"
+      ]
+    },
+    {
+      "login": "TobiBu",
+      "name": "Tobias Buck",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7574273?v=4",
+      "profile": "https://tobibu.github.io",
+      "contributions": [
+        "code",
+        "content",
+        "data",
+        "doc",
+        "design",
+        "example",
+        "ideas",
+        "infra",
+        "maintenance",
+        "plugin",
+        "projectManagement",
+        "question",
+        "research",
+        "review",
+        "tool",
+        "test",
+        "talk",
+        "userTesting",
+        "mentoring"
+      ]
+    },
+    {
+      "login": "robin-janssen",
+      "name": "Robin Janssen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/82322346?v=4",
+      "profile": "https://github.com/robin-janssen",
+      "contributions": [
+        "code"
       ]
     }
   ]

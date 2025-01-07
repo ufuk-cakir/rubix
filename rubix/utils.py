@@ -4,7 +4,6 @@ from astropy.cosmology import Planck15 as cosmo
 import yaml
 import h5py
 from typing import Dict, Union
-from pathlib import Path
 
 
 def get_config(config: Union[str, Dict]) -> Dict:
