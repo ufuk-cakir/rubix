@@ -1,7 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
 import jax.numpy as jnp
-from rubix.pipeline import transformer as transformer
 from rubix.core.pipeline import RubixPipeline
 from rubix.spectra.ssp.grid import SSPGrid
 from rubix.telescope.base import BaseTelescope

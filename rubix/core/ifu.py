@@ -130,7 +130,7 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
         if particle.spectra is not None:
             # Doppler shift based on the velocity of the particle
             doppler_shifted_ssp_wave = doppler_shift(particle.velocity)
-            logger.info(f"Doppler shifting and resampling spectra...")
+            logger.info("Doppler shifting and resampling spectra...")
             logger.debug(f"Doppler Shifted SSP Wave: {doppler_shifted_ssp_wave.shape}")
             logger.debug(f"Telescope Wave Seq: {telescope_wavelength.shape}")
 

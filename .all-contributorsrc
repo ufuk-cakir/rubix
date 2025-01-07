@@ -85,6 +85,14 @@
         "talk",
         "userTesting",
         "mentoring"
+    },
+    {
+      "login": "robin-janssen",
+      "name": "Robin Janssen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/82322346?v=4",
+      "profile": "https://github.com/robin-janssen",
+      "contributions": [
+        "code"
       ]
     }
   ]

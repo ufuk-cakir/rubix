@@ -59,7 +59,6 @@ docs = [
     "sphinx_rtd_theme",
 ]
 
-
 cuda = [
     "jax[cuda]!=0.4.27",
     "jax[cuda]!=0.4.36",]
