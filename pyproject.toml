@@ -37,6 +37,9 @@ dependencies = [
     "interpax",
     "astroquery",
     "beartype",
+    "mpdaf",
+    "ipywidgets",
+    "jdaviz"
 ]
 [project.optional-dependencies]
 tests = [
