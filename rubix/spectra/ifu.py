@@ -2,6 +2,7 @@ import jax.numpy as jnp
 import jax
 from rubix import config
 from jaxtyping import Float, Array
+import numpy as np
 
 from typing import Union
 from jaxtyping import Array, Float, Int, jaxtyped
@@ -42,6 +43,25 @@ def convert_luminoisty_to_flux(
 
 
 @jaxtyped(typechecker=typechecker)
+def convert_luminoisty_to_flux_factor(
+    observation_lum_dist,
+    observation_z,
+    pixel_size,
+    CONSTANTS=config["constants"],
+):
+    """Convert luminosity to flux in units erg/s/cm^2/Angstrom as observed by the telescope"""
+    CONST = np.float64(
+        float(CONSTANTS.get("LSOL_TO_ERG")) / float(CONSTANTS.get("MPC_TO_CM")) ** 2
+    )
+    FACTOR = (
+        CONST
+        / (4 * np.pi * np.float64(observation_lum_dist) ** 2)
+        / (1 + np.float64(observation_z))
+        / np.float64(pixel_size)
+    )
+    FACTOR = jnp.float64(FACTOR)
+    return FACTOR
+
 def cosmological_doppler_shift(
     z: float, wavelength: Float[Array, " n_bins"]
 ) -> Float[Array, " n_bins"]:

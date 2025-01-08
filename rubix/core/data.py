@@ -40,6 +40,29 @@ from beartype import beartype as typechecker
 #        return self.attributes
 
 
+# class Particles:
+#    def __init__(self, particle_data: object):
+#        self.particle_data = particle_data
+#        self.attributes = self._filter_attributes()
+#
+#    def _filter_attributes(self) -> list:
+#        """
+#        Filters the attributes of the particle_data object based on the specified criteria.
+#        """
+#        return [
+#            attr
+#            for attr in dir(self.particle_data)
+#            if not attr.startswith("__")
+#            and not callable(getattr(self.particle_data, attr))
+#        ]
+#
+#    def get_attributes(self) -> list:
+#        """
+#        Returns the filtered attributes.
+#        """
+#        return self.attributes
+
+
 # Registering the dataclass with JAX for automatic tree traversal
 @jaxtyped(typechecker=typechecker)
 @partial(jax.tree_util.register_pytree_node_class)
@@ -291,7 +314,6 @@ class RubixData:
     galaxy: Optional[Galaxy] = None
     stars: Optional[StarsData] = None
     gas: Optional[GasData] = None
-
 
     def __repr__(self):
         representationString = ["RubixData:"]
