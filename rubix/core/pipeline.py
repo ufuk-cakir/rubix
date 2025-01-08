@@ -1,6 +1,8 @@
 import time
 from typing import Union
 
+import jax
+import jax.numpy as jnp
 from jax import block_until_ready
 
 from rubix.logger import get_logger
