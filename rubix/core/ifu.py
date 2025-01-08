@@ -236,6 +236,11 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
             resample_spectrum_pmap = get_resample_spectrum_pmap(telescope_wavelenght)
             # jax.debug.print("doppler shifted ssp wave {}", doppler_shifted_ssp_wave)
             # jax.debug.print("Spectra before resampling {}", inputs["spectra"])
+            if (
+                rubixdata.stars.spectra.shape[0] == 1
+                and rubixdata.stars.spectra.shape[1] == 1
+            ):
+                rubixdata.stars.spectra = jnp.squeeze(rubixdata.stars.spectra, axis=0)
             spectrum_resampled = resample_spectrum_pmap(
                 rubixdata.stars.spectra, doppler_shifted_ssp_wave
             )

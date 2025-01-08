@@ -88,7 +88,9 @@ def moment_of_inertia_tensor(
     >>> from rubix.galaxy.alignment import moment_of_inertia_tensor
     >>> I = moment_of_inertia_tensor(rubixdata.stars.coords, rubixdata.stars.mass, rubixdata.galaxy.half_light_radius)
     """
-
+    if positions.shape[0] == 1 and positions.shape[1] != 3:
+        positions = jnp.squeeze(positions, axis=0)
+        masses = jnp.squeeze(masses, axis=0)
     distances = jnp.sqrt(
         jnp.sum(positions**2, axis=1)
     )  # Direct calculation since positions are already centered

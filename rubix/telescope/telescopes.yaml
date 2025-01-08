@@ -150,9 +150,9 @@ CALIFA:
 
 TESTGRADIENT:
   fov: 2.0
-  spatial_res: 1.0
+  spatial_res: 2.0
   wave_range: [4000.0, 9500.0]
-  wave_res: 100.0
+  wave_res: 1000.0
   lsf_fwhm: 2.51
   signal_to_noise: null
   aperture_type: "square"

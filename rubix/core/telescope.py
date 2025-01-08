@@ -107,6 +107,11 @@ def get_spaxel_assignment(config: dict) -> Callable:
     def spaxel_assignment(rubixdata: object) -> object:
         logger.info("Assigning particles to spaxels...")
         if rubixdata.stars.coords is not None:
+            if (
+                rubixdata.stars.coords.shape[0] == 1
+                and rubixdata.stars.coords.shape[1] != 3
+            ):
+                rubixdata.stars.coords = jnp.squeeze(rubixdata.stars.coords, axis=0)
             pixel_assignment = square_spaxel_assignment(
                 rubixdata.stars.coords, spatial_bin_edges
             )

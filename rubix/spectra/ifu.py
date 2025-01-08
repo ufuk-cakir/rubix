@@ -186,6 +186,8 @@ def velocity_doppler_shift(
     Returns:
         The Doppler shifted wavelength in Angstrom (array-like).
     """
+    if velocity.shape[0] == 1:
+        velocity = jnp.squeeze(velocity, axis=0)
     # Vmap the function to handle multiple velocities with the same wavelength
     return jax.vmap(
         lambda v: _velocity_doppler_shift_single(
