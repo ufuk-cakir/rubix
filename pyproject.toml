@@ -36,6 +36,9 @@ dependencies = [
     "jax[cpu]!=0.4.36",
     "interpax",
     "astroquery",
+    "mpdaf",
+    "ipywidgets",
+    "jdaviz"
 ]
 [project.optional-dependencies]
 tests = [
