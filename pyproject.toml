@@ -36,6 +36,7 @@ dependencies = [
     "jax[cpu]!=0.4.36",
     "interpax",
     "astroquery",
+    "beartype",
     "mpdaf",
     "ipywidgets",
     "jdaviz"

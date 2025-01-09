@@ -1,6 +1,5 @@
 import jax.numpy as jnp
 import jax
-from jaxtyping import Float, Array
 import equinox as eqx
 from rubix.telescope.utils import (
     calculate_spatial_bin_edges,
@@ -9,22 +8,59 @@ from rubix.telescope.utils import (
 )
 from rubix.telescope.base import BaseTelescope
 from rubix.telescope.factory import TelescopeFactory
+from rubix.logger import get_logger
 from .cosmology import get_cosmology
 from .data import RubixData
-from typing import Callable, List
+from typing import Callable, List, Union
 
+from jaxtyping import Array, Float, jaxtyped
+from beartype import beartype as typechecker
 
-def get_telescope(config: dict) -> BaseTelescope:
-    """Get the telescope object based on the configuration."""
+@jaxtyped(typechecker=typechecker)
+def get_telescope(config: Union[str, dict]) -> BaseTelescope:
+    """
+    Get the telescope object based on the configuration.
+
+    Args:
+        config (dict): Configuration dictionary.
+
+    Returns:
+        The telescope object.
+
+    Example
+    -------
+    >>> from rubix.core.telescope import get_telescope
+    >>> config = {
+    ...     "telescope":
+    ...         {"name": "MUSE"},
+    ...     }
+    >>> telescope = get_telescope(config)
+    >>> print(telescope)
+    """
     # TODO: this currently only loads telescope that are supported.
     # add support for custom telescopes
     factory = TelescopeFactory()
     telescope = factory.create_telescope(config["telescope"]["name"])
+    if not isinstance(telescope, BaseTelescope):
+        raise TypeError(f"Expected type BaseTelescope, but got {type(telescope)}")
     return telescope
 
 
-def get_spatial_bin_edges(config: dict) -> Float[Array, " n_bins"]:
-    """Get the spatial bin edges based on the configuration."""
+@jaxtyped(typechecker=typechecker)
+def get_spatial_bin_edges(config: dict) -> Float[Array, "n_bins"]:
+    """
+    Get the spatial bin edges based on the configuration.
+
+    Args:
+        config (dict): Configuration dictionary.
+
+    Returns:
+        The spatial bin edges.
+    """
+    logger = get_logger(config.get("logger", None))
+
+    logger.info("Calculating spatial bin edges...")
+
     telescope = get_telescope(config)
     galaxy_dist_z = config["galaxy"]["dist_z"]
     cosmology = get_cosmology(config)
@@ -40,36 +76,79 @@ def get_spatial_bin_edges(config: dict) -> Float[Array, " n_bins"]:
     return spatial_bin_edges
 
 
+@jaxtyped(typechecker=typechecker)
 def get_spaxel_assignment(config: dict) -> Callable:
-    """Get the spaxel assignment function based on the configuration."""
+    """
+    Get the spaxel assignment function based on the configuration.
+
+    Args:
+        config (dict): Configuration dictionary.
+
+    Returns:
+        The spaxel assignment function.
+
+    Example
+    -------
+    >>> from rubix.core.telescope import get_spaxel_assignment
+    >>> bin_particles = get_spaxel_assignment(config)
+
+    >>> rubixdata = bin_particles(rubixdata)
+
+    >>> print(rubixdata.stars.pixel_assignment)
+    >>> print(rubixdata.stars.spatial_bin_edges)
+    """
+    logger = get_logger(config.get("logger", None))
+
     telescope = get_telescope(config)
     if telescope.pixel_type not in ["square"]:
         raise ValueError(f"Pixel type {telescope.pixel_type} not supported")
     spatial_bin_edges = get_spatial_bin_edges(config)
 
     def spaxel_assignment(rubixdata: RubixData) -> RubixData:
-        def assign_particle(particle):
-            if particle.coords is not None:
-                pixel_assignment = square_spaxel_assignment(
-                    particle.coords, spatial_bin_edges
-                )
-                particle.pixel_assignment = pixel_assignment
-                particle.spatial_bin_edges = spatial_bin_edges
-            return particle
-
-        rubixdata.stars = assign_particle(rubixdata.stars)
-        rubixdata.gas = assign_particle(rubixdata.gas)
+        logger.info("Assigning particles to spaxels...")
+        if rubixdata.stars.coords is not None:
+            pixel_assignment = square_spaxel_assignment(
+                rubixdata.stars.coords, spatial_bin_edges
+            )
+            rubixdata.stars.pixel_assignment = pixel_assignment
+            rubixdata.stars.spatial_bin_edges = spatial_bin_edges
+        
+        if rubixdata.gas.coords is not None:
+            pixel_assignment = square_spaxel_assignment(
+                rubixdata.gas.coords, spatial_bin_edges
+            )
+            rubixdata.gas.pixel_assignment = pixel_assignment
+            rubixdata.gas.spatial_bin_edges = spatial_bin_edges
 
         return rubixdata
 
     return spaxel_assignment
 
 
-def get_filter_particles(config: dict):
-    """Get the function to filter particles outside the aperture."""
+@jaxtyped(typechecker=typechecker)
+def get_filter_particles(config: dict) -> Callable:
+    """
+    Get the function to filter particles outside the aperture.
+
+    Args:
+        config (dict): Configuration dictionary.
+
+    Returns:
+        The filter particles function
+
+    Example
+    -------
+    >>> from rubix.core.telescope import get_filter_particles
+    >>> filter_particles = get_filter_particles(config)
+
+    >>> rubixdata = filter_particles(rubixdata)
+    """
+    logger = get_logger(config.get("logger", None))
+
     spatial_bin_edges = get_spatial_bin_edges(config)
 
     def filter_particles(rubixdata: RubixData) -> RubixData:
+        logger.info("Filtering particles outside the aperture...")
         if "stars" in config["data"]["args"]["particle_type"]:
             # if rubixdata.stars.coords is not None:
             mask = mask_particles_outside_aperture(
@@ -117,30 +196,3 @@ def get_filter_particles(config: dict):
         return rubixdata
 
     return filter_particles
-
-
-# def get_split_data(config: dict, n_particles) -> Callable:
-#     telescope = get_telescope(config)
-#     n_pixels = telescope.sbin**2
-#
-#     def split_data(input_data: dict) -> dict:
-#         # Split the data into two parts
-#
-#         masses, metallicity, ages = restructure_data(
-#             input_data["mass"],
-#             input_data["metallicity"],
-#             input_data["age"],
-#             input_data["pixel_assignment"],
-#             n_pixels,
-#             # n_particles,
-#         )
-#
-#         # Reshape the data to match the number of GPUs
-#
-#         input_data["masses"] = masses
-#         input_data["metallicity"] = metallicity
-#         input_data["age"] = ages
-#
-#         return input_data
-#
-#     return split_data

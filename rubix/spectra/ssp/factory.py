@@ -5,20 +5,26 @@ from rubix import config as rubix_config
 from rubix.paths import TEMPLATE_PATH
 from rubix.logger import get_logger
 
+from jaxtyping import Array, Float, jaxtyped
+from beartype import beartype as typechecker
 
+
+@jaxtyped(typechecker=typechecker)
 def get_ssp_template(template: str) -> SSPGrid:
     """
     Get the SSP template from the configuration file.
 
-    Parameters
-    ----------
-    template : str
-        The template name of the SSP template.
+    Args:
+        template (str): The template name of the SSP template.
 
-    Returns
+    Returns:
+        The SSP template as `SSPGrid`.
+
+    Example
     -------
-    SSPGrid
-        The SSP template.
+    >>> from rubix.spectra.ssp.factory import get_ssp_template
+    >>> ssp = get_ssp_template("FSPS")
+    >>> ssp.age.shape
     """
 
     config = rubix_config["ssp"]["templates"]

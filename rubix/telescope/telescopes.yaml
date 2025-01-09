@@ -1,6 +1,6 @@
 #fov in arcsec!
 MUSE:
-  fov: 5
+  fov: 5.0
   spatial_res: 0.2
   wave_range: [4700.15, 9351.4]
   wave_res: 1.25

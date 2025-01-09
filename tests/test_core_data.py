@@ -9,6 +9,7 @@ from rubix.core.data import (
     get_rubix_data,
     get_reshape_data,
 )
+from rubix.core.data import RubixData, Galaxy, StarsData, GasData
 
 # Mock configuration for tests
 config_dict = {
@@ -23,41 +24,6 @@ config_dict = {
 }
 
 config_path = "path/to/config.yaml"
-
-
-class RubixData:
-    def __init__(self, galaxy, stars, gas):
-        self.galaxy = galaxy
-        self.stars = stars
-        self.gas = gas
-
-
-class Galaxy:
-    def __init__(self):
-        self.redshift = None
-        self.center = None
-        self.halfmassrad_stars = None
-
-
-class StarsData:
-    def __init__(self):
-        self.coords = None
-        self.velocity = None
-        self.metallicity = None
-        self.mass = None
-        self.age = None
-
-
-class GasData:
-    def __init__(self):
-        self.coords = None
-        self.velocity = None
-        self.mass = None
-        self.density = None
-        self.internal_energy = None
-        self.metallicity = None
-        self.sfr = None
-        self.electron_abundance = None
 
 
 # Test convert_to_rubix function
@@ -173,6 +139,7 @@ def test_prepare_input(mock_center_particles, mock_path_join):
         )
 
 
+
 @patch("rubix.core.data.os.path.join")
 @patch("rubix.core.data.center_particles")
 @patch("rubix.core.data.get_logger")
@@ -180,7 +147,10 @@ def test_prepare_input(mock_center_particles, mock_path_join):
 def test_prepare_input_subset_case(
     mock_load_galaxy_data, mock_get_logger, mock_center_particles, mock_path_join
 ):
+    # Mock output path
     mock_path_join.return_value = "/path/to/output/rubix_galaxy.h5"
+
+    # Mock particle and galaxy data
     particle_data = {
         "particle_data": {
             "stars": {
@@ -219,6 +189,7 @@ def test_prepare_input_subset_case(
     mock_center_particles.return_value.stars.age = jnp.array([4.5, 5.5, 6.5])
     mock_center_particles.return_value.galaxy.halfmassrad_stars = 1
 
+    # Config with subset enabled
     config_dict = {
         "data": {
             "name": "IllustrisAPI",
@@ -231,8 +202,10 @@ def test_prepare_input_subset_case(
         "logger": {"log_level": "DEBUG", "log_file_path": None},
     }
 
+    # Call prepare_input
     rubixdata = prepare_input(config_dict)
 
+    # Check that only 2 entries are present due to subset
     assert rubixdata.stars.coords.shape[0] == 2
     assert rubixdata.stars.velocity.shape[0] == 2
     assert rubixdata.stars.metallicity.shape[0] == 2
@@ -240,6 +213,7 @@ def test_prepare_input_subset_case(
     assert rubixdata.stars.age.shape[0] == 2
     assert rubixdata.galaxy.halfmassrad_stars == 1
 
+    # Verify path join was called with correct arguments
     assert (
         call(config_dict["output_path"], "rubix_galaxy.h5")
         in mock_path_join.call_args_list
@@ -274,83 +248,35 @@ def test_reshape_array_padding(monkeypatch):
 @patch("rubix.core.data.prepare_input")
 def test_get_rubix_data(mock_prepare_input, mock_convert_to_rubix):
     config = {"output_path": "/path/to/output"}
-    mock_prepare_input.return_value = "prepared_data"
 
+    # Mock the prepare_input function to return a RubixData instance
+    mock_rubix_data = RubixData(
+        galaxy=Galaxy(),
+        stars=StarsData(),
+        gas=GasData(),
+    )
+    mock_prepare_input.return_value = mock_rubix_data
+
+    # Call the function
     result = get_rubix_data(config)
 
+    # Assert that convert_to_rubix and prepare_input are called correctly
     mock_convert_to_rubix.assert_called_once_with(config)
     mock_prepare_input.assert_called_once_with(config)
-    assert result == "prepared_data"
 
-
-"""
-@patch("rubix.core.data.reshape_array")
-def test_get_reshape_data(mock_reshape_array):
-    config = {}
-    reshape_func = get_reshape_data(config)
-
-    input_data = {
-        "coords": jnp.array([[1, 2], [3, 4]]),
-        "velocities": jnp.array([[5, 6], [7, 8]]),
-        "metallicity": jnp.array([0.1, 0.2]),
-        "mass": jnp.array([1000, 2000]),
-        "age": jnp.array([4.5, 5.5]),
-        "pixel_assignment": jnp.array([0, 1]),
-    }
-
-    reshaped_data = {
-        "coords": jnp.array([[1, 2]]),
-        "velocities": jnp.array([[5, 6]]),
-        "metallicity": jnp.array([0.1]),
-        "mass": jnp.array([1000]),
-        "age": jnp.array([4.5]),
-        "pixel_assignment": jnp.array([0]),
-    }
-
-    mock_reshape_array.side_effect = lambda x: reshaped_data[
-        [k for k, v in input_data.items() if jnp.array_equal(v, x)][0]
-    ]
-
-    result = reshape_func(input_data)
-
-    for key in input_data:
-        assert jnp.array_equal(result[key], reshaped_data[key])
-
-    # Print calls to mock_reshape_array
-    print("Calls to mock_reshape_array:")
-    for calls in mock_reshape_array.call_args_list:
-        print(calls)
-"""
-
-
-class MockRubixData:
-    def __init__(self, stars, gas):
-        self.stars = stars
-        self.gas = gas
-
-
-class MockStarsData:
-    def __init__(self, coords, velocity, metallicity, mass, age, pixel_assignment):
-        self.coords = coords
-        self.velocity = velocity
-        self.metallicity = metallicity
-        self.mass = mass
-        self.age = age
-        self.pixel_assignment = pixel_assignment
-
-
-class MockGasData:
-    def __init__(self, coords=None):
-        self.coords = coords
+    # Assert that the result is the mocked RubixData object
+    assert result == mock_rubix_data
 
 
 @patch("rubix.core.data.reshape_array")
 def test_get_reshape_data(mock_reshape_array):
+    # Configuration (if required)
     config = {}
     reshape_func = get_reshape_data(config)
 
-    input_data = MockRubixData(
-        MockStarsData(
+    # Mock input data for the function
+    input_data = RubixData(
+        stars=StarsData(
             coords=jnp.array([[1, 2], [3, 4]]),
             velocity=jnp.array([[5, 6], [7, 8]]),
             metallicity=jnp.array([0.1, 0.2]),
@@ -358,11 +284,12 @@ def test_get_reshape_data(mock_reshape_array):
             age=jnp.array([4.5, 5.5]),
             pixel_assignment=jnp.array([0, 1]),
         ),
-        MockGasData(coords=None),
+        gas=GasData(velocity=None),
     )
 
-    reshaped_data = MockRubixData(
-        MockStarsData(
+    # Expected reshaped data
+    reshaped_data = RubixData(
+        stars=StarsData(
             coords=jnp.array([[1, 2]]),
             velocity=jnp.array([[5, 6]]),
             metallicity=jnp.array([0.1]),
@@ -370,22 +297,26 @@ def test_get_reshape_data(mock_reshape_array):
             age=jnp.array([4.5]),
             pixel_assignment=jnp.array([0]),
         ),
-        MockGasData(coords=None),
+        gas=GasData(velocity=None),
     )
 
+    # Define the side effect for the mock to simulate reshaping
     def side_effect(x):
-        for k, v in input_data.stars.__dict__.items():
-            if jnp.array_equal(v, x):
-                return reshaped_data.stars.__dict__[k]
-        for k, v in input_data.gas.__dict__.items():
-            if jnp.array_equal(v, x):
-                return reshaped_data.gas.__dict__[k]
+        # Match the input field with the reshaped data's equivalent field
+        for field, value in input_data.stars.__dict__.items():
+            if jnp.array_equal(value, x):
+                return getattr(reshaped_data.stars, field)
+        for field, value in input_data.gas.__dict__.items():
+            if jnp.array_equal(value, x):
+                return getattr(reshaped_data.gas, field)
         return None
 
     mock_reshape_array.side_effect = side_effect
 
+    # Call the reshape function
     result = reshape_func(input_data)
 
+    # Assertions to verify correctness
     assert jnp.array_equal(result.stars.coords, reshaped_data.stars.coords)
     assert jnp.array_equal(result.stars.velocity, reshaped_data.stars.velocity)
     assert jnp.array_equal(result.stars.metallicity, reshaped_data.stars.metallicity)
@@ -394,42 +325,4 @@ def test_get_reshape_data(mock_reshape_array):
     assert jnp.array_equal(
         result.stars.pixel_assignment, reshaped_data.stars.pixel_assignment
     )
-
-
-# # Test prepare_input function
-# @patch("rubix.core.data.os.path.join")
-# @patch("rubix.core.data.center_particles")
-# def test_prepare_input(mock_center_particles, mock_path_join):
-#     mock_path_join.return_value = "/path/to/output/rubix_galaxy.h5"
-#     particle_data = {
-#         "particle_data": {
-#             "stars": {
-#                 "coords": [[1, 2, 3]],
-#                 "velocity": [[4, 5, 6]],
-#                 "metallicity": [0.1],
-#                 "mass": [1000],
-#                 "age": [4.5],
-#             },
-#         },
-#         "subhalo_center": [0, 0, 0],
-#     }
-#     units = {
-#         "galaxy": {"center": "kpc", "halfmassrad_stars": "kpc", "redshift": ""},
-#         "stars": {"mass": "Msun"},
-#     }
-#     mock_load_galaxy_data = (particle_data, units)
-#     with patch("rubix.core.data.load_galaxy_data", return_value=mock_load_galaxy_data):
-#         mock_center_particles.return_value = ([[1, 2, 3]], [[4, 5, 6]])
-#
-#         coords, velocities, metallicity, mass, age = prepare_input(config_dict)
-#
-#         assert coords == [[1, 2, 3]]
-#         assert velocities == [[4, 5, 6]]
-#         assert metallicity == [0.1]
-#         assert mass == [1000]
-#         assert age == [4.5]
-#
-#         mock_path_join.assert_called_once_with(
-#             config_dict["output_path"], "rubix_galaxy.h5"
-#         )
-#         mock_center_particles.assert_called_once()
+    assert result.gas.velocity == reshaped_data.gas.velocity
