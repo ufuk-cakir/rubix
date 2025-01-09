@@ -138,24 +138,36 @@ class NihaoHandler(BaseHandler):
         return halfmass_radius
 
     def get_units(self):
-        """Define and return units for all quantities based on the YAML config."""
+        """
+        Define and return units for all quantities based on the YAML config.
+        We look up each unit string in our unit_map and store it.
+        """
         unit_map = {
             "Msun": u.M_sun,
             "Gyr": u.Gyr,
             "Zsun": u.Unit("Zsun"),
             "kpc": u.kpc,
             "km/s": u.km / u.s,
-            "Msun/kpc^3": u.M_sun / u.kpc**3,
+            "Msun/kpc^3": u.M_sun / (u.kpc**3),
             "Msun/yr": u.M_sun / u.yr,
             "erg/g": u.erg / u.g,
             "K": u.K,
             "dimensionless": u.dimensionless_unscaled,
         }
-        units_config = self.nihao_config["units"]
-        return {
-            category: {
-                field: unit_map[unit]
-                for field, unit in fields.items()
-            }
-            for category, fields in units_config.items()
-        }
+    
+        units_config = self.nihao_config.get("units", {})
+        converted_units = {}
+    
+        for category, fields in units_config.items():
+            converted_units[category] = {}
+            for field, unit_str in fields.items():
+                if unit_str not in unit_map:
+                    self.logger.warning(
+                        f"Unit '{unit_str}' for '{category}.{field}' not recognized. "
+                        "Using dimensionless."
+                    )
+                    converted_units[category][field] = u.dimensionless_unscaled
+                else:
+                    converted_units[category][field] = unit_map[unit_str]
+        
+        return converted_units
