@@ -65,19 +65,26 @@ class NihaoHandler(BaseHandler):
         self.logger.info(
             f"NIHAO snapshot and halo data loaded successfully for classes: {load_classes}."
         )
-    def load_particle_data(self, sim, fields, units, particle_type):
-        """Helper function to load particle data for a given particle type."""
+    def load_particle_data(self, sim_class, fields, units, particle_type):
+        """
+        Helper function to load particle data for a given particle class (stars/gas/dm).
+        We check if each field is in the simulation's loadable keys.
+        If it's missing, we log a warning and create a zero array (with correct shape & units).
+        """
         data = {}
+        loadable = sim_class.loadable_keys()
+
         for field, sim_field in fields.items():
-            if field == "internal_energy" and "temp" in sim.loadable_keys():
-                # Derive internal energy using pynbody's 'u'
-                data[field] = np.array(sim["u"]) * units[field]
-                self.logger.info("Derived internal energy from temperature.")
-            elif sim_field in sim.loadable_keys():
-                data[field] = np.array(sim[sim_field]) * units[field]
+            if sim_field in loadable:
+                # For NIHAO, temperature is directly available as "temp" (if requested).
+                data[field] = np.array(sim_class[sim_field]) * units.get(field, u.dimensionless_unscaled)
             else:
-                self.logger.warning(f"Field {field} ({sim_field}) not found for {particle_type}. Assigning zeros.")
-                data[field] = np.zeros(len(sim)) * units.get(field, u.dimensionless_unscaled)
+                self.logger.warning(
+                    f"Field '{field}' -> '{sim_field}' not found for {particle_type}. "
+                    "Assigning zeros."
+                )
+                data[field] = np.zeros(len(sim_class)) * units.get(field, u.dimensionless_unscaled)
+
         return data
     
     def get_halo_data(self):
