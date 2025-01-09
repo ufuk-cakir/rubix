@@ -45,11 +45,10 @@ class NihaoHandler(BaseHandler):
     def load_data(self):
         """Load data from snapshot and halo file (if available)."""
         self.sim = pynbody.load(self.path)
-        self.halos = self.sim.halos()
         self.sim.physical_units()
 
-        pynbody.analysis.center(self.halos[0])
-        pynbody.analysis.faceon(self.halos[0])
+        pynbody.analysis.center(self.sim)
+        pynbody.analysis.faceon(self.sim)
 
         fields = self.nihao_config["fields"]
         load_classes = self.nihao_config.get("load_classes", ["stars", "gas", "dm"])
