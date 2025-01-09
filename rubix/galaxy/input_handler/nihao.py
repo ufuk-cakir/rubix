@@ -107,7 +107,7 @@ class NihaoHandler(BaseHandler):
         else:
             halfmassrad_stars = None
             self.logger.warning("No star data available to calculate the half-mass radius.")
-        redshift = self.nihao_config.get("redshift", 0.1)
+        redshift = self.config["galaxy"].get("dist_z", 0.1)
 
         return {
             "redshift": redshift,
