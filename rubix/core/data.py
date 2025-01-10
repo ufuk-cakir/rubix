@@ -7,6 +7,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from jaxtyping import Array, Float
+import pickle
 
 from rubix.galaxy import IllustrisAPI, get_input_handler
 from rubix.galaxy.alignment import center_particles
@@ -426,75 +427,76 @@ def prepare_input(config: Union[dict, str]) -> object:
 
     logger_config = config["logger"] if "logger" in config else None  # type:ignore
     logger = get_logger(logger_config)
-    file_path = config["output_path"]
-    file_path = os.path.join(file_path, "rubix_galaxy.h5")
 
-    # Load the data from the file
-    data, units = load_galaxy_data(file_path)
+    if config["output_modified"] == False:
+        file_path = config["output_path"]
+        file_path = os.path.join(file_path, "rubix_galaxy.h5")
 
-    # Load the data from the file
-    # TODO: maybe also pass the units here, currently this is not used
-    data, units = load_galaxy_data(file_path)
+        # Load the data from the file
+        # TODO: maybe also pass the units here, currently this is not used
+        data, units = load_galaxy_data(file_path)
 
-    rubixdata = RubixData(Galaxy(), StarsData(), GasData())
+        rubixdata = RubixData(Galaxy(), StarsData(), GasData())
 
-    rubixdata.galaxy.redshift = data["redshift"]
-    rubixdata.galaxy.center = data["subhalo_center"]
-    rubixdata.galaxy.halfmassrad_stars = data["subhalo_halfmassrad_stars"]
+        rubixdata.galaxy.redshift = data["redshift"]
+        rubixdata.galaxy.center = data["subhalo_center"]
+        rubixdata.galaxy.halfmassrad_stars = data["subhalo_halfmassrad_stars"]
 
-    for partType in config["data"]["args"]["particle_type"]:
-        if partType in data["particle_data"]:
-            # Convert attributes to JAX arrays and set them on rubixdata
-            for attribute, value in data["particle_data"][partType].items():
-                jax_value = jnp.array(value)
-                setattr(getattr(rubixdata, partType), attribute, jax_value)
+        for partType in config["data"]["args"]["particle_type"]:
+            if partType in data["particle_data"]:
+                # Convert attributes to JAX arrays and set them on rubixdata
+                for attribute, value in data["particle_data"][partType].items():
+                    jax_value = jnp.array(value)
+                    setattr(getattr(rubixdata, partType), attribute, jax_value)
 
-            # Center the particles
-            logger.info(f"Centering {partType} particles")
-            rubixdata = center_particles(rubixdata, partType)
+                # Center the particles
+                logger.info(f"Centering {partType} particles")
+                rubixdata = center_particles(rubixdata, partType)
 
-            if (
-                "data" in config
-                and "subset" in config["data"]
-                and config["data"]["subset"]["use_subset"]
-            ):
-                size = config["data"]["subset"]["subset_size"]
-                # Randomly sample indices
-                # Set random seed for reproducibility
-                np.random.seed(42)
-                if rubixdata.stars.coords is not None:
-                    indices = np.random.choice(
-                        np.arange(len(rubixdata.stars.coords)),
-                        size=size,  # type:ignore
-                        replace=False,
-                    )  # type:ignore
-                else:
-                    indices = np.random.choice(
-                        np.arange(len(rubixdata.gas.coords)),
-                        size=size,  # type:ignore
-                        replace=False,
+                if (
+                    "data" in config
+                    and "subset" in config["data"]
+                    and config["data"]["subset"]["use_subset"]
+                ):
+                    size = config["data"]["subset"]["subset_size"]
+                    # Randomly sample indices
+                    # Set random seed for reproducibility
+                    np.random.seed(42)
+                    if rubixdata.stars.coords is not None:
+                        indices = np.random.choice(
+                            np.arange(len(rubixdata.stars.coords)),
+                            size=size,  # type:ignore
+                            replace=False,
+                        )  # type:ignore
+                    else:
+                        indices = np.random.choice(
+                            np.arange(len(rubixdata.gas.coords)),
+                            size=size,  # type:ignore
+                            replace=False,
+                        )
+                    # Subset the attributes
+                    jax_indices = jnp.array(indices)
+                    for attribute in data["particle_data"][partType].keys():
+                        attr_value = getattr(getattr(rubixdata, partType), attribute)
+                        if attr_value.ndim == 2:  # For attributes with shape (N, 3)
+                            setattr(
+                                getattr(rubixdata, partType),
+                                attribute,
+                                attr_value[jax_indices, :],
+                            )
+                        else:  # For attributes with shape (N,)
+                            setattr(
+                                getattr(rubixdata, partType),
+                                attribute,
+                                attr_value[jax_indices],
+                            )
+
+                    # Log the subset warning
+                    logger.warning(
+                        f"The Subset value is set in config. Using only subset of size {size} for {partType}"
                     )
-                # Subset the attributes
-                jax_indices = jnp.array(indices)
-                for attribute in data["particle_data"][partType].keys():
-                    attr_value = getattr(getattr(rubixdata, partType), attribute)
-                    if attr_value.ndim == 2:  # For attributes with shape (N, 3)
-                        setattr(
-                            getattr(rubixdata, partType),
-                            attribute,
-                            attr_value[jax_indices, :],
-                        )
-                    else:  # For attributes with shape (N,)
-                        setattr(
-                            getattr(rubixdata, partType),
-                            attribute,
-                            attr_value[jax_indices],
-                        )
-
-                # Log the subset warning
-                logger.warning(
-                    f"The Subset value is set in config. Using only subset of size {size} for {partType}"
-                )
+    elif config["output_modified"] == True:
+        rubixdata = pickle.load(open(config["modified_path"], "rb"))
 
     return rubixdata
 
