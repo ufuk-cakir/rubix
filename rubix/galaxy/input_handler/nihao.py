@@ -26,13 +26,32 @@ class NihaoHandler(BaseHandler):
         self.load_data()
 
     def _load_config(self):
-        """Load the YAML configuration."""
-        config_path = os.path.join(
-            os.path.dirname(__file__),
-            "../../config/nihao_config.yml" 
-        )
+        """
+        Load the NIHAO YAML configuration.
+        Check for an environment variable (RUBIX_NIHAO_CONFIG) to specify the config path.
+        If not set, fall back to the default relative path.
+        """
+        # Check for environment variable
+        env_config_path = os.environ.get("RUBIX_NIHAO_CONFIG", "")
+
+        if env_config_path:
+            self.logger.info(f"Using environment-specified config path: {env_config_path}")
+            config_path = env_config_path
+        else:
+            # Default to the relative path
+            config_path = os.path.join(
+                os.path.dirname(__file__),
+                "../../config/nihao_config.yml"
+            )
+
+        # Check if the config file exists
         if not os.path.exists(config_path):
-            raise FileNotFoundError(f"Config file not found: {config_path}")
+            raise FileNotFoundError(
+                f"NIHAO config file not found at: {config_path}. "
+                "Ensure the file exists or set the RUBIX_NIHAO_CONFIG environment variable."
+            )
+
+        # Load the YAML config
         with open(config_path, "r") as file:
             return yaml.safe_load(file)
 
