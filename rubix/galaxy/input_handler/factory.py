@@ -16,8 +16,11 @@ def get_input_handler(config: dict, logger=None) -> BaseHandler:
         logger.info("Using IllustrisHandler")
         return IllustrisHandler(**config["simulation"]["args"], logger=logger)
     elif simulation_name == "NIHAO":
-        logger.info("Using NihaoHandler")
-        return NihaoHandler(**config["simulation"]["args"], logger=logger)
+        logger.info("Using NihaoHandler")        
+        simulation_args = config["simulation"]["args"]
+        if "galaxy" in config and "dist_z" in config["galaxy"]:
+            simulation_args["dist_z"] = config["galaxy"]["dist_z"] 
+        return NihaoHandler(**simulation_args, logger=logger)
     else:
         logger.error(f"Simulation {config['simulation']} is not supported")
         raise ValueError(f"Simulation {config['simulation']} is not supported")
