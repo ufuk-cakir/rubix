@@ -64,6 +64,9 @@ def mock_config():
                 'halfmassrad_stars': 'kpc'
             }
         },
+        'galaxy': { 
+            'dist_z': 0.1
+        }
     }
 
 @pytest.fixture
@@ -118,8 +121,8 @@ def handler_with_mock_data(mock_simulation, mock_config):
     pynbody.load = MagicMock(return_value=mock_simulation)
     pynbody.analysis.center = MagicMock()
     pynbody.analysis.faceon = MagicMock()
-
-    handler = NihaoHandler(path="mock_path", halo_path="mock_halo_path", config=mock_config)
+    dist_z = mock_config["galaxy"]["dist_z"]
+    handler = NihaoHandler(path="mock_path", halo_path="mock_halo_path", config=mock_config, dist_z=dist_z)
     handler.sim = mock_simulation
     handler.center = np.array([0, 0, 0])
 
