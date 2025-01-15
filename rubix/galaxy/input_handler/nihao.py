@@ -11,13 +11,15 @@ Zsun = u.def_unit("Zsun", u.dimensionless_unscaled)
 u.add_enabled_units(Zsun)
 
 class NihaoHandler(BaseHandler):
-    def __init__(self, path, halo_path=None, logger=None, config=None):
+    def __init__(self, path, halo_path=None, logger=None, config=None, dist_z=None):
         """Initialize handler with paths to snapshot and halo files."""
         self.path = path
         self.halo_path = halo_path
         self.nihao_config = config or self._load_config()
         self.logger = logger or self._default_logger()
         super().__init__()
+        self.dist_z = dist_z
+        self.logger.info(f"Galaxy redshift (dist_z) set to: {self.dist_z}")
         if "dm" not in self.config["particles"]:
             self.config["particles"]["dm"] = {}
 
@@ -126,10 +128,9 @@ class NihaoHandler(BaseHandler):
         else:
             halfmassrad_stars = None
             self.logger.warning("No star data available to calculate the half-mass radius.")
-        redshift = self.config["galaxy"].get("dist_z", 0.1)
 
         return {
-            "redshift": redshift,
+            "redshift": self.dist_z,
             "center": [0, 0, 0],
             "halfmassrad_stars": halfmassrad_stars,
         }
