@@ -238,8 +238,8 @@ def star_coords_2D(h5_file):
     y = star_coords[:, 1]
     plt.figure(figsize=(8, 8))
     plt.scatter(x, y, s=1, alpha=0.5)
-    plt.xlabel(r"$x$ [kpc]")
-    plt.ylabel(r"$y$ [kpc]")
+    plt.xlabel("x [kpc]")
+    plt.ylabel("y [kpc]")
     plt.grid(True)
     plt.show()
 
