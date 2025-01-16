@@ -1,0 +1,45 @@
+# fields to be read from the data files
+fields:
+  stars:
+    age: "tform"
+    mass: "mass"
+    metallicity: "metals"
+    coords: "pos"
+    velocity: "vel"
+  gas:
+    density: "rho"
+    temperature: "temp"
+    metallicity: "metals"
+    coords: "pos"
+    velocity: "vel"
+    mass: "mass"
+    sfr: "sfr"
+    internal_energy: "u"
+    electron_abundance: "electron_abundance"
+  dm:
+    mass: "mass"
+
+# units for the fields
+units:
+  stars:
+    mass: "Msun"
+    age: "Gyr"
+    metallicity: "Zsun"
+    coords: "kpc"
+    velocity: "km/s"
+  gas:
+    density: "Msun/kpc^3"
+    temperature: "K"
+    metallicity: "Zsun"
+    coords: "kpc"
+    velocity: "km/s"
+    mass: "Msun"
+    sfr: "Msun/yr"
+    internal_energy: "erg/g"
+    electron_abundance: "dimensionless"
+  dm:
+    mass: "Msun"
+  galaxy:
+    redshift: "dimensionless"
+    center: "kpc"
+    halfmassrad_stars: "kpc"
