@@ -12,10 +12,11 @@ u.add_enabled_units(Zsun)
 
 
 class PynbodyHandler(BaseHandler):
-    def __init__(self, path, halo_path=None, logger=None, config=None, dist_z=None):
+    def __init__(self, path, halo_path=None, logger=None, config=None, dist_z=None, halo_id=None):
         """Initialize handler with paths to snapshot and halo files."""
         self.path = path
         self.halo_path = halo_path
+        self.halo_id = halo_id
         self.pynbody_config = config or self._load_config()
         self.logger = logger or self._default_logger()
         super().__init__()
@@ -72,8 +73,10 @@ class PynbodyHandler(BaseHandler):
         self.sim = pynbody.load(self.path)
         self.sim.physical_units()
 
-        pynbody.analysis.center(self.sim)
-        pynbody.analysis.faceon(self.sim)
+        halo = self.get_halo_data(halo_id=self.halo_id)
+        if halo is not None:
+            pynbody.analysis.angmom.faceon(halo)
+            self.sim = halo
 
         fields = self.pynbody_config["fields"]
         load_classes = self.pynbody_config.get("load_classes", ["stars", "gas", "dm"])
@@ -117,12 +120,15 @@ class PynbodyHandler(BaseHandler):
 
         return data
 
-    def get_halo_data(self):
+    def get_halo_data(self, halo_id=None):
         """Load and return halo data if available."""
         if self.halo_path:
             halos = self.sim.halos(filename=self.halo_path)
             self.logger.info("Halo data loaded.")
-            return halos[1]
+            if halo_id:
+                return halos[halo_id]
+            else:
+                return halos[0]
         else:
             self.logger.warning("No halo file provided or found.")
             return None
