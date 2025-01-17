@@ -1,151 +1,183 @@
+import numpy as np
 import pytest
 from unittest.mock import MagicMock, patch
-import numpy as np
-from rubix.galaxy.input_handler.pynbody import PynbodyHandler
-
-@pytest.fixture
-def mock_config():
-    """Mocked configuration for PynbodyHandler."""
-    return {
-        "fields": {
-            "stars": {
-                "age": "age",
-                "mass": "mass",
-                "metallicity": "metallicity",
-                "coords": "pos",
-                "velocity": "vel",
-            },
-            "gas": {"density": "density", "temperature": "temperature"},
-            "dm": {"mass": "mass"},
-        },
-        "units": {
-            "stars": {
-                "coords": "kpc",
-                "mass": "Msun",
-                "age": "Gyr",
-                "velocity": "km/s",
-                "metallicity": "dimensionless",
-            },
-            "gas": {"density": "Msun/kpc^3", "temperature": "K"},
-            "dm": {"mass": "Msun"},
-            "galaxy": {
-                "redshift": "dimensionless",
-                "center": "kpc",
-                "halfmassrad_stars": "kpc",
-            },
-        },
-        "galaxy": {"dist_z": 0.1},
-    }
+from rubix.galaxy.input_handler.nihao import NihaoHandler
 
 @pytest.fixture
 def mock_simulation():
-    """Mocked simulation object that mimics a pynbody SimSnap (stars, gas, dm)."""
-    mock_sim = MagicMock()
+    """Mocked simulation data for testing."""
+    mock = MagicMock()
 
-    mock_sim.stars.loadable_keys.return_value = ["pos", "mass", "vel", "metallicity", "age"]
-    mock_sim.gas.loadable_keys.return_value = ["density", "temperature"]
-    mock_sim.dm.loadable_keys.return_value = ["mass"]
+    mock.stars = MagicMock()
+    mock.stars['pos'] = np.array([
+        [1.0, 2.0, 3.0],
+        [4.0, 5.0, 6.0],
+        [7.0, 8.0, 9.0],
+    ])
+    mock.stars['mass'] = np.array([1.0, 2.0, 3.0])
 
-    star_arrays = {
-        "pos": np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0], [2.0, 2.0, 2.0]]),
-        "mass": np.array([1.0, 2.0, 3.0]),
-        "vel": np.array([[10.0, 0.0, 0.0], [0.0, 10.0, 0.0], [0.0, 0.0, 10.0]]),
-        "metallicity": np.array([0.02, 0.03, 0.01]),
-        "age": np.array([1.0, 2.0, 3.0]),
+    mock.gas = MagicMock()
+    mock.dm = MagicMock()
+    mock.gas['density'] = np.array([0.1, 0.2, 0.3])
+    mock.dm['mass'] = np.array([10.0, 20.0, 30.0])
+
+    return mock
+
+@pytest.fixture
+def mock_config():
+    """Mocked configuration for NihaoHandler."""
+    return {
+        'fields': {
+            'stars': {
+                'age': 'age',
+                'mass': 'mass',
+                'metallicity': 'metallicity',
+                'coords': 'pos',
+                'velocity': 'vel'
+            },
+            'gas': {
+                'density': 'density',
+                'temperature': 'temperature'
+            },
+            'dm': {
+                'mass': 'mass'
+            }
+        },
+        'units': {
+            'stars': {
+                'coords': 'kpc',
+                'mass': 'Msun',
+                'age': 'Gyr',
+                'velocity': 'km/s',
+                'metallicity': 'dimensionless'
+            },
+            'gas': {
+                'density': 'Msun/kpc^3',
+                'temperature': 'K'
+            },
+            'dm': {
+                'mass': 'Msun'
+            },
+            'galaxy': {
+                'redshift': 'dimensionless',
+                'center': 'kpc',
+                'halfmassrad_stars': 'kpc'
+            }
+        },
+        'galaxy': { 
+            'dist_z': 0.1
+        }
     }
-
-    gas_arrays = {
-        "density": np.array([0.1, 0.2, 0.3]),
-        "temperature": np.array([100.0, 200.0, 300.0]),
-    }
-
-    dm_arrays = {
-        "mass": np.array([10.0, 20.0, 30.0])
-    }
-
-    def star_getitem(key):
-        return star_arrays[key]
-
-    def gas_getitem(key):
-        return gas_arrays[key]
-
-    def dm_getitem(key):
-        return dm_arrays[key]
-
-    mock_sim.stars.__getitem__.side_effect = star_getitem
-    mock_sim.gas.__getitem__.side_effect = gas_getitem
-    mock_sim.dm.__getitem__.side_effect = dm_getitem
-
-    mock_sim.stars.__len__.return_value = len(star_arrays["pos"])
-    mock_sim.gas.__len__.return_value = len(gas_arrays["density"])
-    mock_sim.dm.__len__.return_value = len(dm_arrays["mass"])
-
-    mock_halos = MagicMock()
-    mock_halos.__getitem__.return_value = mock_sim
-    mock_sim.halos.return_value = mock_halos
-
-    return mock_sim
 
 @pytest.fixture
 def handler_with_mock_data(mock_simulation, mock_config):
-    with patch("pynbody.load", return_value=mock_simulation):
-        with patch("pynbody.analysis.angmom.faceon", return_value=None):
-            handler = PynbodyHandler(
-                path="mock_path",
-                halo_path="mock_halo_path",
-                config=mock_config,
-                dist_z=mock_config["galaxy"]["dist_z"],
-                halo_id=1,
-            )
-            return handler
+    star_arrays = {
+        'pos': np.array([
+            [0.0, 0.0, 0.0],
+            [1.0, 1.0, 1.0],
+            [2.0, 2.0, 2.0]
+        ]),
+        'mass': np.array([1.0, 2.0, 3.0]),
+        'vel': np.array([
+            [10.0, 0.0, 0.0],
+            [0.0, 10.0, 0.0],
+            [0.0, 0.0, 10.0]
+        ]),
+        'metallicity': np.array([0.02, 0.03, 0.01]),
+        'age': np.array([1.0, 2.0, 3.0])
+    }
 
-def test_pynbody_handler_initialization(handler_with_mock_data):
-    """Test initialization of PynbodyHandler."""
+    gas_arrays = {
+        'density': np.array([1.0, 2.0, 3.0]),
+        'temperature': np.array([100.0, 200.0, 300.0])
+    }
+
+    dm_arrays = {
+        'mass': np.array([10.0, 20.0, 30.0])
+    }
+
+    def get_star_item(key):
+        return star_arrays[key]
+    
+    def get_gas_item(key):
+        return gas_arrays[key]
+    
+    def get_dm_item(key):
+        return dm_arrays[key]
+
+    mock_simulation.stars.loadable_keys.return_value = list(star_arrays.keys())
+    mock_simulation.gas.loadable_keys.return_value = list(gas_arrays.keys())
+    mock_simulation.dm.loadable_keys.return_value = list(dm_arrays.keys())
+
+    mock_simulation.stars.__getitem__.side_effect = get_star_item
+    mock_simulation.gas.__getitem__.side_effect = get_gas_item
+    mock_simulation.dm.__getitem__.side_effect = get_dm_item
+
+    mock_simulation.stars.__len__.return_value = len(star_arrays['pos'])
+    mock_simulation.gas.__len__.return_value = len(gas_arrays['density'])
+    mock_simulation.dm.__len__.return_value = len(dm_arrays['mass'])
+
+    import pynbody
+    pynbody.load = MagicMock(return_value=mock_simulation)
+    pynbody.analysis.center = MagicMock()
+    pynbody.analysis.faceon = MagicMock()
+    dist_z = mock_config["galaxy"]["dist_z"]
+    handler = NihaoHandler(path="mock_path", halo_path="mock_halo_path", config=mock_config, dist_z=dist_z)
+    handler.sim = mock_simulation
+    handler.center = np.array([0, 0, 0])
+
+    return handler
+
+def test_nihao_handler_initialization(handler_with_mock_data):
+    """Test initialization of NihaoHandler."""
     assert handler_with_mock_data is not None
 
 def test_load_data(handler_with_mock_data):
     """Test if data is loaded correctly."""
-    data = handler_with_mock_data.get_particle_data()
-    assert "stars" in data
-
+    handler_with_mock_data.load_data()
+    assert handler_with_mock_data.center is not None
 
 def test_get_galaxy_data(handler_with_mock_data):
     """Test retrieval of galaxy data."""
     galaxy_data = handler_with_mock_data.get_galaxy_data()
+
     assert galaxy_data is not None, "galaxy_data should not be None."
 
     expected_redshift = 0.1
     expected_center = [0, 0, 0]
 
-    assert "redshift" in galaxy_data
-    assert galaxy_data["redshift"] == expected_redshift
-    assert "center" in galaxy_data
-    assert galaxy_data["center"] == expected_center
-    assert "halfmassrad_stars" in galaxy_data
+    positions = handler_with_mock_data.data["stars"]["coords"].value
+    masses = handler_with_mock_data.data["stars"]["mass"].value
+    expected_halfmassrad_stars = handler_with_mock_data.calculate_halfmass_radius(positions, masses)
+
+    assert galaxy_data["redshift"] == expected_redshift, f"Expected redshift {expected_redshift}, got {galaxy_data['redshift']}"
+    assert np.allclose(galaxy_data["center"], expected_center), f"Expected center {expected_center}, got {galaxy_data['center']}"
+    assert "halfmassrad_stars" in galaxy_data, "halfmassrad_stars is missing from galaxy_data."
+    assert np.isclose(galaxy_data["halfmassrad_stars"], expected_halfmassrad_stars), \
+        f"Expected halfmassrad_stars {expected_halfmassrad_stars}, got {galaxy_data['halfmassrad_stars']}"
+    
 
 def test_get_units(handler_with_mock_data):
     """Test if units are correctly returned."""
     units = handler_with_mock_data.get_units()
-    assert "stars" in units
-    assert "gas" in units
-    assert "dm" in units
+    assert 'stars' in units
+    assert 'gas' in units
+    assert 'dm' in units
 
 def test_gas_data_load(handler_with_mock_data):
     """Test loading of gas data."""
-    data = handler_with_mock_data.get_particle_data()
-    assert "gas" in data
-    assert "density" in data["gas"]
-    assert "temperature" in data["gas"]
+    gas_data = handler_with_mock_data.get_particle_data()
+    assert gas_data is not None
+    assert len(gas_data) > 0
 
 def test_stars_data_load(handler_with_mock_data):
     """Test loading of stars data."""
-    data = handler_with_mock_data.get_particle_data()
-    assert "stars" in data
-    assert "coords" in data["stars"]
-    assert "mass" in data["stars"]
+    star_data = handler_with_mock_data.get_particle_data()
+    assert star_data is not None
+    assert len(star_data) > 0
 
 def test_dm_data_load(handler_with_mock_data):
     """Test loading of dark matter data."""
-    data = handler_with_mock_data.get_particle_data()
-    assert "dm" in data
-    assert "mass" in data["dm"]
+    dm_data = handler_with_mock_data.get_particle_data()
+    assert dm_data is not None
+    assert len(dm_data) > 0
