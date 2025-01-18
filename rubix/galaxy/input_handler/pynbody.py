@@ -23,12 +23,12 @@ class PynbodyHandler(BaseHandler):
         self.dist_z = dist_z
         self.logger.info(f"Galaxy redshift (dist_z) set to: {self.dist_z}")
         if "dm" not in self.config["particles"]:
+            self.logger.warning("No DM (dark matter) configuration found under 'particles'.")
             self.config["particles"]["dm"] = {}
 
         if "mass" not in self.config["particles"]["dm"]:
-            self.config["particles"]["dm"]["mass"] = self.pynbody_config["units"][
-                "stars"
-            ]["mass"]
+            self.logger.warning("No 'mass' field found for DM in configuration.")
+            self.config["particles"]["dm"]["mass"] = self.pynbody_config["units"]["stars"]["mass"]
         self.load_data()
 
     def _load_config(self):
