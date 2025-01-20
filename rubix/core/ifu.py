@@ -236,22 +236,27 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
             resample_spectrum_pmap = get_resample_spectrum_pmap(telescope_wavelenght)
             # jax.debug.print("doppler shifted ssp wave {}", doppler_shifted_ssp_wave)
             # jax.debug.print("Spectra before resampling {}", inputs["spectra"])
-            if (
-                rubixdata.stars.spectra.shape[0] == 1
-                and rubixdata.stars.spectra.shape[1] == 1
-            ):
-                rubixdata.stars.spectra = jnp.squeeze(rubixdata.stars.spectra, axis=0)
-            if (
+            # if (
+            #    rubixdata.stars.spectra.shape[0] == 1
+            #    and rubixdata.stars.spectra.shape[1] == 1
+            # ):
+            #    rubixdata.stars.spectra = jnp.squeeze(rubixdata.stars.spectra, axis=0)
+            # if (
+            #     rubixdata.stars.spectra.shape[0] == 1
+            #    and rubixdata.stars.spectra.shape[1] == 1
+            # ):
+            #    rubixdata.stars.spectra = jnp.squeeze(rubixdata.stars.spectra, axis=0)
+            while (
                 rubixdata.stars.spectra.shape[0] == 1
                 and rubixdata.stars.spectra.shape[1] == 1
             ):
                 rubixdata.stars.spectra = jnp.squeeze(rubixdata.stars.spectra, axis=0)
             # if doppler_shifted_ssp_wave.shape[0] == 1:
             #    doppler_shifted_ssp_wave = jnp.squeeze(doppler_shifted_ssp_wave, axis=0)
-            print(f"Shape of spectra...............: {rubixdata.stars.spectra.shape}")
-            print(
-                f"Shape of doppler_shifted_ssp_wave..................: {doppler_shifted_ssp_wave.shape}"
-            )
+            # print(f"Shape of spectra...............: {rubixdata.stars.spectra.shape}")
+            # print(
+            #    f"Shape of doppler_shifted_ssp_wave..................: {doppler_shifted_ssp_wave.shape}"
+            # )
 
             spectrum_resampled = resample_spectrum_pmap(
                 rubixdata.stars.spectra, doppler_shifted_ssp_wave
