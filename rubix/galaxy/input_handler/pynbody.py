@@ -12,7 +12,9 @@ u.add_enabled_units(Zsun)
 
 
 class PynbodyHandler(BaseHandler):
-    def __init__(self, path, halo_path=None, logger=None, config=None, dist_z=None, halo_id=None):
+    def __init__(
+        self, path, halo_path=None, logger=None, config=None, dist_z=None, halo_id=None
+    ):
         """Initialize handler with paths to snapshot and halo files."""
         self.path = path
         self.halo_path = halo_path
@@ -23,12 +25,16 @@ class PynbodyHandler(BaseHandler):
         self.dist_z = dist_z
         self.logger.info(f"Galaxy redshift (dist_z) set to: {self.dist_z}")
         if "dm" not in self.config["particles"]:
-            self.logger.warning("No DM (dark matter) configuration found under 'particles'.")
+            self.logger.warning(
+                "No DM (dark matter) configuration found under 'particles'."
+            )
             self.config["particles"]["dm"] = {}
 
         if "mass" not in self.config["particles"]["dm"]:
             self.logger.warning("No 'mass' field found for DM in configuration.")
-            self.config["particles"]["dm"]["mass"] = self.pynbody_config["units"]["stars"]["mass"]
+            self.config["particles"]["dm"]["mass"] = self.pynbody_config["units"][
+                "stars"
+            ]["mass"]
         self.load_data()
 
     def _load_config(self):
@@ -73,6 +79,7 @@ class PynbodyHandler(BaseHandler):
         self.sim = pynbody.load(self.path)
         self.sim.physical_units()
 
+        self.logger.info(f"Simulation snapshot loaded from halo {self.halo_id}")
         halo = self.get_halo_data(halo_id=self.halo_id)
         if halo is not None:
             pynbody.analysis.angmom.faceon(halo)
