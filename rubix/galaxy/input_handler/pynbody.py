@@ -24,17 +24,6 @@ class PynbodyHandler(BaseHandler):
         super().__init__()
         self.dist_z = dist_z
         self.logger.info(f"Galaxy redshift (dist_z) set to: {self.dist_z}")
-        if "dm" not in self.config["particles"]:
-            self.logger.warning(
-                "No DM (dark matter) configuration found under 'particles'."
-            )
-            self.config["particles"]["dm"] = {}
-
-        if "mass" not in self.config["particles"]["dm"]:
-            self.logger.warning("No 'mass' field found for DM in configuration.")
-            self.config["particles"]["dm"]["mass"] = self.pynbody_config["units"][
-                "stars"
-            ]["mass"]
         self.load_data()
 
     def _load_config(self):
@@ -86,13 +75,13 @@ class PynbodyHandler(BaseHandler):
             self.sim = halo
 
         fields = self.pynbody_config["fields"]
-        load_classes = self.pynbody_config.get("load_classes", ["stars", "gas", "dm"])
+        load_classes = self.pynbody_config.get("load_classes", ["stars", "gas"])
         self.data = {}
         units = self.get_units()
 
-        # Load data for stars, gas, and dark matter
+        # Load data for stars and gas
         for cls in load_classes:
-            if cls in ["stars", "gas", "dm"]:
+            if cls in ["stars", "gas"]:
                 self.data[cls] = self.load_particle_data(
                     getattr(self.sim, cls), fields[cls], units[cls], cls
                 )
