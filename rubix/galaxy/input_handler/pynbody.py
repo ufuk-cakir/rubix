@@ -6,16 +6,14 @@ import logging
 import astropy.units as u
 import yaml
 import os
-
-Zsun = u.def_unit("Zsun", u.dimensionless_unscaled)
-u.add_enabled_units(Zsun)
-
+from rubix.units import Zsun
 
 class PynbodyHandler(BaseHandler):
     def __init__(
         self, path, halo_path=None, logger=None, config=None, dist_z=None, halo_id=None
     ):
         """Initialize handler with paths to snapshot and halo files."""
+        self.metallicity_unit = Zsun
         self.path = path
         self.halo_path = halo_path
         self.halo_id = halo_id
