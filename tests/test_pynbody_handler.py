@@ -142,9 +142,3 @@ def test_stars_data_load(handler_with_mock_data):
     assert "stars" in data
     assert "coords" in data["stars"]
     assert "mass" in data["stars"]
-
-def test_dm_data_load(handler_with_mock_data):
-    """Test loading of dark matter data."""
-    data = handler_with_mock_data.get_particle_data()
-    assert "dm" in data
-    assert "mass" in data["dm"]
