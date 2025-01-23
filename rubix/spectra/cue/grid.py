@@ -215,7 +215,7 @@ class CueGasLookup:
         logger.debug(f"dispersionfactor: {dispersionfactor.shape}")
         logger.debug(f"dispersionfactor: {dispersionfactor}")
         return (
-            dispersionfactor * 1e8
+            dispersionfactor * 1e7
         )  # because otherwise the dispersion factor is orders of magnitudeds too small
 
     def gaussian(self, x, a, b, c):

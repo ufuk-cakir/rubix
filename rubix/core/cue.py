@@ -72,7 +72,11 @@ def prepare_theta(config: dict, rubixdata):
     log_HeI_OII = jnp.full(len(rubixdata.gas.mass), 0.7)
     log_HI_HeI = jnp.full(len(rubixdata.gas.mass), 0.85)
     # log_QH = rubixdata.gas.electron_abundance
-    n_H = jnp.full(len(rubixdata.gas.mass), 10**2.5)  # rubixdata.gas.density
+
+    # Density for cue has to be hydrogen number density per cm^3
+    # m_H_atom = 1.6735575e-24 g
+    n_H = rubixdata.gas.density / 1.6735575e-24 * 10
+    # n_H = jnp.full(len(rubixdata.gas.mass), 10**2.5)  # rubixdata.gas.density
     # n_H = jnp.full(len(rubixdata.gas.mass), 10**2.5)
     OH_ratio = rubixdata.gas.metals[:, 4] / rubixdata.gas.metals[:, 0]
     NO_ratio = rubixdata.gas.metals[:, 3] / rubixdata.gas.metals[:, 4]
@@ -91,9 +95,9 @@ def prepare_theta(config: dict, rubixdata):
     final_log_no = jnp.log10(NO_ratio * no_factor) / 10**log_no_sol
     log_QH = jnp.full(len(rubixdata.gas.mass), 49.58)
 
-    log_OH_ratio = jnp.full(len(rubixdata.gas.mass), -0.85)
-    log_NO_ratio = jnp.full(len(rubixdata.gas.mass), -0.134)
-    log_CO_ratio = jnp.full(len(rubixdata.gas.mass), -0.134)
+    # log_OH_ratio = jnp.full(len(rubixdata.gas.mass), -0.85)
+    # log_NO_ratio = jnp.full(len(rubixdata.gas.mass), -0.134)
+    # log_CO_ratio = jnp.full(len(rubixdata.gas.mass), -0.134)
 
     theta = [
         alpha_HeII,

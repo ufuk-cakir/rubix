@@ -122,7 +122,7 @@ BaseHandler:
       age: "Gyr"
     gas:
       coords: "kpc"
-      density: "Msun/kpc^3"
+      density: "g/cm^3"
       mass: "Msun"
       metallicity: ""
       metals: ""
