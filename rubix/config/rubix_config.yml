@@ -30,6 +30,7 @@ IllustrisAPI:
       - Masses
       #- ParticleIDs
       - GFM_Metallicity
+      - GFM_Metals
       #- SubfindHsml
       - StarFormationRate
       - InternalEnergy
@@ -51,6 +52,7 @@ IllustrisHandler:
       Density: density
       Masses: mass
       GFM_Metallicity: metallicity
+      GFM_Metals: metals
       StarFormationRate: sfr
       InternalEnergy: internal_energy
       Velocities: velocity
@@ -83,6 +85,7 @@ IllustrisHandler:
       density: g/cm^3
       mass: g
       metallicity: ""
+      metals: ""
       sfr: Msun/yr
       internal_energy: erg/g
       velocity: cm/s
@@ -122,6 +125,7 @@ BaseHandler:
       density: "Msun/kpc^3"
       mass: "Msun"
       metallicity: ""
+      metals: ""
       sfr: "Msun/yr"
       internal_energy: "erg/g"
       velocity: "kpc/s"

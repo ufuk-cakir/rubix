@@ -147,6 +147,7 @@ class StarsData:
     velocity: Optional[jnp.ndarray] = None
     mass: Optional[jnp.ndarray] = None
     metallicity: Optional[jnp.ndarray] = None
+    metals: Optional[jnp.ndarray] = None
     age: Optional[jnp.ndarray] = None
     pixel_assignment: Optional[jnp.ndarray] = None
     spatial_bin_edges: Optional[jnp.ndarray] = None
@@ -181,6 +182,7 @@ class StarsData:
             self.velocity,
             self.mass,
             self.metallicity,
+            self.metals,
             self.age,
             self.pixel_assignment,
             self.spatial_bin_edges,

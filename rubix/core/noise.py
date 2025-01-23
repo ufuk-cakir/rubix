@@ -62,17 +62,30 @@ def get_apply_noise(config: dict) -> Callable:
         logger.info(
             f"Applying noise to datacube with signal to noise ratio: {signal_to_noise} and noise distribution: {noise_distribution}"
         )
-        datacube = rubixdata.stars.datacube
-        # Define S2n for each spaxel
-        S2N = jnp.ones(datacube.shape[:2]) * signal_to_noise
+        cube_type = config["data"]["args"].get("cube_type", [])
 
-        # Calculate the noise cube
-        noise_cube = calculate_noise_cube(
-            datacube, S2N, noise_distribution=noise_distribution
-        )
+        if "stars" in cube_type:
+            datacube = rubixdata.stars.datacube
+            # Define S2n for each spaxel
+            S2N = jnp.ones(datacube.shape[:2]) * signal_to_noise
+            # Calculate the noise cube
+            noise_cube = calculate_noise_cube(
+                datacube, S2N, noise_distribution=noise_distribution
+            )
+            # Add noise to the datacube
+            rubixdata.stars.datacube += noise_cube
 
-        # Add noise to the datacube
-        rubixdata.stars.datacube += noise_cube
+        if "gas" in cube_type:
+            datacube = rubixdata.gas.datacube
+            # Define S2n for each spaxel
+            S2N = jnp.ones(datacube.shape[:2]) * signal_to_noise
+            # Calculate the noise cube
+            noise_cube = calculate_noise_cube(
+                datacube, S2N, noise_distribution=noise_distribution
+            )
+            # Add noise to the datacube
+            rubixdata.gas.datacube += noise_cube
+
         return rubixdata
 
     return apply_noise

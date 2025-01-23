@@ -40,7 +40,7 @@ def get_convolve_psf(config: dict) -> Callable:
     """
 
     logger = get_logger(config.get("logger", None))
-    
+
     # Check if key exists in config file
     if "psf" not in config["telescope"]:
         raise ValueError("PSF configuration not found in telescope configuration")
@@ -67,8 +67,14 @@ def get_convolve_psf(config: dict) -> Callable:
     # Define the function to convolve the datacube with the PSF kernel
     def convolve_psf(rubixdata: RubixData) -> RubixData:
         """Convolve the input datacube with the PSF kernel."""
-        logger.info("Convolving with PSF...")
-        rubixdata.stars.datacube = apply_psf(rubixdata.stars.datacube, psf_kernel)
+
+        cube_type = config["data"]["args"].get("cube_type", [])
+
+        if "stars" in cube_type:
+            rubixdata.stars.datacube = apply_psf(rubixdata.stars.datacube, psf_kernel)
+        if "gas" in cube_type:
+            rubixdata.gas.datacube = apply_psf(rubixdata.gas.datacube, psf_kernel)
+
         return rubixdata
 
     return convolve_psf

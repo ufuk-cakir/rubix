@@ -230,14 +230,14 @@ def apply_rotation(
 
 @jaxtyped(typechecker=typechecker)
 def rotate_galaxy(
-    positions: Float[Array, "* 3"],
-    velocities: Float[Array, "* 3"],
+    positions: Float[Array, "..."],
+    velocities: Float[Array, "..."],
     masses: Float[Array, "..."],
-    halfmass_radius: Float[Array, "..."],
-    alpha: float,
-    beta: float,
-    gamma: float,
-) -> Tuple[Float[Array, "* 3"], Float[Array, "* 3"]]:
+    halfmass_radius: Union[float, Float[Array, "..."]],
+    alpha: Union[float, Float[Array, "..."]],
+    beta: Union[float, Float[Array, "..."]],
+    gamma: Union[float, Float[Array, "..."]],
+) -> Tuple[Float[Array, "..."], Float[Array, "..."]]:
     """
     Orientate the galaxy by applying a rotation matrix to the positions of the particles.
 

@@ -42,6 +42,25 @@ def convert_luminoisty_to_flux(
     return spectral_dist
 
 
+def convert_luminoisty_to_flux_gas(
+    observation_lum_dist,
+    observation_z,
+    pixel_size,
+    CONSTANTS=config["constants"],
+):
+    """Convert luminosity to flux in units erg/s/cm^2/Angstrom as observed by the telescope"""
+    CONST = np.float64(1 / float(CONSTANTS.get("MPC_TO_CM")) ** 2)
+    FACTOR = (
+        CONST
+        / (4 * np.pi * np.float64(observation_lum_dist) ** 2)
+        / (1 + np.float64(observation_z))
+        / np.float64(pixel_size)
+    )
+    FACTOR = FACTOR * 1e50
+    FACTOR = jnp.float64(FACTOR)
+    return FACTOR
+
+
 @jaxtyped(typechecker=typechecker)
 def convert_luminoisty_to_flux_factor(
     observation_lum_dist,
@@ -61,6 +80,7 @@ def convert_luminoisty_to_flux_factor(
     )
     FACTOR = jnp.float64(FACTOR)
     return FACTOR
+
 
 def cosmological_doppler_shift(
     z: float, wavelength: Float[Array, " n_bins"]
@@ -214,22 +234,25 @@ def velocity_doppler_shift(
     )(velocity)
 
 
-@jaxtyped(typechecker=typechecker)
 def resample_spectrum(
     initial_spectrum: Float[Array, " n_bins_initial"],
     initial_wavelength: Float[Array, " n_bins_initial"],
     target_wavelength: Float[Array, " n_bins_target"],
 ) -> Float[Array, " n_bins_target"]:
-    """
-    Resample a spectrum to the wavelength grid of a telescope.
+    """Resample a spectrum to the wavelength grid of a telescope.
+    Parameters
+    ----------
+    initial_spectrum : array-like
+        The initial spectrum.
+    initial_wavelength : array-like
+        The initial wavelength grid.
+    target_wavelength : array-like
+        The target wavelength grid.
 
-    Args:
-        initial_spectrum (array-like): The initial spectrum.
-        initial_wavelength (array-like): The initial wavelength grid.
-        target_wavelength (array-like): The target wavelength grid.
-
-    Returns:
-        The resampled spectrum (array-like).
+    Returns
+    -------
+    array-like
+        The resampled spectrum.
     """
     # Get wavelengths inside the telescope range
     in_range_mask = (initial_wavelength >= jnp.min(target_wavelength)) & (
@@ -238,6 +261,7 @@ def resample_spectrum(
     intrinsic_wave_diff = calculate_diff(initial_wavelength) * in_range_mask
 
     # Get total luminsoity within the wavelength range
+    initial_spectrum = jnp.nan_to_num(initial_spectrum, nan=0.0, posinf=0.0, neginf=0.0)
     total_lum = jnp.sum(initial_spectrum * intrinsic_wave_diff)
 
     # Interpolate the wavelegnth to the telescope grid
@@ -258,6 +282,40 @@ def resample_spectrum(
     # jax.debug.print("resampled spectrum: {}", lum)
     # jax.debug.print("intrinsic_wave_diff: {}", intrinsic_wave_diff)
     return lum
+
+
+def resample_spectrum_gas(
+    initial_spectrum: Float[Array, " n_bins_initial"],
+    initial_wavelength: Float[Array, " n_bins_initial"],
+    target_wavelength: Float[Array, " n_bins_target"],
+) -> Float[Array, " n_bins_target"]:
+    """Resample a spectrum to the wavelength grid of a telescope.
+    Parameters
+    ----------
+    initial_spectrum : array-like
+        The initial spectrum.
+    initial_wavelength : array-like
+        The initial wavelength grid.
+    target_wavelength : array-like
+        The target wavelength grid.
+
+    Returns
+    -------
+    array-like
+        The resampled spectrum.
+    """
+    # Get wavelengths inside the telescope range
+    in_range_mask = (initial_wavelength >= jnp.min(target_wavelength)) & (
+        initial_wavelength <= jnp.max(target_wavelength)
+    )
+
+    # Get total luminsoity within the wavelength range
+    # initial_spectrum = jnp.nan_to_num(initial_spectrum, nan=0.0, posinf=0.0, neginf=0.0)
+
+    # Interpolate the wavelegnth to the telescope grid
+    particle_lum = jnp.interp(target_wavelength, initial_wavelength, initial_spectrum)
+
+    return particle_lum
 
 
 @jaxtyped(typechecker=typechecker)
