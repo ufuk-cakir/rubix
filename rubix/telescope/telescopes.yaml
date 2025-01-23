@@ -152,7 +152,7 @@ CALIFA:
 TESTGAS:
   fov: 40.0
   spatial_res: 1.0
-  wave_range: [1000.0,3000.0]
+  wave_range: [2000.0,10000.0]
   wave_res: 1.25
   lsf_fwhm: 2.51
   signal_to_noise: null

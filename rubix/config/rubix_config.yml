@@ -117,7 +117,7 @@ BaseHandler:
     stars:
       coords: "kpc"
       mass: "Msun"
-      velocity: "kpc/s"
+      velocity: "km/s"
       metallicity: ""
       age: "Gyr"
     gas:
@@ -128,7 +128,7 @@ BaseHandler:
       metals: ""
       sfr: "Msun/yr"
       internal_energy: "erg/g"
-      velocity: "kpc/s"
+      velocity: "km/s"
       electron_abundance: ""
 
 ssp:

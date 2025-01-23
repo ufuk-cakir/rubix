@@ -205,15 +205,15 @@ def get_gas_emission(config: dict):
         rubixdata.gas.spectra = flux
 
         logger.debug("Completed gas emission calculation: %s", rubixdata)
-        logger.debug(
-            "test core module: temperature: %s", jnp.array(rubixdata.gas.temperature)
-        )
-        logger.debug(
-            "test core module: continuum: %s", jnp.array(rubixdata.gas.continuum)
-        )
-        logger.debug(
-            "test core module: emission: %s", jnp.array(rubixdata.gas.emission_spectra)
-        )
+        # logger.debug(
+        #    "test core module: temperature: %s", jnp.array(rubixdata.gas.temperature)
+        # )
+        # logger.debug(
+        #    "test core module: continuum: %s", jnp.array(rubixdata.gas.continuum)
+        # )
+        # logger.debug(
+        #    "test core module: emission: %s", jnp.array(rubixdata.gas.emission_spectra)
+        # )
         return rubixdata
 
     return gas_emission
