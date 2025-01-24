@@ -187,7 +187,7 @@ class RubixPipeline:
             output.gas.coords_unit = self.data.gas.coords_unit
             output.gas.velocity_unit = self.data.gas.velocity_unit
             output.gas.mass_unit = self.data.gas.mass_unit
-            output.gas.density = self.data.gas.density_unit
+            output.gas.density_unit = self.data.gas.density_unit
             output.gas.internal_energy_unit = self.data.gas.internal_energy_unit
             # output.gas.metallicity_unit = self.data.gas.metallicity_unit
             output.gas.sfr_unit = self.data.gas.sfr_unit
