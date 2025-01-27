@@ -16,6 +16,7 @@ from typing import Callable, List, Union
 from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker
 
+
 @jaxtyped(typechecker=typechecker)
 def get_telescope(config: Union[str, dict]) -> BaseTelescope:
     """
@@ -112,7 +113,7 @@ def get_spaxel_assignment(config: dict) -> Callable:
             )
             rubixdata.stars.pixel_assignment = pixel_assignment
             rubixdata.stars.spatial_bin_edges = spatial_bin_edges
-        
+
         if rubixdata.gas.coords is not None:
             pixel_assignment = square_spaxel_assignment(
                 rubixdata.gas.coords, spatial_bin_edges
@@ -187,7 +188,20 @@ def get_filter_particles(config: dict) -> Callable:
             for attr in attributes:
                 current_attr_value = getattr(rubixdata.gas, attr)
                 if isinstance(current_attr_value, jnp.ndarray):
-                    setattr(rubixdata.gas, attr, jnp.where(mask, current_attr_value, 0))
+                    # this has to be done, because metals has the shape (n_particles, 10), all others have (n_particles,)
+                    if attr == "metals":
+                        mask_extended = jnp.broadcast_to(
+                            mask[:, None], current_attr_value.shape
+                        )
+                        setattr(
+                            rubixdata.gas,
+                            attr,
+                            jnp.where(mask_extended, current_attr_value, 0),
+                        )
+                    else:
+                        setattr(
+                            rubixdata.gas, attr, jnp.where(mask, current_attr_value, 0)
+                        )
                 # rubixdata.gas.__setattr__(attr, jnp.where(mask, rubixdata.gas.__getattribute__(attr), 0))
             mask_jax = jnp.array(mask)
             setattr(rubixdata.gas, "mask", mask_jax)
