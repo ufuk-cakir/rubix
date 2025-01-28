@@ -39,7 +39,8 @@ dependencies = [
     "beartype",
     "mpdaf",
     "ipywidgets",
-    "jdaviz"
+    "jdaviz",
+    "pynbody"
 ]
 [project.optional-dependencies]
 tests = [
