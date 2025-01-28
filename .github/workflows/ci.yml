@@ -21,7 +21,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         # Here, we are testing the oldest and the newest supported Python version.
         # If this is insufficient for your package, consider adding more versions.
-        python-version: ["3.9", "3.12"]
+        python-version: ["3.10", "3.12"]
 
     steps:
     - name: Checkout repository
