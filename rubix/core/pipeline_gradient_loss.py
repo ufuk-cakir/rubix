@@ -135,7 +135,7 @@ class RubixPipeline:
 
         return functions
 
-    def run(self, rubixdata):
+    def run(self, rubixdata, targetdata):
         """
         Runs the data processing pipeline.
 
@@ -169,38 +169,38 @@ class RubixPipeline:
         self.logger.info(
             "Pipeline run completed in %.2f seconds.", time_end - time_start
         )
-        # output.stars.mass = jnp.squeeze(output.stars.mass, axis=0)
-        # output.stars.age = jnp.squeeze(output.stars.age, axis=0)
-        # output.stars.metallicity = jnp.squeeze(output.stars.metallicity, axis=0)
-        return output
+        output.stars.mass = jnp.squeeze(output.stars.mass, axis=0)
+        output.stars.age = jnp.squeeze(output.stars.age, axis=0)
+        output.stars.metallicity = jnp.squeeze(output.stars.metallicity, axis=0)
+
+        return jnp.mean(jnp.square(output.stars.datacube - targetdata.stars.datacube))
 
     # TODO: implement gradient calculation
-    def gradient(self, rubixdata, targetdata):
+    def gradient(self, rubixdata):
         """
         This function will calculate the gradient of the pipeline, but is yet not implemented.
         """
         # _get_pipeline_functions() returns a list of the transformer functions in the correct order
-        # transformers_list = self._get_pipeline_functions()
+        transformers_list = self._get_pipeline_functions()
 
-        # read_cfg = read_yaml("../rubix/config/pipeline_config.yml")
+        read_cfg = read_yaml("../rubix/config/pipeline_config.yml")
 
         # read_cfg is a dict. We specifically want read_cfg["calc_ifu"], which has "Transformers" inside.
-        # pipeline_cfg = read_cfg["calc_gradient"]
+        pipeline_cfg = read_cfg["calc_gradient"]
 
-        # tp = pipeline.LinearTransformerPipeline(
-        #    pipeline_cfg,  # pipeline_cfg == read_cfg["calc_ifu"]
-        #    transformers_list,  # The list of function objects from RubixPipeline
-        # )
+        tp = pipeline.LinearTransformerPipeline(
+            pipeline_cfg,  # pipeline_cfg == read_cfg["calc_ifu"]
+            transformers_list,  # The list of function objects from RubixPipeline
+        )
 
-        # compiled_fn = tp.compile_expression()
-        # jac_fn = jax.jacrev(compiled_fn)
-        # jacobian = jac_fn(rubixdata)
-        # stars_gradient = jacobian.stars.datacube
+        compiled_fn = tp.compile_expression()
+        jac_fn = jax.jacrev(compiled_fn)
+        jacobian = jac_fn(rubixdata)
+        stars_gradient = jacobian.stars.datacube
 
-        # return stars_gradient
-        return jax.grad(self.loss, argnums=0)(rubixdata, targetdata)
+        return stars_gradient
 
-    def loss(self, rubixdata, targetdata):
+    def loss_mse(self, data, target):
         """
         Calculate the mean squared error loss.
 
@@ -211,6 +211,4 @@ class RubixPipeline:
         Returns:
             The mean squared error loss.
         """
-        output = self.run(rubixdata)
-        loss_value = jnp.sum((output.stars.datacube - targetdata.stars.datacube) ** 2)
-        return loss_value
+        return jnp.mean(jnp.square(data - target))
