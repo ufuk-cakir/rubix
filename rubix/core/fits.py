@@ -44,8 +44,18 @@ def store_fits(config, data, filepath):
     # hdr['X_RES'] = params['cube_params']['spatial_resolution'][0]
     # hdr['Y_RES'] = params['cube_params']['spatial_resolution'][1]
     hdr["SIM"] = config["simulation"]["name"]
-    hdr["GALAXYID"] = config["data"]["load_galaxy_args"]["id"]
-    hdr["SNAPSHOT"] = config["data"]["args"]["snapshot"]
+    
+    # Handle GALAXYID based on simulation type
+    if config["simulation"]["name"].lower() == "illustris":
+        hdr["GALAXYID"] = config["data"]["load_galaxy_args"]["id"]
+        object_name = f"{config['simulation']['name']} {config['data']['load_galaxy_args']['id']}"
+    elif config["simulation"]["name"].lower() == "nihao":
+        hdr["GALAXYID"] = "N/A"
+        object_name = f"{config['simulation']['name']} NIHAO"
+    else:
+        object_name = f"{config['simulation']['name']} Unknown"
+
+    hdr["SNAPSHOT"] = config["data"].get("args", {}).get("snapshot", "unknown")
     hdr["SUBSET"] = config["data"]["subset"]["use_subset"]
     hdr["SSP"] = config["ssp"]["template"]["name"]
     hdr["INSTR"] = config["telescope"]["name"]
@@ -59,11 +69,7 @@ def store_fits(config, data, filepath):
 
     hdr1 = fits.Header()
     hdr1["EXTNAME"] = "DATA"
-    hdr1["OBJECT"] = (
-        str(config["simulation"]["name"])
-        + " "
-        + str(config["data"]["load_galaxy_args"]["id"])
-    )
+    hdr1["OBJECT"] = object_name
     hdr1["BUNIT"] = "erg/(s*cm^2*A)"  # ? /Angstrom
     hdr1["CRPIX1"] = (datacube.shape[0] - 1) / 2
     hdr1["CRPIX2"] = (datacube.shape[1] - 1) / 2
@@ -91,11 +97,14 @@ def store_fits(config, data, filepath):
     image_hdu1 = fits.ImageHDU(datacube.T, header=hdr1)
     # image_hdu2 = fits.ImageHDU(wavelengths, name='WAVE')
 
+        # Define output filename
+    if config["simulation"]["name"].lower() == "illustris":
+        output_filename = f"{filepath}{config['simulation']['name']}_id{config['data']['load_galaxy_args']['id']}_snap{config['data']['args']['snapshot']}_{parttype}_subset{config['data']['subset']['use_subset']}.fits"
+    else:  # NIHAO
+        output_filename = f"{filepath}{config['simulation']['name']}_snap{config['data']['args'].get('snapshot', 'unknown')}_{parttype}_subset{config['data'].get('subset', {}).get('use_subset', 'unknown')}.fits"
+
     hdul = fits.HDUList([empty_primary, image_hdu1])  # , image_hdu2])
-    hdul.writeto(
-        f"{filepath}{config['simulation']['name']}_id{config['data']['load_galaxy_args']['id']}_snap{config['data']['args']['snapshot']}_{parttype}_subset{config['data']['subset']['use_subset']}.fits",
-        overwrite=True,
-    )
+    hdul.writeto(output_filename, overwrite=True)
     logger.info(f"Datacube saved to {filepath}")
 
 
