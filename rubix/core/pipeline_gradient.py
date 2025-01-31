@@ -28,6 +28,8 @@ from .noise import get_apply_noise
 from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker
 
+from copy import deepcopy
+
 
 class RubixPipeline:
     """
@@ -214,3 +216,34 @@ class RubixPipeline:
         output = self.run(rubixdata)
         loss_value = jnp.sum((output.stars.datacube - targetdata.stars.datacube) ** 2)
         return loss_value
+
+    def grad_only_for_age(self, rubixdata, target):
+        # 1) Regular gradient w.r.t. entire rubixdata
+        full_grad_fn = jax.grad(self.loss, argnums=0)
+
+        g = full_grad_fn(rubixdata, target)
+
+        # Create a copy of g with zeros in all fields except rubixdata.stars.age
+        # The idea is:
+        #    if a field name is 'age', keep it
+        #    else, zero it out
+        def mask_grad_tree(g_subtree, d_subtree):
+            # This function is called pairwise on (gradient, data)
+            # If the data corresponds to the 'stars.age' array, we keep g_subtree.
+            # Otherwise, we return 0 (stop gradient).
+            # A direct check might be awkward with pytrees, so let's do a quick hack:
+            # You can compare shapes or rely on a known structure, etc.
+
+            # Example: If shape matches rubixdata.stars.age shape
+            # or if we pass along a "path" variable with jax.tree_map_with_path
+            # For simplicity let's rely on shape matching, though it's not perfect:
+            if g_subtree.shape == rubixdata.stars.age.shape and jnp.all(
+                d_subtree == rubixdata.stars.age
+            ):
+                return g_subtree
+            else:
+                return jnp.zeros_like(g_subtree)
+
+        # We assume rubixdata and g share structure
+        g_filtered = jax.tree_util.tree_map(mask_grad_tree, g, rubixdata)
+        return g_filtered
