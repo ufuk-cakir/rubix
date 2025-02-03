@@ -217,33 +217,42 @@ class RubixPipeline:
         loss_value = jnp.sum((output.stars.datacube - targetdata.stars.datacube) ** 2)
         return loss_value
 
-    def grad_only_for_age(self, rubixdata, target):
-        # 1) Regular gradient w.r.t. entire rubixdata
-        full_grad_fn = jax.grad(self.loss, argnums=0)
+    def loss_only_wrt_age(self, age, base_data, target):
+        """
+        A "wrapped" loss function that:
+        1) Creates a modified rubixdata with the new 'age'
+        2) Runs the pipeline
+        3) Returns MSE
+        """
+        # 1) Copy your data (so we don't mutate the original)
+        data_modified = deepcopy(base_data)
+        # 2) Replace the age
+        data_modified.stars.age = age
 
-        g = full_grad_fn(rubixdata, target)
+        # 3) Run the pipeline
+        output = self.run(data_modified)
 
-        # Create a copy of g with zeros in all fields except rubixdata.stars.age
-        # The idea is:
-        #    if a field name is 'age', keep it
-        #    else, zero it out
-        def mask_grad_tree(g_subtree, d_subtree):
-            # This function is called pairwise on (gradient, data)
-            # If the data corresponds to the 'stars.age' array, we keep g_subtree.
-            # Otherwise, we return 0 (stop gradient).
-            # A direct check might be awkward with pytrees, so let's do a quick hack:
-            # You can compare shapes or rely on a known structure, etc.
+        # 4) Compute loss
+        loss = jnp.sum((output.stars.datacube - target.stars.datacube) ** 2)
 
-            # Example: If shape matches rubixdata.stars.age shape
-            # or if we pass along a "path" variable with jax.tree_map_with_path
-            # For simplicity let's rely on shape matching, though it's not perfect:
-            if g_subtree.shape == rubixdata.stars.age.shape and jnp.all(
-                d_subtree == rubixdata.stars.age
-            ):
-                return g_subtree
-            else:
-                return jnp.zeros_like(g_subtree)
+        return loss
 
-        # We assume rubixdata and g share structure
-        g_filtered = jax.tree_util.tree_map(mask_grad_tree, g, rubixdata)
-        return g_filtered
+    def loss_only_wrt_metallicity(self, metallicity, base_data, target):
+        """
+        A "wrapped" loss function that:
+        1) Creates a modified rubixdata with the new 'metallicity'
+        2) Runs the pipeline
+        3) Returns MSE
+        """
+        # 1) Copy your data (so we don't mutate the original)
+        data_modified = deepcopy(base_data)
+        # 2) Replace the age
+        data_modified.stars.metallicity = metallicity
+
+        # 3) Run the pipeline
+        output = self.run(data_modified)
+
+        # 4) Compute loss
+        loss = jnp.sum((output.stars.datacube - target.stars.datacube) ** 2)
+
+        return loss
