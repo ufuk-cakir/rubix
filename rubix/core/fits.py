@@ -5,21 +5,39 @@ from rubix.logger import get_logger
 from mpdaf.obj import Cube
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
+import os
 
+def extract_info_from_path(sim_path):
+    """
+    Extract galaxy_id and snapshot from a simulation path.
+    Example:
+      /Users/.../g8.26e11/snap_2000/output/8.26e11.02000 
+      --> galaxy_id: "g8.26e11", snapshot: "2000"
+    """
+    path_parts = os.path.normpath(sim_path).split(os.sep)
+    snapshot = None
+    galaxy_id = None
+    for i, part in enumerate(path_parts):
+        if part.startswith("snap_"):
+            snapshot = part.split("_", 1)[1]
+            if i > 0:
+                galaxy_id = path_parts[i - 1]
+            break
+    return galaxy_id, snapshot
 
 def store_fits(config, data, filepath):
     """
-    Store the datacube in a fits file.
+    Store the datacube in a FITS file.
 
     Parameters:
         config (dict): The configuration dictionary
         data (dict): The data dictionary
-        filepath (str): The path to the fits
+        filepath (str): The path to save the FITS file
 
     Returns:
         None
     """
-    logger_config = config["logger"] if "logger" in config else None  # type:ignore
+    logger_config = config.get("logger", None)
     logger = get_logger(logger_config)
 
     if "cube_type" not in config["data"]["args"]:
@@ -39,23 +57,26 @@ def store_fits(config, data, filepath):
     hdr["PIPELINE"] = config["pipeline"]["name"]
     hdr["DIST_z"] = config["galaxy"]["dist_z"]
     hdr["ROTATION"] = config["galaxy"]["rotation"]["type"]
-    # hdr['XCOORD'] = params['cube_params']['x_coord']
-    # hdr['YCOORD'] = params['cube_params']['y_coord']
-    # hdr['X_RES'] = params['cube_params']['spatial_resolution'][0]
-    # hdr['Y_RES'] = params['cube_params']['spatial_resolution'][1]
     hdr["SIM"] = config["simulation"]["name"]
-    
-    # Handle GALAXYID based on simulation type
-    if config["simulation"]["name"].lower() == "illustris":
-        hdr["GALAXYID"] = config["data"]["load_galaxy_args"]["id"]
-        object_name = f"{config['simulation']['name']} {config['data']['load_galaxy_args']['id']}"
-    elif config["simulation"]["name"].lower() == "nihao":
-        hdr["GALAXYID"] = "N/A"
-        object_name = f"{config['simulation']['name']} NIHAO"
-    else:
-        object_name = f"{config['simulation']['name']} Unknown"
 
-    hdr["SNAPSHOT"] = config["data"].get("args", {}).get("snapshot", "unknown")
+    sim_name = config["simulation"]["name"].lower()
+    if sim_name.startswith("illustris"):
+        # For Illustris, use values from the config directly
+        galaxy_id = config["data"]["load_galaxy_args"]["id"]
+        snapshot = config["data"]["args"]["snapshot"]
+    else:
+        # For NIHAO, extract from the simulation path
+        sim_path = config["simulation"]["args"]["path"]
+        galaxy_id, snapshot = extract_info_from_path(sim_path)
+        # Fallback in case extraction fails
+        if galaxy_id is None or snapshot is None:
+            galaxy_id = config["data"]["load_galaxy_args"].get("id", "unknown")
+            snapshot = config["data"]["args"].get("snapshot", "unknown")
+
+    hdr["GALAXYID"] = galaxy_id
+    object_name = f"{config['simulation']['name']} {galaxy_id}"
+    hdr["SNAPSHOT"] = snapshot
+
     hdr["SUBSET"] = config["data"]["subset"]["use_subset"]
     hdr["SSP"] = config["ssp"]["template"]["name"]
     hdr["INSTR"] = config["telescope"]["name"]
@@ -70,19 +91,17 @@ def store_fits(config, data, filepath):
     hdr1 = fits.Header()
     hdr1["EXTNAME"] = "DATA"
     hdr1["OBJECT"] = object_name
-    hdr1["BUNIT"] = "erg/(s*cm^2*A)"  # ? /Angstrom
+    hdr1["BUNIT"] = "erg/(s*cm^2*A)"  # flux unit per Angstrom
     hdr1["CRPIX1"] = (datacube.shape[0] - 1) / 2
     hdr1["CRPIX2"] = (datacube.shape[1] - 1) / 2
-    hdr1["CD1_1"] = telescope.spatial_res / 3600  # to convert from arcsec to deg
+    hdr1["CD1_1"] = telescope.spatial_res / 3600  # convert arcsec to deg
     hdr1["CD1_2"] = 0
     hdr1["CD2_1"] = 0
-    hdr1["CD2_2"] = telescope.spatial_res / 3600  # to convert from arcsec to deg
+    hdr1["CD2_2"] = telescope.spatial_res / 3600  # convert arcsec to deg
     hdr1["CUNIT1"] = "deg"
     hdr1["CUNIT2"] = "deg"
     hdr1["CTYPE1"] = "RA---TAN"
     hdr1["CTYPE2"] = "DEC--TAN"
-    hdr1["CRVAL1"] = 0
-    hdr1["CRVAL2"] = 0
     hdr1["CTYPE3"] = "AWAV"
     hdr1["CUNIT3"] = "Angstrom"
     hdr1["CD3_3"] = telescope.wave_res
@@ -95,25 +114,23 @@ def store_fits(config, data, filepath):
 
     empty_primary = fits.PrimaryHDU(header=hdr)
     image_hdu1 = fits.ImageHDU(datacube.T, header=hdr1)
-    # image_hdu2 = fits.ImageHDU(wavelengths, name='WAVE')
 
-        # Define output filename
-    if config["simulation"]["name"].lower() == "illustris":
-        output_filename = f"{filepath}{config['simulation']['name']}_id{config['data']['load_galaxy_args']['id']}_snap{config['data']['args']['snapshot']}_{parttype}_subset{config['data']['subset']['use_subset']}.fits"
-    else:  # NIHAO
-        output_filename = f"{filepath}{config['simulation']['name']}_snap{config['data']['args'].get('snapshot', 'unknown')}_{parttype}_subset{config['data'].get('subset', {}).get('use_subset', 'unknown')}.fits"
+    output_filename = (
+        f"{filepath}{config['simulation']['name']}_id{galaxy_id}_snap{snapshot}_"
+        f"{parttype}_subset{config['data']['subset']['use_subset']}.fits"
+    )
 
-    hdul = fits.HDUList([empty_primary, image_hdu1])  # , image_hdu2])
+    os.makedirs(os.path.dirname(output_filename), exist_ok=True)
+    hdul = fits.HDUList([empty_primary, image_hdu1])
     hdul.writeto(output_filename, overwrite=True)
-    logger.info(f"Datacube saved to {filepath}")
-
+    logger.info(f"Datacube saved to {output_filename}")
 
 def load_fits(filepath):
     """
-    Load a fits file and return the datacube.
+    Load a FITS file and return the datacube.
 
     Parameters:
-        filepath (str): The path to the fits file
+        filepath (str): The path to the FITS file
 
     Returns:
         The cube object from mpdaf
