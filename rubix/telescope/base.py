@@ -37,3 +37,13 @@ class BaseTelescope(eqx.Module):
     pixel_type: str
     wave_seq: Float[Array, "..."]
     wave_edges: Float[Array, "..."]
+
+    @jaxtyped(typechecker=typechecker)
+    def set_spatial_bin_area(self, spatial_bin_area: Union[float, None]) -> None:
+        """
+        Set the spatial bin area.
+
+        Args:
+            spatial_bin_area (float): The spatial bin area.
+        """
+        self.spatial_bin_area = spatial_bin_area

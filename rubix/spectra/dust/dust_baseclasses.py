@@ -1,45 +1,14 @@
 import jax.numpy as jnp
+import jax
 import equinox
 
+from .helpers import test_valid_x_range
 from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker
 
 __all__ = ["BaseExtModel", "BaseExtRvModel"]#, "BaseExtRvAfAModel", "BaseExtGrainModel"]
-
-def test_valid_x_range(wave: Float[Array, "n"], wave_range: Float[Array, "2"], outname: str) -> None:
-    """
-    Test if the input wavelength is within the valid range of the model.
-
-    Parameters
-    ----------
-    wave : Float[Array, "n"]
-        The input wavelength to test.
         
-    wave_range : Float[Array, "2"]
-        The valid range of the model.
-        
-    outname : str
-        The name of the model for error message.
 
-    Returns
-    -------
-    None
-    """
-
-    deltacheck = 1e-6  # delta to allow for small numerical issues
-    if jnp.logical_or(
-        jnp.any(wave <= (wave_range[0] - deltacheck)), jnp.any(wave >= (wave_range[1] + deltacheck))
-    ):
-        raise ValueError(
-            "Input wave outside of range defined for "
-            + outname
-            + " ["
-            + str(wave_range[0])
-            + " <= wave <= "
-            + str(wave_range[1])
-            + ", wave has units 1/micron]"
-        )
-        
 @jaxtyped(typechecker=typechecker)
 class BaseExtModel(equinox.Module): 
     """
@@ -47,7 +16,9 @@ class BaseExtModel(equinox.Module):
     """
 
     #wave: equinox.AbstractClassVar[Float[Array, "n_wave"]]
-    wave_range: equinox.AbstractClassVar[Float[Array, "2"]]
+    #wave_range: equinox.AbstractVar[Float[Array, "2"]]
+    wave_range_l: equinox.AbstractVar[float]
+    wave_range_h: equinox.AbstractVar[float]
     #wave: Float[Array, "n_wave"] = equinox.field(static=True)
     #wave_range: Float[Array, "2"] = equinox.field(converter=jnp.asarray, static=True)
 
@@ -56,9 +27,26 @@ class BaseExtModel(equinox.Module):
         Evaluate the dust extinction model at the input wavelength for the given model parameters.
         """
 
-        test_valid_x_range(wave, self.wave_range, self.__class__.__name__)
+        #test_valid_x_range(wave, [self.wave_range_l,self.wave_range_h], self.__class__.__name__)
         
         return self.evaluate(wave)
+
+    def evaluate(self, wave: Float[Array, "n_wave"]) -> Float[Array, "n_wave"]:
+        """
+        Abstract function to evaluate the dust extinction model at the input wavelength for the given model parameters.
+
+        Parameters
+        ----------
+        wave : Float[Array, "n_wave"]
+            The wavelength to calculate the dust extinction for.
+            The wavelength has to be passed as wavenumber in units of [1/microns].
+
+        Returns
+        -------
+        Float[Array, "n_wave"]
+            The dust extinction as a function of wavenumber.
+        """
+        pass
 
     def extinguish(self) -> Float[Array, "n_wave"]:
         """
@@ -84,36 +72,55 @@ class BaseExtRvModel(BaseExtModel):
     Base class for dust extinction models with Rv parameter.
     """
 
-    Rv: float #equinox.AbstractClassVar[Float]
-    Rv_range: equinox.AbstractClassVar[Float[Array, "2"]]
+    Rv: equinox.AbstractVar[float]
+    Rv_range_l: equinox.AbstractVar[float]#[Array, "2"]]
+    Rv_range_h: equinox.AbstractVar[float]
 
     """
     The Rv parameter (R(V) = A(V)/E(B-V) total-to-selective extinction) of the dust extinction model and its valid range. 
     """
 
-    def __check_init__(self) -> None:
-        """
-        Check if the Rv parameter of the dust extinction model is within Rv_range.
+    
+    #def __check_init__(self) -> None:
+    #    """
+    #    Check if the Rv parameter of the dust extinction model is within Rv_range.
 
-        Parameters
-        ----------
-        Rv : Float
-            The Rv parameter of the dust extinction model.
+    #    Parameters
+    #    ----------
+    #    Rv : Float
+    #        The Rv parameter of the dust extinction model.
         
-        Raises
-        ------
-        ValueError
-            If the Rv parameter is outsied of defined range.
-        """
-        if not (self.Rv_range[0] <= self.Rv <= self.Rv_range[1]):
-            raise ValueError(
-                "parameter Rv must be between "
-                + str(self.Rv_range[0])
-                + " and "
-                + str(self.Rv_range[1])
-            )
-        else:
-            pass
+    #    Raises
+    #    ------
+    #    ValueError
+    #        If the Rv parameter is outsied of defined range.
+    #    """
+    #    #if jnp.logical_or(self.Rv < self.Rv_range[0], self.Rv > self.Rv_range[1]): #not (self.Rv_range[0] <= self.Rv <= self.Rv_range[1]):
+    #    #    raise ValueError(
+    #    #        "parameter Rv must be between "
+    #    #        + str(self.Rv_range[0])
+    #    #        + " and "
+    #    #        + str(self.Rv_range[1])
+    #    #    )
+    #    #else:
+    #    #    pass
+
+    #    def true_fn(_):
+    #        raise ValueError(f"Rv value {self.Rv} is out of range [{self.Rv_range_l},{self.Rv_range_h}]")
+
+    #    def false_fn(_):
+    #        return None
+
+    #    condition = jnp.logical_or(self.Rv < self.Rv_range_l, self.Rv > self.Rv_range_h)
+    #    jax.debug.print("Condition: {}", condition)
+
+
+    #    jax.lax.cond(
+    #        jnp.logical_or(self.Rv < self.Rv_range_l, self.Rv > self.Rv_range_h),
+    #        true_fn,
+    #        false_fn,
+    #        operand=None
+    #    )
     
     def extinguish(self, wave: Float[Array, "n_wave"], Av: Float = None, Ebv: Float = None) -> Float[Array, "n_wave"]:
         """

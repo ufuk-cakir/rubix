@@ -22,7 +22,7 @@ from .telescope import get_spaxel_assignment, get_telescope, get_filter_particle
 from .psf import get_convolve_psf
 from .lsf import get_convolve_lsf
 from .noise import get_apply_noise
-from rubix import config as rubix_config
+from .dust import get_extinction
 
 from jaxtyping import jaxtyped
 from beartype import beartype as typechecker
@@ -112,6 +112,7 @@ class RubixPipeline:
         doppler_shift_and_resampling = get_doppler_shift_and_resampling(
             self.user_config
         )
+        apply_extinction = get_extinction(self.user_config)
         calculate_datacube = get_calculate_datacube(self.user_config)
         convolve_psf = get_convolve_psf(self.user_config)
         convolve_lsf = get_convolve_lsf(self.user_config)
@@ -125,6 +126,7 @@ class RubixPipeline:
             reshape_data,
             scale_spectrum_by_mass,
             doppler_shift_and_resampling,
+            apply_extinction,
             calculate_datacube,
             convolve_psf,
             convolve_lsf,

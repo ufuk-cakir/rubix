@@ -1,6 +1,4 @@
 import jax.numpy as jnp
-import jax
-import equinox as eqx
 from rubix.telescope.utils import (
     calculate_spatial_bin_edges,
     square_spaxel_assignment,
@@ -11,7 +9,7 @@ from rubix.telescope.factory import TelescopeFactory
 from rubix.logger import get_logger
 from .cosmology import get_cosmology
 from .data import RubixData
-from typing import Callable, List, Union
+from typing import Callable, Union
 
 from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker
