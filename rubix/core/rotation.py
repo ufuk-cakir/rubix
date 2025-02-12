@@ -71,7 +71,7 @@ def get_galaxy_rotation(config: dict):
         gamma = config["galaxy"]["rotation"]["gamma"]
 
     @jaxtyped(typechecker=typechecker)
-    def rotate_galaxy(rubixdata: RubixData, type: str = "face-on") -> RubixData:
+    def rotate_galaxy(rubixdata: RubixData) -> RubixData:
         logger.info(f"Rotating galaxy with alpha={alpha}, beta={beta}, gamma={gamma}")
 
         for particle_type in ["stars", "gas"]:
