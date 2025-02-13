@@ -4,6 +4,7 @@ constants:
   RHO_CRIT0_KPC3_UNITY_H: 277.536627  # multiply by h**2 in cosmology conversion
   MPC:  3.08567758149e24  # Mpc in cm
   YEAR: 31556925.2  # year in seconds
+  m_H: 1.6737236e-27  # kg
 
 telescopes:
   MUSE:

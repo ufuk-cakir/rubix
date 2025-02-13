@@ -1,7 +1,6 @@
 import jax.numpy as jnp
 import jax
 from rubix import config
-from jaxtyping import Float, Array
 import numpy as np
 
 from typing import Union
