@@ -83,7 +83,7 @@ def calculate_extinction(
     dust_grain_density: float,
     effective_wavelength: float = 5448 # Johnson V band effective wavelength in Angstrom
 ) -> Float[Array, "n_gas"]:
-    """
+    r"""
     Calculate the extinction of the gas cells due to dust.
     
         The extinction is calculated using the dust column density and the dust-to-gas ratio.
@@ -144,7 +144,7 @@ def calculate_extinction(
 
 @jaxtyped(typechecker=typechecker)
 def apply_spaxel_extinction(config: dict, rubixdata: RubixData, wavelength: Float[Array, "n_wave"], n_spaxels: int, spaxel_area: Float[Array, "..."]) -> Float[Array, "1 n_star n_wave"]:
-    """
+    r"""
         Calculate the extinction for each star in the spaxel and apply dust extinction to it's associated SSP.
 
         The dust column density is calculated by effectively integrating the dust mass along the z-axis and dividing by pixel area.

@@ -114,6 +114,7 @@ def test_load_data(mock_file, mock_exists):
             "density": "g/cm^3",
             "mass": "g",
             "metallicity": "",
+            "metals": "",
             "sfr": "Msun/yr",
             "internal_energy": "erg/g",
             "velocity": "cm/s",
