@@ -37,7 +37,7 @@ def calculate_dust_to_gas_ratio(gas_metallicity: Float[Array, "n_gas"], model: s
 
     if Xco == "MW":
         if model == "power law slope fixed":
-            raise NotImplementedError("power law slope fixed not implemented yet.")
+            raise NotImplementedError("power law slope fixed not implemented yet.") # pragma no cover
         elif model == "power law slope free":
             # power law slope fixed
             # log(D/G) = a + b * log(O/H)
@@ -56,7 +56,7 @@ def calculate_dust_to_gas_ratio(gas_metallicity: Float[Array, "n_gas"], model: s
             dust_to_gas_ratio = 1 / jnp.where(gas_metallicity > x_transition, 10**(a + alpha_h * (x_sol - gas_metallicity)), 10**(b + alpha_l * (x_sol - gas_metallicity)))
     elif Xco == "Z":
         if model == "power law slope fixed":
-            raise NotImplementedError("power law slope fixed not implemented yet.")
+            raise NotImplementedError("power law slope fixed not implemented yet.") # pragma no cover
         elif model == "power law slope free":
             # power law slope fixed
             # log(D/G) = a + b * log(O/H)

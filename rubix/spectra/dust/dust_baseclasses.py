@@ -1,5 +1,6 @@
 import jax.numpy as jnp
 import equinox
+from abc import abstractmethod
 
 #TODO: add runtime type checking for valid x ranges
 # can be achieved by using chekify...
@@ -32,6 +33,7 @@ class BaseExtModel(equinox.Module):
         
         return self.evaluate(wave)
 
+    @abstractmethod
     def evaluate(self, wave: Float[Array, "n_wave"]) -> Float[Array, "n_wave"]:
         """
         Abstract function to evaluate the dust extinction model at the input wavelength for the given model parameters.
@@ -47,8 +49,8 @@ class BaseExtModel(equinox.Module):
         Float[Array, "n_wave"]
             The dust extinction as a function of wavenumber.
         """
-        pass
 
+    @abstractmethod
     def extinguish(self) -> Float[Array, "n_wave"]:
         """
         Abstract function to calculate the dust extinction for a given wavelength as a fraction.
@@ -64,7 +66,6 @@ class BaseExtModel(equinox.Module):
         Float[Array, "n_wave"]
             The fractional extinction as a function of wavenumber.
         """
-        pass
 
 
 @jaxtyped(typechecker=typechecker)

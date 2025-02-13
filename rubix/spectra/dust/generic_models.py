@@ -75,7 +75,7 @@ def Polynomial1d(x: Float[Array, "n"], coeffs: Float[Array, "m"], domain: Tuple[
         Evaluate polynomial using Horner's method.
         """
         if len(coeffs) == 1:
-            return coeffs[-1] * jnp.ones_like(x, subok=False)
+            return coeffs[-1] * jnp.ones_like(x)
         c0 = coeffs[-1]
         for i in range(2, len(coeffs) + 1):
             c0 = coeffs[-i] + c0 * x

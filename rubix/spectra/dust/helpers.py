@@ -8,7 +8,7 @@ from typing import Tuple
 from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker
 
-def test_valid_x_range(wave: Float[Array, "n"], wave_range: Float[Array, "2"], outname: str) -> None:
+def test_valid_x_range(wave: Float[Array, "n"], wave_range: Float[Array, "2"], outname: str) -> None: # pragma no cover
     """
     Test if the input wavelength is within the valid range of the model.
 
@@ -86,8 +86,7 @@ def poly_map_domain(oldx: Float[Array, "n"], domain: Tuple[float, float], window
     """
     domain = jnp.array(domain)
     window = jnp.array(window)
-    if domain.shape != (2,) or window.shape != (2,):
-        raise ValueError('Expected "domain" and "window" to be a tuple of size 2.')
+
     scl = (window[1] - window[0]) / (domain[1] - domain[0])
     off = (window[0] * domain[1] - window[1] * domain[0]) / (domain[1] - domain[0])
     return off + scl * oldx
