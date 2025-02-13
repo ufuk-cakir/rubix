@@ -1,8 +1,9 @@
 import jax.numpy as jnp
-import jax
 import equinox
 
-from .helpers import test_valid_x_range
+#TODO: add runtime type checking for valid x ranges
+# can be achieved by using chekify...
+#from .helpers import test_valid_x_range
 from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker
 

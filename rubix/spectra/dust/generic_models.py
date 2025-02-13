@@ -1,7 +1,9 @@
 import jax.numpy as jnp
 
 from .helpers import poly_map_domain
-from .dust_baseclasses import test_valid_x_range
+#TODO: add runtime type checking for valid x ranges
+# can be achieved by using chekify...
+#from .dust_baseclasses import test_valid_x_range
 
 from typing import Tuple
 from jaxtyping import Array, Float, jaxtyped

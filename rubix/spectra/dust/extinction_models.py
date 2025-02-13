@@ -5,7 +5,6 @@ from .dust_baseclasses import BaseExtRvModel
 from .helpers import _smoothstep
 from .generic_models import PowerLaw1d, Polynomial1d, Drude1d, _modified_drude, FM90
 
-from typing import ClassVar
 from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker
 

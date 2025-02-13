@@ -127,6 +127,7 @@ BaseHandler:
       density: "Msun/kpc^3"
       mass: "Msun"
       metallicity: ""
+      metals: ""
       sfr: "Msun/yr"
       internal_energy: "erg/g"
       velocity: "kpc/s"
