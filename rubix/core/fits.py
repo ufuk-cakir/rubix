@@ -7,24 +7,6 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import os
 
-def extract_info_from_path(sim_path):
-    """
-    Extract galaxy_id and snapshot from a simulation path.
-    Example:
-      /Users/.../g8.26e11/snap_2000/output/8.26e11.02000 
-      --> galaxy_id: "g8.26e11", snapshot: "2000"
-    """
-    path_parts = os.path.normpath(sim_path).split(os.sep)
-    snapshot = None
-    galaxy_id = None
-    for i, part in enumerate(path_parts):
-        if part.startswith("snap_"):
-            snapshot = part.split("_", 1)[1]
-            if i > 0:
-                galaxy_id = path_parts[i - 1]
-            break
-    return galaxy_id, snapshot
-
 def store_fits(config, data, filepath):
     """
     Store the datacube in a FITS file.
@@ -59,19 +41,9 @@ def store_fits(config, data, filepath):
     hdr["ROTATION"] = config["galaxy"]["rotation"]["type"]
     hdr["SIM"] = config["simulation"]["name"]
 
-    sim_name = config["simulation"]["name"].lower()
-    if sim_name.startswith("illustris"):
-        # For Illustris, use values from the config directly
-        galaxy_id = config["data"]["load_galaxy_args"]["id"]
-        snapshot = config["data"]["args"]["snapshot"]
-    else:
-        # For NIHAO, extract from the simulation path
-        sim_path = config["simulation"]["args"]["path"]
-        galaxy_id, snapshot = extract_info_from_path(sim_path)
-        # Fallback in case extraction fails
-        if galaxy_id is None or snapshot is None:
-            galaxy_id = config["data"]["load_galaxy_args"].get("id", "unknown")
-            snapshot = config["data"]["args"].get("snapshot", "unknown")
+    #For Illustris and NIHAO
+    galaxy_id = config["data"]["load_galaxy_args"]["id"]
+    snapshot = config["data"]["args"]["snapshot"]
 
     hdr["GALAXYID"] = galaxy_id
     object_name = f"{config['simulation']['name']} {galaxy_id}"
