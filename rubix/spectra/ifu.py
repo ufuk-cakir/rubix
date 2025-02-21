@@ -75,7 +75,8 @@ def calculate_diff(
     """
 
     if pad_with_zero:
-        differences = jnp.diff(vec, prepend=vec[0])
+        #differences = jnp.diff(vec, prepend=vec[0])
+        differences = jnp.diff(vec, prepend=vec[..., :1], axis=-1)
     else:
         differences = jnp.diff(vec)
     return differences
@@ -219,6 +220,10 @@ def resample_spectrum(
     in_range_mask = (initial_wavelength >= jnp.min(target_wavelength)) & (
         initial_wavelength <= jnp.max(target_wavelength)
     )
+
+    # Ensure the wavelength array is at least 1D
+    initial_wavelength = jnp.atleast_1d(initial_wavelength)
+
     intrinsic_wave_diff = calculate_diff(initial_wavelength) * in_range_mask
 
     # Get total luminsoity within the wavelength range
