@@ -256,3 +256,24 @@ class RubixPipeline:
         loss = jnp.sum((output.stars.datacube - target.stars.datacube) ** 2)
 
         return loss
+
+    def loss_only_wrt_age_metallicity(self, age, metallicity, base_data, target):
+        """
+        A "wrapped" loss function that:
+        1) Creates a modified rubixdata with the new 'age' and 'metallicity'
+        2) Runs the pipeline
+        3) Returns MSE
+        """
+        # 1) Copy your data (so we don't mutate the original)
+        data_modified = deepcopy(base_data)
+        # 2) Replace the age
+        data_modified.stars.age = age
+        data_modified.stars.metallicity = metallicity
+
+        # 3) Run the pipeline
+        output = self.run(data_modified)
+
+        # 4) Compute loss
+        loss = jnp.sum((output.stars.datacube - target.stars.datacube) ** 2)
+
+        return loss
