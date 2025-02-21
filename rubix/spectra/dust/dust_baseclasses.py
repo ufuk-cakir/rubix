@@ -17,12 +17,8 @@ class BaseExtModel(equinox.Module):
     Base class for dust extinction models.
     """
 
-    #wave: equinox.AbstractClassVar[Float[Array, "n_wave"]]
-    #wave_range: equinox.AbstractVar[Float[Array, "2"]]
     wave_range_l: equinox.AbstractVar[float]
     wave_range_h: equinox.AbstractVar[float]
-    #wave: Float[Array, "n_wave"] = equinox.field(static=True)
-    #wave_range: Float[Array, "2"] = equinox.field(converter=jnp.asarray, static=True)
 
     def __call__(self, wave: Float[Array, "n_wave"]) -> Float[Array, "n_wave"]:
         """

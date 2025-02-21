@@ -190,8 +190,8 @@ def get_filter_particles(config: dict) -> Callable:
             mask_jax = jnp.array(mask)
             setattr(rubixdata.gas, "mask", mask_jax)
             # rubixdata.gas.mask = mask
-            masked_metals = jnp.where(mask_jax[:, jnp.newaxis], rubixdata.gas.metals, 0)
-            setattr(rubixdata.gas, "metals", masked_metals)
+            #masked_metals = jnp.where(mask_jax[:, jnp.newaxis], rubixdata.gas.metals, 0)
+            #setattr(rubixdata.gas, "metals", masked_metals)
 
         return rubixdata
 

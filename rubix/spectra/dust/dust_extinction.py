@@ -32,9 +32,6 @@ def calculate_dust_to_gas_ratio(gas_metallicity: Float[Array, "n_gas"], model: s
 
     x_sol = 8.69  # solar oxygen abundance from Asplund et al. 2009
 
-    #convert the gas gas_metallicity to 12 + log(O/H)
-    # TODO!!!
-
     if Xco == "MW":
         if model == "power law slope fixed":
             raise NotImplementedError("power law slope fixed not implemented yet.") # pragma no cover
@@ -123,7 +120,6 @@ def calculate_extinction(
     # Constants
     m_H = config["constants"]["MASS_OF_PROTON"]  # mass of a hydrogen atom in grams
 
-    #TODO: check units carefully!
     # dust_grain_density is in g/cm^3
     # dust_column_density is internally in Msun per kpc^2, but should be in g/cm^2
     # coordinates internally are in kpc
