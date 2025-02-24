@@ -1,6 +1,4 @@
 import jax.numpy as jnp
-import jax
-import equinox as eqx
 from rubix.telescope.utils import (
     calculate_spatial_bin_edges,
     square_spaxel_assignment,
@@ -11,7 +9,7 @@ from rubix.telescope.factory import TelescopeFactory
 from rubix.logger import get_logger
 from .cosmology import get_cosmology
 from .data import RubixData
-from typing import Callable, List, Union
+from typing import Callable, Union
 
 from jaxtyping import Array, Float, jaxtyped
 from beartype import beartype as typechecker
@@ -182,7 +180,7 @@ def get_filter_particles(config: dict) -> Callable:
                 for attr in dir(rubixdata.gas)
                 if not attr.startswith("__")
                 and not callable(getattr(rubixdata.gas, attr))
-                and attr not in ("coords", "velocity")
+                and attr not in ("coords", "velocity", "metals")
             ]
             for attr in attributes:
                 current_attr_value = getattr(rubixdata.gas, attr)
@@ -192,6 +190,8 @@ def get_filter_particles(config: dict) -> Callable:
             mask_jax = jnp.array(mask)
             setattr(rubixdata.gas, "mask", mask_jax)
             # rubixdata.gas.mask = mask
+            #masked_metals = jnp.where(mask_jax[:, jnp.newaxis], rubixdata.gas.metals, 0)
+            #setattr(rubixdata.gas, "metals", masked_metals)
 
         return rubixdata
 
