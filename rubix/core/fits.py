@@ -5,21 +5,21 @@ from rubix.logger import get_logger
 from mpdaf.obj import Cube
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
-
+import os
 
 def store_fits(config, data, filepath):
     """
-    Store the datacube in a fits file.
+    Store the datacube in a FITS file.
 
     Parameters:
         config (dict): The configuration dictionary
         data (dict): The data dictionary
-        filepath (str): The path to the fits
+        filepath (str): The path to save the FITS file
 
     Returns:
         None
     """
-    logger_config = config["logger"] if "logger" in config else None  # type:ignore
+    logger_config = config.get("logger", None)
     logger = get_logger(logger_config)
 
     if "cube_type" not in config["data"]["args"]:
@@ -39,13 +39,16 @@ def store_fits(config, data, filepath):
     hdr["PIPELINE"] = config["pipeline"]["name"]
     hdr["DIST_z"] = config["galaxy"]["dist_z"]
     hdr["ROTATION"] = config["galaxy"]["rotation"]["type"]
-    # hdr['XCOORD'] = params['cube_params']['x_coord']
-    # hdr['YCOORD'] = params['cube_params']['y_coord']
-    # hdr['X_RES'] = params['cube_params']['spatial_resolution'][0]
-    # hdr['Y_RES'] = params['cube_params']['spatial_resolution'][1]
     hdr["SIM"] = config["simulation"]["name"]
-    hdr["GALAXYID"] = config["data"]["load_galaxy_args"]["id"]
-    hdr["SNAPSHOT"] = config["data"]["args"]["snapshot"]
+
+    #For Illustris and NIHAO
+    galaxy_id = config["data"]["load_galaxy_args"]["id"]
+    snapshot = config["data"]["args"]["snapshot"]
+
+    hdr["GALAXYID"] = galaxy_id
+    object_name = f"{config['simulation']['name']} {galaxy_id}"
+    hdr["SNAPSHOT"] = snapshot
+
     hdr["SUBSET"] = config["data"]["subset"]["use_subset"]
     hdr["SSP"] = config["ssp"]["template"]["name"]
     hdr["INSTR"] = config["telescope"]["name"]
@@ -59,24 +62,18 @@ def store_fits(config, data, filepath):
 
     hdr1 = fits.Header()
     hdr1["EXTNAME"] = "DATA"
-    hdr1["OBJECT"] = (
-        str(config["simulation"]["name"])
-        + " "
-        + str(config["data"]["load_galaxy_args"]["id"])
-    )
-    hdr1["BUNIT"] = "erg/(s*cm^2*A)"  # ? /Angstrom
+    hdr1["OBJECT"] = object_name
+    hdr1["BUNIT"] = "erg/(s*cm^2*A)"  # flux unit per Angstrom
     hdr1["CRPIX1"] = (datacube.shape[0] - 1) / 2
     hdr1["CRPIX2"] = (datacube.shape[1] - 1) / 2
-    hdr1["CD1_1"] = telescope.spatial_res / 3600  # to convert from arcsec to deg
+    hdr1["CD1_1"] = telescope.spatial_res / 3600  # convert arcsec to deg
     hdr1["CD1_2"] = 0
     hdr1["CD2_1"] = 0
-    hdr1["CD2_2"] = telescope.spatial_res / 3600  # to convert from arcsec to deg
+    hdr1["CD2_2"] = telescope.spatial_res / 3600  # convert arcsec to deg
     hdr1["CUNIT1"] = "deg"
     hdr1["CUNIT2"] = "deg"
     hdr1["CTYPE1"] = "RA---TAN"
     hdr1["CTYPE2"] = "DEC--TAN"
-    hdr1["CRVAL1"] = 0
-    hdr1["CRVAL2"] = 0
     hdr1["CTYPE3"] = "AWAV"
     hdr1["CUNIT3"] = "Angstrom"
     hdr1["CD3_3"] = telescope.wave_res
@@ -89,22 +86,23 @@ def store_fits(config, data, filepath):
 
     empty_primary = fits.PrimaryHDU(header=hdr)
     image_hdu1 = fits.ImageHDU(datacube.T, header=hdr1)
-    # image_hdu2 = fits.ImageHDU(wavelengths, name='WAVE')
 
-    hdul = fits.HDUList([empty_primary, image_hdu1])  # , image_hdu2])
-    hdul.writeto(
-        f"{filepath}{config['simulation']['name']}_id{config['data']['load_galaxy_args']['id']}_snap{config['data']['args']['snapshot']}_{parttype}_subset{config['data']['subset']['use_subset']}.fits",
-        overwrite=True,
+    output_filename = (
+        f"{filepath}{config['simulation']['name']}_id{galaxy_id}_snap{snapshot}_"
+        f"{parttype}_subset{config['data']['subset']['use_subset']}.fits"
     )
-    logger.info(f"Datacube saved to {filepath}")
 
+    os.makedirs(os.path.dirname(output_filename), exist_ok=True)
+    hdul = fits.HDUList([empty_primary, image_hdu1])
+    hdul.writeto(output_filename, overwrite=True)
+    logger.info(f"Datacube saved to {output_filename}")
 
 def load_fits(filepath):
     """
-    Load a fits file and return the datacube.
+    Load a FITS file and return the datacube.
 
     Parameters:
-        filepath (str): The path to the fits file
+        filepath (str): The path to the FITS file
 
     Returns:
         The cube object from mpdaf
