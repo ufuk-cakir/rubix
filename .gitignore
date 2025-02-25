@@ -167,3 +167,6 @@ rubix/telescope/filters/data/*
 .firebaserc
 firebase.json
 .firebase/*
+
+notebooks/frames/*
+notebooks/frames
