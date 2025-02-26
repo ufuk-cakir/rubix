@@ -104,11 +104,10 @@ fail_under = 80
 ignore = ["F722"]
 
 [tool.isort]
-profile = “black”
+profile = "black"
 combine_as_imports = true
 known_third_party = [
-    “IPython”,
-    “pytest”,
+    "pytest",
     "requests",
     "requests-mock",
     "h5py",
@@ -119,8 +118,7 @@ known_third_party = [
     "pyaml",
     "jaxtyping",
     "equinox",
-    "jax[cpu]!=0.4.27",
-    "jax[cpu]!=0.4.36",
+    "jax",
     "interpax",
     "astroquery",
     "beartype",
@@ -130,6 +128,6 @@ known_third_party = [
     "pynbody"
 ]
 known_first_party = [
-  “rubix”,
+  "rubix",
 ]
-sections = [“FUTURE”, “STDLIB”, “THIRDPARTY”, “FIRSTPARTY”, “LOCALFOLDER”]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
