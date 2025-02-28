@@ -3,6 +3,8 @@
 constants:
   LSOL_TO_ERG: 3.828e33
   MPC_TO_CM: 3.08568e24
+  KPC_TO_CM: 3.08568e21
+  MSUN_TO_GRAMS: 1.989e33
   SPEED_OF_LIGHT: 299792.458
   CM_TO_KPC: 3.24078e-22
   CMS_TO_KMS: 1e-5
@@ -30,6 +32,7 @@ IllustrisAPI:
       - Masses
       #- ParticleIDs
       - GFM_Metallicity
+      - GFM_Metals
       #- SubfindHsml
       - StarFormationRate
       - InternalEnergy
@@ -51,6 +54,7 @@ IllustrisHandler:
       Density: density
       Masses: mass
       GFM_Metallicity: metallicity
+      GFM_Metals: metals
       StarFormationRate: sfr
       InternalEnergy: internal_energy
       Velocities: velocity
@@ -83,6 +87,7 @@ IllustrisHandler:
       density: g/cm^3
       mass: g
       metallicity: ""
+      metals: ""
       sfr: Msun/yr
       internal_energy: erg/g
       velocity: cm/s
@@ -122,6 +127,7 @@ BaseHandler:
       density: "Msun/kpc^3"
       mass: "Msun"
       metallicity: ""
+      metals: ""
       sfr: "Msun/yr"
       internal_energy: "erg/g"
       velocity: "kpc/s"
@@ -136,6 +142,12 @@ ssp:
     metallicity: ""
     wavelength: Angstrom
     flux: Lsun/Angstrom
+  dust:
+    extinction_model: "Cardelli89"
+    Rv: 3.1
+    dust_to_gas_model: "broken power law fit" # fitting model for dust to gas ratio from Remy-Ruyer et al. 2014 Table 1
+    Xco: "Z" # Xco model used in Remy-Ruyer et al. 2014, either "MW" or "Z" see Table 1 in their paper
+    dust_grain_density: 3.5 # g/cm^3 #check this value
   templates:
     BruzualCharlot2003:
       name: "Bruzual & Charlot (2003)"
