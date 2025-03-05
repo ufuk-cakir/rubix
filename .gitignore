@@ -169,3 +169,4 @@ utils/*
 firebase.json
 .firebase/*
 
+rubix/spectra/ssp/templates/fsps.h5
