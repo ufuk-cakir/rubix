@@ -214,7 +214,7 @@ ssp:
       # more information on how those models are synthesized: https://github.com/cconroy20/fsps
       # and https://dfm.io/python-fsps/current/
       format: "fsps" # Format of the template
-      source: "rerun_from_scratch" # note: for fsps we use the source entry to specify if fsps should be run (rerun_from_scratch)
+      source: "load_from_file" # note: for fsps we use the source entry to specify if fsps should be run (rerun_from_scratch)
       # which silently also saves the output to disk in h5 format under the "file_name" given
       # or if we load from a pre-existing file in h5 format specified by "file_name".
       file_name: "fsps.h5" # File name of the template, stored in templates directory
