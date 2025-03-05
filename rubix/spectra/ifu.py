@@ -183,7 +183,13 @@ def _velocity_doppler_shift_single(
     """
     velocity = get_velocity_component(velocity, direction)
     # Calculate the Doppler shift of a wavelength due to a velocity
+    #print(velocity/SPEED_OF_LIGHT)
+    #classic dopplershift, which is approximated 1 + v/c
     return wavelength * jnp.exp(velocity / SPEED_OF_LIGHT)
+    #relativistic dopplershift
+    #return wavelength * jnp.sqrt((1 + velocity / SPEED_OF_LIGHT) / (1 - velocity / SPEED_OF_LIGHT))
+    #return wavelength
+
 
 
 @jaxtyped(typechecker=typechecker)
