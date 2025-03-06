@@ -41,7 +41,8 @@ dependencies = [
     "mpdaf",
     "ipywidgets",
     "jdaviz",
-    "pynbody"
+    "pynbody",
+    "pytest-mock"
 ]
 [project.optional-dependencies]
 tests = [
