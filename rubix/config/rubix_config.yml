@@ -242,4 +242,4 @@ ssp:
 ifu:
   # Configuration Related to IFU calculation
   doppler:
-    velocity_direction: "y" # The velocity component used to calculate doppler shift
+    velocity_direction: "z" # The velocity component used to calculate doppler shift
