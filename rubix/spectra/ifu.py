@@ -1,11 +1,12 @@
-import jax.numpy as jnp
-import jax
-from rubix import config
-import numpy as np
-
 from typing import Union
-from jaxtyping import Array, Float, Int, jaxtyped
+
+import jax
+import jax.numpy as jnp
+import numpy as np
 from beartype import beartype as typechecker
+from jaxtyping import Array, Float, Int, jaxtyped
+
+from rubix import config
 
 
 @jaxtyped(typechecker=typechecker)
@@ -60,6 +61,7 @@ def convert_luminoisty_to_flux_factor(
     )
     FACTOR = jnp.float64(FACTOR)
     return FACTOR
+
 
 def cosmological_doppler_shift(
     z: float, wavelength: Float[Array, " n_bins"]
@@ -183,13 +185,12 @@ def _velocity_doppler_shift_single(
     """
     velocity = get_velocity_component(velocity, direction)
     # Calculate the Doppler shift of a wavelength due to a velocity
-    #print(velocity/SPEED_OF_LIGHT)
-    #classic dopplershift, which is approximated 1 + v/c
+    # print(velocity/SPEED_OF_LIGHT)
+    # classic dopplershift, which is approximated 1 + v/c
     return wavelength * jnp.exp(velocity / SPEED_OF_LIGHT)
-    #relativistic dopplershift
-    #return wavelength * jnp.sqrt((1 + velocity / SPEED_OF_LIGHT) / (1 - velocity / SPEED_OF_LIGHT))
-    #return wavelength
-
+    # relativistic dopplershift
+    # return wavelength * jnp.sqrt((1 + velocity / SPEED_OF_LIGHT) / (1 - velocity / SPEED_OF_LIGHT))
+    # return wavelength
 
 
 @jaxtyped(typechecker=typechecker)
