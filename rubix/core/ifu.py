@@ -1,24 +1,28 @@
 from typing import Callable, Union
-from rubix.core.data import StarsData, GasData
 
 import jax
 import jax.numpy as jnp
+from beartype import beartype as typechecker
+from jaxtyping import Array, Float, jaxtyped
 
 from rubix import config as rubix_config
+from rubix.core.data import GasData, StarsData
 from rubix.logger import get_logger
 from rubix.spectra.ifu import (
+    calculate_cube,
     cosmological_doppler_shift,
     resample_spectrum,
     velocity_doppler_shift,
-    calculate_cube,
 )
-from .data import RubixData
-from .ssp import get_lookup_interpolation_pmap, get_ssp
-from .telescope import get_telescope
-from .data import RubixData
 
-from jaxtyping import Array, Float, jaxtyped
-from beartype import beartype as typechecker
+from .data import RubixData
+from .ssp import (
+    get_lookup_interpolation,
+    get_lookup_interpolation_pmap,
+    get_lookup_interpolation_vmap,
+    get_ssp,
+)
+from .telescope import get_telescope
 
 
 @jaxtyped(typechecker=typechecker)
@@ -52,6 +56,8 @@ def get_calculate_spectra(config: dict) -> Callable:
     """
     logger = get_logger(config.get("logger", None))
     lookup_interpolation_pmap = get_lookup_interpolation_pmap(config)
+    # lookup_interpolation_vmap = get_lookup_interpolation_vmap(config)
+    lookup_interpolation = get_lookup_interpolation(config)
 
     @jaxtyped(typechecker=typechecker)
     def calculate_spectra(rubixdata: RubixData) -> RubixData:
@@ -68,13 +74,47 @@ def get_calculate_spectra(config: dict) -> Callable:
         age = jnp.atleast_1d(age_data)
         metallicity = jnp.atleast_1d(metallicity_data)
 
-        spectra = lookup_interpolation_pmap(
+        """
+        spectra1 = lookup_interpolation(
             # rubixdata.stars.metallicity, rubixdata.stars.age
-            metallicity,
-            age,
+            metallicity[0][:250000],
+            age[0][:250000],
         )  # * inputs["mass"]
+        spectra2 = lookup_interpolation(
+            # rubixdata.stars.metallicity, rubixdata.stars.age
+            metallicity[0][250000:500000],
+            age[0][250000:500000],
+        )
+        spectra3 = lookup_interpolation(
+            # rubixdata.stars.metallicity, rubixdata.stars.age
+            metallicity[0][500000:750000],
+            age[0][500000:750000],
+        )
+        spectra = jnp.concatenate([spectra1, spectra2, spectra3], axis=0)
+        """
+        # Define the chunk size (number of particles per chunk)
+        chunk_size = 250000
+        total_length = metallicity[0].shape[
+            0
+        ]  # assuming metallicity[0] is your 1D array of particles
+
+        # List to hold the spectra chunks
+        spectra_chunks = []
+
+        # Loop over the data in chunks
+        for start in range(0, total_length, chunk_size):
+            end = min(start + chunk_size, total_length)
+            current_chunk = lookup_interpolation(
+                metallicity[0][start:end],
+                age[0][start:end],
+            )
+            spectra_chunks.append(current_chunk)
+
+        # Concatenate all the chunks along axis 0
+        spectra = jnp.concatenate(spectra_chunks, axis=0)
         logger.debug(f"Calculation Finished! Spectra shape: {spectra.shape}")
         spectra_jax = jnp.array(spectra)
+        spectra_jax = jnp.expand_dims(spectra_jax, axis=0)
         rubixdata.stars.spectra = spectra_jax
         # setattr(rubixdata.gas, "spectra", spectra)
         # jax.debug.print("Calculate Spectra: Spectra {}", spectra)
