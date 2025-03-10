@@ -65,8 +65,7 @@ calc_dusty_ifu:
       name: rotate_galaxy
       depends_on: null
       args: []
-      kwargs:
-        type: "face-on"
+      kwargs: {}
     filter_particles:
       name: filter_particles
       depends_on: rotate_galaxy

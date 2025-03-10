@@ -3,7 +3,7 @@ import jax.numpy as jnp
 from beartype import beartype as typechecker
 from jaxtyping import Array, Float, jaxtyped
 
-from rubix import config
+from rubix import config as rubix_config
 from rubix.core.data import RubixData
 from rubix.logger import get_logger
 
@@ -134,7 +134,9 @@ def calculate_extinction(
     """
 
     # Constants
-    m_H = config["constants"]["MASS_OF_PROTON"]  # mass of a hydrogen atom in grams
+    m_H = rubix_config["constants"][
+        "MASS_OF_PROTON"
+    ]  # mass of a hydrogen atom in grams
 
     # dust_grain_density is in g/cm^3
     # dust_column_density is internally in Msun per kpc^2, but should be in g/cm^2
@@ -148,8 +150,8 @@ def calculate_extinction(
 
     # convert the surface density to grams per cm^2
     CONVERT_MASS_PER_AREA = (
-        float(config["constants"]["MSUN_TO_GRAMS"])
-        / float(config["constants"]["KPC_TO_CM"]) ** 2
+        float(rubix_config["constants"]["MSUN_TO_GRAMS"])
+        / float(rubix_config["constants"]["KPC_TO_CM"]) ** 2
     )
     effective_wavelength = effective_wavelength * 1e-8  # convert to cm
     dust_extinction = (
@@ -278,7 +280,9 @@ def apply_spaxel_extinction(
         rubixdata.gas.metals[0, :, 4] / (16 * rubixdata.gas.metals[0, :, 0])
     )
     dust_to_gas_ratio = calculate_dust_to_gas_ratio(
-        log_OH, config["ssp"]["dust"]["dust_to_gas_model"], config["ssp"]["dust"]["Xco"]
+        log_OH,
+        rubix_config["ssp"]["dust"]["dust_to_gas_model"],
+        rubix_config["ssp"]["dust"]["Xco"],
     )
     dust_mass = rubixdata.gas.mass[0] * dust_to_gas_ratio
 
