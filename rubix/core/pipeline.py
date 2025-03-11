@@ -3,29 +3,28 @@ from typing import Union
 
 import jax
 import jax.numpy as jnp
+from beartype import beartype as typechecker
 from jax import block_until_ready
+from jaxtyping import jaxtyped
 
 from rubix.logger import get_logger
 from rubix.pipeline import linear_pipeline as pipeline
 from rubix.utils import get_config, get_pipeline_config
 
 from .data import get_reshape_data, get_rubix_data
+from .dust import get_extinction
 from .ifu import (
+    get_calculate_datacube,
     get_calculate_spectra,
     get_doppler_shift_and_resampling,
     get_scale_spectrum_by_mass,
-    get_calculate_datacube,
 )
-from .rotation import get_galaxy_rotation
-from .ssp import get_ssp
-from .telescope import get_spaxel_assignment, get_telescope, get_filter_particles
-from .psf import get_convolve_psf
 from .lsf import get_convolve_lsf
 from .noise import get_apply_noise
-from .dust import get_extinction
-
-from jaxtyping import jaxtyped
-from beartype import beartype as typechecker
+from .psf import get_convolve_psf
+from .rotation import get_galaxy_rotation
+from .ssp import get_ssp
+from .telescope import get_filter_particles, get_spaxel_assignment, get_telescope
 
 
 class RubixPipeline:

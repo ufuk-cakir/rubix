@@ -41,7 +41,9 @@ dependencies = [
     "mpdaf",
     "ipywidgets",
     "jdaviz",
-    "pynbody"
+    "pynbody",
+    "pytest-mock",
+    "opt-einsum >=3.3.0",
 ]
 [project.optional-dependencies]
 tests = [
@@ -64,7 +66,8 @@ docs = [
 
 cuda = [
     "jax[cuda]!=0.4.27",
-    "jax[cuda]!=0.4.36",]
+    "jax[cuda]!=0.4.36",
+    ]
 
 
 # The following section contains setuptools-specific configuration
