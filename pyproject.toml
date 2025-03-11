@@ -30,18 +30,13 @@ dependencies = [
     "numpy",
     "matplotlib",
     "pyaml",
-    "jaxtyping",
-    "equinox",
-    "jax[cpu]!=0.4.27",
-    "jax[cpu]!=0.4.36",
-    "jax[cpu]!=0.5.1",
-    "interpax",
     "astroquery",
-    "beartype",
     "mpdaf",
     "ipywidgets",
+    "pynbody",
+    "opt-einsum >=3.3.0",
+    "beartype",
     "jdaviz",
-    "pynbody"
 ]
 [project.optional-dependencies]
 tests = [
@@ -49,8 +44,6 @@ tests = [
     "pytest-cov",
     "pytest-mock",
     "nbval",
-    "jax[cpu]!=0.4.27",
-    "jax[cpu]!=0.4.36",
     "pre-commit",
 ]
 docs = [
@@ -61,11 +54,18 @@ docs = [
     "sphinx_mdinclude",
     "sphinx_rtd_theme",
 ]
-
 cuda = [
-    "jax[cuda]!=0.4.27",
-    "jax[cuda]!=0.4.36",]
-
+    "jax[cuda12]==0.5.0",
+    "jaxtyping",
+    "equinox",
+    "interpax",
+]
+cpu = [
+    "jax==0.5.0",
+    "jaxtyping",
+    "equinox",
+    "interpax",
+]
 
 # The following section contains setuptools-specific configuration
 # options. For a full reference of available options, check the overview
