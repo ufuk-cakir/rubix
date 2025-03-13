@@ -93,7 +93,7 @@ def get_calculate_spectra(config: dict) -> Callable:
         spectra = jnp.concatenate([spectra1, spectra2, spectra3], axis=0)
         """
         # Define the chunk size (number of particles per chunk)
-        chunk_size = 250000
+        chunk_size = 100000
         total_length = metallicity[0].shape[
             0
         ]  # assuming metallicity[0] is your 1D array of particles
@@ -272,6 +272,10 @@ def get_doppler_shift_and_resampling(config: dict) -> Callable:
         if particle.spectra is not None:
             # Doppler shift based on the velocity of the particle
             doppler_shifted_ssp_wave = doppler_shift(particle.velocity)
+            # print(f"Velocity: {particle.velocity[0,:,:]}")
+            # doppler_shifted_ssp_wave = velocity_doppler_shift(wavelength=ssp_wave,
+            #                                                  velocity=particle.velocity[0,:,:], direction=velocity_direction)
+            # doppler_shifted_ssp_wave = jnp.expand_dims(doppler_shifted_ssp_wave, axis=0)
             logger.info(f"Doppler shifting and resampling spectra...")
             logger.debug(f"Doppler Shifted SSP Wave: {doppler_shifted_ssp_wave.shape}")
             logger.debug(f"Telescope Wave Seq: {telescope_wavelength.shape}")
