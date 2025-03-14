@@ -1,5 +1,8 @@
 import logging
 import os
+
+import jax
+
 import rubix._version as version
 from rubix import config as rubix_config
 
@@ -52,5 +55,7 @@ def get_logger(config=None):
 """
         )
         logger.info(f"Rubix version: {version.__version__}")
+        logger.info(f"JAX version: {jax.__version__}")
+        logger.info(f"Running on {jax.devices()} devices")
 
     return logger

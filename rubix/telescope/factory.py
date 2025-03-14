@@ -10,7 +10,7 @@ from rubix.utils import read_yaml
 import os
 import warnings
 from typing import Optional, Union
-from jaxtyping import Float, Array, jaxtyped
+from jaxtyping import jaxtyped
 from beartype import beartype as typechecker
 
 PATH = os.path.dirname(os.path.abspath(__file__))

@@ -34,13 +34,16 @@ dependencies = [
     "equinox",
     "jax[cpu]!=0.4.27",
     "jax[cpu]!=0.4.36",
+    "jax[cpu]!=0.5.1",
     "interpax",
     "astroquery",
     "beartype",
     "mpdaf",
     "ipywidgets",
     "jdaviz",
-    "pynbody"
+    "pynbody",
+    "pytest-mock",
+    "opt-einsum >=3.3.0",
 ]
 [project.optional-dependencies]
 tests = [
@@ -63,7 +66,8 @@ docs = [
 
 cuda = [
     "jax[cuda]!=0.4.27",
-    "jax[cuda]!=0.4.36",]
+    "jax[cuda]!=0.4.36",
+    ]
 
 
 # The following section contains setuptools-specific configuration
@@ -102,3 +106,32 @@ fail_under = 80
 
 [tool.ruff]
 ignore = ["F722"]
+
+[tool.isort]
+profile = "black"
+combine_as_imports = true
+known_third_party = [
+    "pytest",
+    "requests",
+    "requests-mock",
+    "h5py",
+    "astropy",
+    "scipy",
+    "numpy",
+    "matplotlib",
+    "pyaml",
+    "jaxtyping",
+    "equinox",
+    "jax",
+    "interpax",
+    "astroquery",
+    "beartype",
+    "mpdaf",
+    "ipywidgets",
+    "jdaviz",
+    "pynbody"
+]
+known_first_party = [
+  "rubix",
+]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]

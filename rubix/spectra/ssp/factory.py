@@ -45,9 +45,7 @@ def get_ssp_template(template: str) -> SSPGrid:
     elif config[template]["format"].lower() == "fsps":
         if config[template]["source"] == "load_from_file":
             try:
-                return HDF5SSPGrid.from_file(
-                    config[template], file_location=TEMPLATE_PATH
-                )
+                return HDF5SSPGrid.from_file(config[template], file_location=TEMPLATE_PATH)
             except FileNotFoundError:
                 logger.warning(
                     "The FSPS SSP template file is not found. Running FSPS to generate SSP templates."
@@ -55,9 +53,7 @@ def get_ssp_template(template: str) -> SSPGrid:
                 write_fsps_data_to_disk(
                     config[template]["file_name"], file_location=TEMPLATE_PATH
                 )
-                return HDF5SSPGrid.from_file(
-                    config[template], file_location=TEMPLATE_PATH
-                )
+                return HDF5SSPGrid.from_file(config[template], file_location=TEMPLATE_PATH)
         elif config[template]["source"] == "rerun_from_scratch":
             logger.info(
                 "Running fsps to generate SSP templates. This may take a while."
